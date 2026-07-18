@@ -113,12 +113,13 @@ jobs:
             site/firmware/gbbdongle.ota.bin
 
       - name: Attest firmware SBOM
-        uses: actions/attest-sbom@v4
+        uses: actions/attest@v4
         with:
           subject-path: |
             site/firmware/gbbdongle.factory.bin
             site/firmware/gbbdongle.ota.bin
-          sbom-path: sbom-toolchain.cyclonedx.json
+          predicate-type: https://cyclonedx.org/bom
+          predicate-path: sbom-toolchain.cyclonedx.json
 
       - name: Attach binaries and SBOM to release
         uses: softprops/action-gh-release@v3
