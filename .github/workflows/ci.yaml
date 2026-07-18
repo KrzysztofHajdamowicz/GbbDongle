@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Cache PlatformIO and ESPHome build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            firmware/.esphome
+          key: pio-${{ runner.os }}-${{ hashFiles('uv.lock', 'firmware/**/*.yaml') }}
+          restore-keys: |
+            pio-${{ runner.os }}-
+
+      - name: Validate configuration
+        run: uv run esphome config firmware/gbbdongle.yaml
+
+      - name: Compile firmware
+        run: uv run esphome compile firmware/gbbdongle.yaml

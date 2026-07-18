@@ -1,0 +1,15 @@
+# Python / uv
+.venv/
+__pycache__/
+*.pyc
+
+# ESPHome build artifacts
+.esphome/
+firmware/.esphome/
+
+# Secrets
+secrets.yaml
+firmware/secrets.yaml
+
+# macOS
+.DS_Store

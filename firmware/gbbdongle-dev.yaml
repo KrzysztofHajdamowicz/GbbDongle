@@ -1,0 +1,16 @@
+# Development variant: verbose logging, joins your WiFi from secrets.yaml
+# (copy secrets.yaml.example to firmware/secrets.yaml first).
+# Build & flash: uv run esphome run firmware/gbbdongle-dev.yaml
+
+substitutions:
+  device_name: gbbdongle-dev
+  friendly_name: GbbDongle Dev
+  log_level: VERBOSE
+
+packages:
+  base: !include common/base.yaml
+
+wifi:
+  networks:
+    - ssid: !secret wifi_ssid
+      password: !secret wifi_password

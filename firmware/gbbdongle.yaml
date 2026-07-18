@@ -1,0 +1,6 @@
+# Release firmware for GbbDongle (Waveshare ESP32-S3-RS485-CAN).
+# Build: uv run esphome compile firmware/gbbdongle.yaml
+# CI overrides the version: uv run esphome -s version 1.2.3 compile ...
+
+packages:
+  base: !include common/base.yaml

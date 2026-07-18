@@ -1,0 +1,300 @@
+# Shared configuration for all GbbDongle firmware variants.
+# Target hardware: Waveshare ESP32-S3-RS485-CAN
+#   RS485: TX=GPIO17, RX=GPIO18, direction control=GPIO21
+#   16 MB flash, 8 MB Octal PSRAM
+
+substitutions:
+  device_name: gbbdongle
+  friendly_name: GbbDongle
+  version: 0.0.0-dev
+  log_level: DEBUG
+  update_manifest_url: https://krzysztofhajdamowicz.github.io/GbbDongle/firmware/update-manifest.json
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  min_version: 2026.7.0
+  project:
+    name: krzysztofhajdamowicz.gbbdongle
+    version: ${version}
+
+esp32:
+  board: esp32-s3-devkitc-1
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+external_components:
+  - source:
+      type: local
+      path: ../components
+
+logger:
+  level: ${log_level}
+  hardware_uart: USB_SERIAL_JTAG
+
+api:
+  reboot_timeout: 0s
+
+web_server:
+  version: 3
+
+wifi:
+  reboot_timeout: 0s
+  ap:
+    ssid: GbbDongle Setup
+
+captive_portal:
+
+improv_serial:
+
+esp32_improv:
+  authorizer: none
+
+safe_mode:
+
+ota:
+  - platform: esphome
+  - platform: web_server
+  - platform: http_request
+
+http_request:
+
+update:
+  - platform: http_request
+    id: firmware_update
+    name: Firmware
+    source: ${update_manifest_url}
+    update_interval: 6h
+
+uart:
+  id: rs485_uart
+  tx_pin: GPIO17
+  rx_pin: GPIO18
+  baud_rate: 9600
+  data_bits: 8
+  parity: NONE
+  stop_bits: 1
+  rx_buffer_size: 512
+
+# The broker/credentials below are placeholders: GbbDongle applies the
+# runtime-configured values (entities below, persisted in NVS) before calling
+# enable(). enable_on_boot must stay false.
+mqtt:
+  id: gbb_mqtt
+  broker: 127.0.0.1
+  port: 8883
+  enable_on_boot: false
+  discovery: false
+  reboot_timeout: 0s
+  birth_message:
+  will_message:
+  shutdown_message:
+  log_topic:
+
+gbb_dongle:
+  id: gbb
+  uart_id: rs485_uart
+  mqtt_id: gbb_mqtt
+  flow_control_pin: GPIO21
+  version: ${version}
+  environment: GbbDongle
+  mqtt_host_id: cfg_mqtt_host
+  mqtt_port_id: cfg_mqtt_port
+  plant_id_id: cfg_plant_id
+  plant_token_id: cfg_plant_token
+  cloud_enabled_id: cfg_cloud_enabled
+  tls_enabled_id: cfg_tls_enabled
+  tls_skip_cn_check_id: cfg_tls_skip_cn_check
+  baud_rate_id: cfg_baud_rate
+  parity_id: cfg_parity
+  # ISRG Root X1 (Let's Encrypt). Verify against the actual chain used by
+  # your gbboptimizerX-mqtt.gbbsoft.pl broker:
+  #   openssl s_client -connect <host>:8883 -showcerts
+  certificate_authority: |
+    -----BEGIN CERTIFICATE-----
+    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
+    -----END CERTIFICATE-----
+
+text:
+  - platform: template
+    id: cfg_mqtt_host
+    name: MQTT Server
+    icon: mdi:server-network
+    entity_category: config
+    mode: text
+    optimistic: true
+    restore_value: true
+    initial_value: ""
+    min_length: 0
+    max_length: 128
+  - platform: template
+    id: cfg_plant_id
+    name: Plant Id
+    icon: mdi:solar-power
+    entity_category: config
+    mode: text
+    optimistic: true
+    restore_value: true
+    initial_value: ""
+    min_length: 0
+    max_length: 64
+  - platform: template
+    id: cfg_plant_token
+    name: Plant Token
+    icon: mdi:key
+    entity_category: config
+    mode: password
+    optimistic: true
+    restore_value: true
+    initial_value: ""
+    min_length: 0
+    max_length: 64
+
+number:
+  - platform: template
+    id: cfg_mqtt_port
+    name: MQTT Port
+    icon: mdi:numeric
+    entity_category: config
+    optimistic: true
+    restore_value: true
+    initial_value: 8883
+    min_value: 1
+    max_value: 65535
+    step: 1
+    mode: box
+
+select:
+  - platform: template
+    id: cfg_baud_rate
+    name: RS485 Baud Rate
+    icon: mdi:swap-horizontal
+    entity_category: config
+    optimistic: true
+    restore_value: true
+    options:
+      - "2400"
+      - "4800"
+      - "9600"
+      - "19200"
+      - "38400"
+      - "57600"
+      - "115200"
+    initial_option: "9600"
+  - platform: template
+    id: cfg_parity
+    name: RS485 Parity
+    icon: mdi:swap-horizontal
+    entity_category: config
+    optimistic: true
+    restore_value: true
+    options:
+      - "None"
+      - "Even"
+      - "Odd"
+    initial_option: "None"
+
+switch:
+  - platform: template
+    id: cfg_cloud_enabled
+    name: Cloud Connection
+    icon: mdi:cloud-upload
+    entity_category: config
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+  - platform: template
+    id: cfg_tls_enabled
+    name: TLS
+    icon: mdi:lock
+    entity_category: config
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+  - platform: template
+    id: cfg_tls_skip_cn_check
+    name: TLS Skip CN Check
+    icon: mdi:lock-alert
+    entity_category: config
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+
+button:
+  - platform: restart
+    name: Apply Settings (Restart)
+    icon: mdi:restart
+
+binary_sensor:
+  - platform: template
+    name: Cloud Connected
+    device_class: connectivity
+    lambda: return id(gbb_mqtt).is_connected();
+  - platform: template
+    name: Restart Required
+    icon: mdi:restart-alert
+    entity_category: diagnostic
+    lambda: return id(gbb).is_settings_dirty();
+
+sensor:
+  - platform: template
+    name: Requests Handled
+    icon: mdi:counter
+    entity_category: diagnostic
+    state_class: total_increasing
+    accuracy_decimals: 0
+    update_interval: 60s
+    lambda: return id(gbb).get_requests_handled();
+  - platform: template
+    name: Modbus Errors
+    icon: mdi:alert-circle
+    entity_category: diagnostic
+    state_class: total_increasing
+    accuracy_decimals: 0
+    update_interval: 60s
+    lambda: return id(gbb).get_modbus_errors();
+  - platform: wifi_signal
+    name: WiFi Signal
+    entity_category: diagnostic
+    update_interval: 60s
+
+text_sensor:
+  - platform: template
+    name: Firmware Version
+    entity_category: diagnostic
+    update_interval: never
+    lambda: return {"${version}"};
+  - platform: wifi_info
+    ip_address:
+      name: IP Address
+      entity_category: diagnostic

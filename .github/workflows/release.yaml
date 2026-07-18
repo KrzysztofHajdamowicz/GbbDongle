@@ -1,0 +1,105 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Cache PlatformIO and ESPHome build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            firmware/.esphome
+          key: pio-${{ runner.os }}-${{ hashFiles('uv.lock', 'firmware/**/*.yaml') }}
+          restore-keys: |
+            pio-${{ runner.os }}-
+
+      - name: Compile firmware
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          uv run esphome -s version "$VERSION" compile firmware/gbbdongle.yaml
+
+      - name: Assemble site and manifests
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          BUILD_DIR=firmware/.esphome/build/gbbdongle/build
+          mkdir -p site/firmware
+          cp static/index.html site/
+          cp "$BUILD_DIR/firmware.factory.bin" site/firmware/gbbdongle.factory.bin
+          cp "$BUILD_DIR/firmware.ota.bin" site/firmware/gbbdongle.ota.bin
+          MD5=$(md5sum site/firmware/gbbdongle.ota.bin | cut -d' ' -f1)
+
+          # ESP Web Tools manifest (browser flashing over USB)
+          cat > site/firmware/manifest.json <<EOF
+          {
+            "name": "GbbDongle",
+            "version": "$VERSION",
+            "new_install_prompt_erase": true,
+            "builds": [
+              {
+                "chipFamily": "ESP32-S3",
+                "parts": [{ "path": "gbbdongle.factory.bin", "offset": 0 }]
+              }
+            ]
+          }
+          EOF
+
+          # Manifest for the esphome http_request update entity (OTA)
+          cat > site/firmware/update-manifest.json <<EOF
+          {
+            "name": "GbbDongle",
+            "version": "$VERSION",
+            "builds": [
+              {
+                "chipFamily": "ESP32-S3",
+                "ota": {
+                  "path": "gbbdongle.ota.bin",
+                  "md5": "$MD5",
+                  "summary": "GbbDongle $VERSION",
+                  "release_url": "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME}"
+                }
+              }
+            ]
+          }
+          EOF
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Attach binaries to release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            site/firmware/gbbdongle.factory.bin
+            site/firmware/gbbdongle.ota.bin
+
+  deploy-pages:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
