@@ -34,7 +34,7 @@ update entity (manifest hosted on GitHub Pages).
 | MQTT Server / MQTT Port | e.g. `gbboptimizer1-mqtt.gbbsoft.pl` : `8883` |
 | Plant Id / Plant Token | from GbbOptimizer |
 | Cloud Connection | master enable switch |
-| TLS / TLS Skip CN Check | TLS is on by default (ISRG Root X1 CA compiled in) |
+| TLS / TLS Skip CN Check | TLS is on by default (Certum Trusted Network CA + ISRG Root X1 compiled in) |
 | RS485 Baud Rate / Parity | serial parameters, applied live |
 
 Note: the Plant Token is masked in the web UI but visible to the Home
