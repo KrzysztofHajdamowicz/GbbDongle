@@ -7,7 +7,8 @@ on:
 permissions:
   contents: write
   pages: write
-  id-token: write
+  id-token: write        # Sigstore signing for attestations + Pages deploy
+  attestations: write    # Upload attestations to GitHub
 
 jobs:
   build:
@@ -86,13 +87,47 @@ jobs:
         with:
           path: site
 
-      - name: Attach binaries to release
+      # ── SBOM: build toolchain ──
+      # Scans pyproject.toml / uv.lock (esphome + the whole Python toolchain
+      # the firmware is built with). The C components baked into the binary
+      # (ESP-IDF, ArduinoJson) are pinned by the esphome version listed here.
+      - name: Generate toolchain SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: sbom-toolchain.cyclonedx.json
+
+      - name: Rename SBOM for release
+        run: cp sbom-toolchain.cyclonedx.json "SBOM-Toolchain-${GITHUB_REF_NAME#v}.cyclonedx.json"
+
+      # ── Attestations ──
+      # Sigstore-signed provenance: proves the firmware binaries were built by
+      # THIS workflow in THIS repo. Verify with:
+      #   gh attestation verify gbbdongle.factory.bin --owner KrzysztofHajdamowicz
+      - name: Attest firmware build provenance
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: |
+            site/firmware/gbbdongle.factory.bin
+            site/firmware/gbbdongle.ota.bin
+
+      - name: Attest firmware SBOM
+        uses: actions/attest-sbom@v4
+        with:
+          subject-path: |
+            site/firmware/gbbdongle.factory.bin
+            site/firmware/gbbdongle.ota.bin
+          sbom-path: sbom-toolchain.cyclonedx.json
+
+      - name: Attach binaries and SBOM to release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           files: |
             site/firmware/gbbdongle.factory.bin
             site/firmware/gbbdongle.ota.bin
+            SBOM-Toolchain-*.cyclonedx.json
 
   deploy-pages:
     needs: build
