@@ -1,3 +1,6 @@
+import subprocess
+from pathlib import Path
+
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome import pins
@@ -28,13 +31,32 @@ CONF_LOG_BUFFER_SIZE = "log_buffer_size"
 gbb_dongle_ns = cg.esphome_ns.namespace("gbb_dongle")
 GbbDongle = gbb_dongle_ns.class_("GbbDongle", cg.Component, uart.UARTDevice)
 
+
+def _resolve_version(value: str) -> str:
+    """Reported over MQTT as GbbVersion. Release builds pass the exact tag
+    via `-s version X.Y.Z`; the sentinels below mean "not stamped", in which
+    case the git tag of this checkout is used (e.g. 0.1.1 or 0.1.1-3-g1350dc2
+    between tags)."""
+    if value not in ("auto", "0.0.0-dev"):
+        return value
+    try:
+        described = subprocess.check_output(
+            ["git", "describe", "--tags", "--dirty", "--always"],
+            cwd=Path(__file__).parent,
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+        return described.removeprefix("v")
+    except (subprocess.CalledProcessError, OSError):
+        return "dev"
+
 CONFIG_SCHEMA = (
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(GbbDongle),
             cv.GenerateID(CONF_MQTT_ID): cv.use_id(mqtt.MQTTClientComponent),
             cv.Optional(CONF_FLOW_CONTROL_PIN): pins.gpio_output_pin_schema,
-            cv.Optional(CONF_VERSION, default="dev"): cv.string_strict,
+            cv.Optional(CONF_VERSION, default="auto"): cv.string_strict,
             cv.Optional(CONF_ENVIRONMENT, default="GbbDongle"): cv.string_strict,
             cv.Optional(CONF_CERTIFICATE_AUTHORITY): cv.string,
             cv.Required(CONF_MQTT_HOST_ID): cv.use_id(text.Text),
@@ -75,7 +97,7 @@ async def to_code(config):
         pin = await cg.gpio_pin_expression(config[CONF_FLOW_CONTROL_PIN])
         cg.add(var.set_flow_control_pin(pin))
 
-    cg.add(var.set_version(config[CONF_VERSION]))
+    cg.add(var.set_version(_resolve_version(config[CONF_VERSION])))
     cg.add(var.set_environment(config[CONF_ENVIRONMENT]))
 
     if CONF_CERTIFICATE_AUTHORITY in config:
