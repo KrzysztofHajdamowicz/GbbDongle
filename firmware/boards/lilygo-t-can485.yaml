@@ -1,0 +1,45 @@
+# Board package: LilyGo T-CAN485 (https://github.com/Xinyuan-LilyGO/T-CAN485)
+#   RS485: TX=GPIO22, RX=GPIO21; auto-direction transceiver, no flow control
+#   4 MB flash, no PSRAM — smaller log buffer, no BLE provisioning
+#   (improv_serial and the captive-portal AP remain available)
+
+esp32:
+  board: esp32dev
+  flash_size: 4MB
+  framework:
+    type: esp-idf
+
+logger:
+  hardware_uart: UART0
+
+uart:
+  tx_pin: GPIO22
+  rx_pin: GPIO21
+
+gbb_dongle:
+  # No PSRAM: the LastLog ring buffer falls back to internal heap, so keep
+  # it small. 8 KB still covers the interval between SendLastLog polls.
+  log_buffer_size: 8192
+
+# RS485 transceiver control pins. Pin roles per the board schematic and the
+# vendor RS485-modbus example (the README pin table is wrong); all three must
+# be driven high:
+#   GPIO16 — enables the 5 V booster powering the transceiver
+#   GPIO17 — /RE high together with /SHDN high selects auto-direction mode
+#   GPIO19 — /SHDN, high = transceiver enabled
+switch:
+  - platform: gpio
+    pin: GPIO16
+    id: rs485_5v_enable
+    restore_mode: ALWAYS_ON
+    internal: true
+  - platform: gpio
+    pin: GPIO17
+    id: rs485_auto_direction
+    restore_mode: ALWAYS_ON
+    internal: true
+  - platform: gpio
+    pin: GPIO19
+    id: rs485_transceiver_enable
+    restore_mode: ALWAYS_ON
+    internal: true
