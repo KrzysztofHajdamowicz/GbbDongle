@@ -1,0 +1,37 @@
+name: Dependabot auto-merge
+
+# Turns green CI into an approval for low-risk dependency bumps: once the CI
+# "build" job compiles the firmware on the new versions, minor/patch Dependabot
+# PRs merge themselves into main. Major bumps are left for manual review.
+#
+# This only affects the main branch. It does NOT ship anything to devices:
+# firmware is published to GitHub Pages / the OTA manifest solely by the
+# Release workflow on a v* tag, which stays a manual, human-gated step.
+#
+# Prerequisites (one-time, in the GitHub UI):
+#   1. Settings -> General -> Pull Requests -> enable "Allow auto-merge".
+#   2. Branch protection (or a ruleset) on `main` requiring the CI "build"
+#      status check to pass. Without a required check, --auto would merge
+#      immediately instead of waiting for the compile.
+
+on: pull_request
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+
+      - name: Enable auto-merge for minor/patch updates
+        if: steps.metadata.outputs.update-type != 'version-update:semver-major'
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -9,6 +9,19 @@ updates:
       - KrzysztofHajdamowicz
     labels:
       - dependencies
+    # Give freshly published releases a week to prove themselves before
+    # Dependabot proposes them, so we never chase a brand-new package.
+    cooldown:
+      default-days: 7
+    # One PR per week for all minor/patch bumps (esphome + its pinned
+    # toolchain move together); majors come as their own PRs for manual review.
+    groups:
+      python-toolchain:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
 
   - package-ecosystem: github-actions
     directory: /
@@ -19,3 +32,12 @@ updates:
       - KrzysztofHajdamowicz
     labels:
       - dependencies
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
