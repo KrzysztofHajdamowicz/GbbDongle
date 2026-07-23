@@ -13,6 +13,17 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # `config` doubles as the artifact basename; the gbbdongle.* names
+          # are kept for the Waveshare board so update manifests already in
+          # the field keep resolving.
+          - config: gbbdongle
+            chip_family: ESP32-S3
+          - config: gbbdongle-tcan485
+            chip_family: ESP32
     steps:
       - uses: actions/checkout@v7
 
@@ -29,26 +40,49 @@ jobs:
           path: |
             ~/.cache/esphome
             firmware/.esphome
-          key: pio-${{ runner.os }}-${{ hashFiles('uv.lock', 'firmware/**/*.yaml') }}
+          key: pio-${{ runner.os }}-${{ matrix.config }}-${{ hashFiles('uv.lock', 'firmware/**/*.yaml') }}
           restore-keys: |
-            pio-${{ runner.os }}-
+            pio-${{ runner.os }}-${{ matrix.config }}-
 
       - name: Compile firmware
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          uv run esphome -s version "$VERSION" compile firmware/gbbdongle.yaml
+          uv run esphome -s version "$VERSION" compile "firmware/${{ matrix.config }}.yaml"
+
+      - name: Collect binaries
+        run: |
+          BUILD_DIR="firmware/.esphome/build/${{ matrix.config }}/build"
+          mkdir -p dist
+          cp "$BUILD_DIR/firmware.factory.bin" "dist/${{ matrix.config }}.factory.bin"
+          cp "$BUILD_DIR/firmware.ota.bin" "dist/${{ matrix.config }}.ota.bin"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: firmware-${{ matrix.config }}
+          path: dist/
+          if-no-files-found: error
+
+  assemble:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: firmware-*
+          merge-multiple: true
+          path: site/firmware
 
       - name: Assemble site and manifests
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          BUILD_DIR=firmware/.esphome/build/gbbdongle/build
-          mkdir -p site/firmware
           cp static/index.html site/
-          cp "$BUILD_DIR/firmware.factory.bin" site/firmware/gbbdongle.factory.bin
-          cp "$BUILD_DIR/firmware.ota.bin" site/firmware/gbbdongle.ota.bin
-          MD5=$(md5sum site/firmware/gbbdongle.ota.bin | cut -d' ' -f1)
+          MD5_S3=$(md5sum site/firmware/gbbdongle.ota.bin | cut -d' ' -f1)
+          MD5_TCAN485=$(md5sum site/firmware/gbbdongle-tcan485.ota.bin | cut -d' ' -f1)
 
-          # ESP Web Tools manifest (browser flashing over USB)
+          # ESP Web Tools manifest (browser flashing over USB); the flasher
+          # picks the build matching the detected chip family.
           cat > site/firmware/manifest.json <<EOF
           {
             "name": "GbbDongle",
@@ -58,12 +92,17 @@ jobs:
               {
                 "chipFamily": "ESP32-S3",
                 "parts": [{ "path": "gbbdongle.factory.bin", "offset": 0 }]
+              },
+              {
+                "chipFamily": "ESP32",
+                "parts": [{ "path": "gbbdongle-tcan485.factory.bin", "offset": 0 }]
               }
             ]
           }
           EOF
 
-          # Manifest for the esphome http_request update entity (OTA)
+          # Manifest for the esphome http_request update entity (OTA); the
+          # update component picks the build whose chipFamily matches.
           cat > site/firmware/update-manifest.json <<EOF
           {
             "name": "GbbDongle",
@@ -73,7 +112,16 @@ jobs:
                 "chipFamily": "ESP32-S3",
                 "ota": {
                   "path": "gbbdongle.ota.bin",
-                  "md5": "$MD5",
+                  "md5": "$MD5_S3",
+                  "summary": "GbbDongle $VERSION",
+                  "release_url": "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME}"
+                }
+              },
+              {
+                "chipFamily": "ESP32",
+                "ota": {
+                  "path": "gbbdongle-tcan485.ota.bin",
+                  "md5": "$MD5_TCAN485",
                   "summary": "GbbDongle $VERSION",
                   "release_url": "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME}"
                 }
@@ -111,6 +159,8 @@ jobs:
           subject-path: |
             site/firmware/gbbdongle.factory.bin
             site/firmware/gbbdongle.ota.bin
+            site/firmware/gbbdongle-tcan485.factory.bin
+            site/firmware/gbbdongle-tcan485.ota.bin
 
       - name: Attest firmware SBOM
         uses: actions/attest@v4
@@ -118,6 +168,8 @@ jobs:
           subject-path: |
             site/firmware/gbbdongle.factory.bin
             site/firmware/gbbdongle.ota.bin
+            site/firmware/gbbdongle-tcan485.factory.bin
+            site/firmware/gbbdongle-tcan485.ota.bin
           predicate-type: https://cyclonedx.org/bom
           predicate-path: sbom-toolchain.cyclonedx.json
 
@@ -128,10 +180,12 @@ jobs:
           files: |
             site/firmware/gbbdongle.factory.bin
             site/firmware/gbbdongle.ota.bin
+            site/firmware/gbbdongle-tcan485.factory.bin
+            site/firmware/gbbdongle-tcan485.ota.bin
             SBOM-Toolchain-*.cyclonedx.json
 
   deploy-pages:
-    needs: build
+    needs: assemble
     runs-on: ubuntu-latest
     environment:
       name: github-pages
