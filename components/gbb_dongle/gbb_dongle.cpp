@@ -143,7 +143,10 @@ void GbbDongle::mark_dirty_() {
 
 void GbbDongle::on_cloud_message_(const std::string &payload) {
   this->requests_received_++;
-  ESP_LOGD(TAG, "toDevice message (%u B)", payload.size());
+  // Full request as it arrived from the cloud, so on the bench you can see
+  // exactly what was asked for and match it against the Modbus frames the
+  // executor sends out below.
+  ESP_LOGD(TAG, "Cloud -> device: received a request (%u B): %s", payload.size(), payload.c_str());
 
   GbbHeader header;
   if (!parse_header(payload, header)) {
@@ -194,6 +197,11 @@ void GbbDongle::publish_response_(GbbHeader &&header) {
     last_log_ptr = &last_log;
   }
   const std::string response = build_response(header, this->version_, this->environment_, last_log_ptr);
+  // Summary rather than the whole JSON: with SendLastLog the response also
+  // carries up to 8 KB of recent log lines, and the per-line results are
+  // already visible in the executor's "<- inverter" log lines above.
+  ESP_LOGD(TAG, "Device -> cloud: sending the response back (%u B, %u line(s)%s)", response.size(),
+           header.lines.size(), last_log_ptr != nullptr ? ", incl. recent log" : "");
   if (!this->mqtt_->publish(this->topic_from_device_, response.data(), response.size(), 2, false)) {
     ESP_LOGW(TAG, "Failed to publish fromDevice response (%u B)", response.size());
   }
