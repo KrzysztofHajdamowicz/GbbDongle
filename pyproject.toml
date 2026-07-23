@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "GbbDongle - ESPHome-based MQTT<->Modbus RTU proxy for GbbOptimizer (GbbConnect2 replacement on ESP32-S3)"
 requires-python = ">=3.12,<3.14"
 dependencies = [
-    "esphome==2026.7.0",
+    "esphome==2026.7.2",
 ]
 
 [dependency-groups]
@@ -15,7 +15,7 @@ dev = [
 
 [tool.uv]
 package = false
-# esphome 2026.7.0 (cryptography==49) conflicts with esptool's <49 cap on
+# esphome 2026.7.2 (cryptography==49) conflicts with esptool's <49 cap on
 # Intel macOS; resolve only for the platforms we actually use.
 environments = [
     "sys_platform == 'darwin' and platform_machine == 'arm64'",
