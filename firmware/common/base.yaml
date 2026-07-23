@@ -1,7 +1,7 @@
-# Shared configuration for all GbbDongle firmware variants.
-# Target hardware: Waveshare ESP32-S3-RS485-CAN
-#   RS485: TX=GPIO17, RX=GPIO18, direction control=GPIO21
-#   16 MB flash, 8 MB Octal PSRAM
+# Board-agnostic configuration shared by all GbbDongle firmware variants.
+# Hardware specifics (esp32/psram, UART pins, RS485 direction control, BLE
+# provisioning) live in firmware/boards/*.yaml; a device yaml combines this
+# file with exactly one board file via `packages:`.
 
 substitutions:
   device_name: gbbdongle
@@ -18,16 +18,6 @@ esphome:
     name: krzysztofhajdamowicz.gbbdongle
     version: ${version}
 
-esp32:
-  board: esp32-s3-devkitc-1
-  flash_size: 16MB
-  framework:
-    type: esp-idf
-
-psram:
-  mode: octal
-  speed: 80MHz
-
 external_components:
   - source:
       type: local
@@ -35,7 +25,6 @@ external_components:
 
 logger:
   level: ${log_level}
-  hardware_uart: USB_SERIAL_JTAG
 
 api:
   reboot_timeout: 0s
@@ -51,9 +40,6 @@ wifi:
 captive_portal:
 
 improv_serial:
-
-esp32_improv:
-  authorizer: none
 
 safe_mode:
 
@@ -71,10 +57,9 @@ update:
     source: ${update_manifest_url}
     update_interval: 6h
 
+# TX/RX pins come from the board file.
 uart:
   id: rs485_uart
-  tx_pin: GPIO17
-  rx_pin: GPIO18
   baud_rate: 9600
   data_bits: 8
   parity: NONE
@@ -96,11 +81,12 @@ mqtt:
   shutdown_message:
   log_topic:
 
+# flow_control_pin (boards with manual RS485 direction control) and
+# log_buffer_size (boards without PSRAM) are set in the board file.
 gbb_dongle:
   id: gbb
   uart_id: rs485_uart
   mqtt_id: gbb_mqtt
-  flow_control_pin: GPIO21
   version: ${version}
   environment: GbbDongle
   mqtt_host_id: cfg_mqtt_host

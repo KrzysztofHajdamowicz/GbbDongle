@@ -4,3 +4,4 @@
 
 packages:
   base: !include common/base.yaml
+  board: !include boards/waveshare-esp32-s3-rs485-can.yaml

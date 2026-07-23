@@ -1,0 +1,27 @@
+# Board package: Waveshare ESP32-S3-RS485-CAN
+#   RS485: TX=GPIO17, RX=GPIO18, direction control=GPIO21
+#   16 MB flash, 8 MB Octal PSRAM
+
+esp32:
+  board: esp32-s3-devkitc-1
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+logger:
+  hardware_uart: USB_SERIAL_JTAG
+
+uart:
+  tx_pin: GPIO17
+  rx_pin: GPIO18
+
+gbb_dongle:
+  flow_control_pin: GPIO21
+
+# BLE WiFi provisioning — affordable here thanks to PSRAM.
+esp32_improv:
+  authorizer: none
