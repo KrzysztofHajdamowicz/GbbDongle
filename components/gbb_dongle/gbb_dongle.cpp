@@ -3,6 +3,7 @@
 #include <cstdlib>
 
 #include "esphome/components/logger/logger.h"
+#include "esphome/components/network/util.h"
 #include "esphome/core/hal.h"
 #include "esphome/core/helpers.h"
 #include "esphome/core/log.h"
@@ -95,9 +96,13 @@ void GbbDongle::configure_mqtt_() {
 
   this->cloud_configured_ = true;
   if (this->cloud_enabled_ == nullptr || this->cloud_enabled_->state) {
-    ESP_LOGI(TAG, "Connecting to GbbOptimizer at %s:%u as plant '%s' (TLS: %s)", host.c_str(), port, plant_id.c_str(),
-             tls && this->ca_certificate_ != nullptr ? "yes" : "NO");
-    this->mqtt_->enable();
+    // Defer the actual enable() until the network is up: setup() runs before
+    // WiFi finishes associating, so connecting here just fails DNS with -6 and
+    // spams warnings until the first retry. loop() flips this on once
+    // network::is_connected() returns true.
+    ESP_LOGI(TAG, "Cloud configured for GbbOptimizer at %s:%u as plant '%s' (TLS: %s); connecting once WiFi is up",
+             host.c_str(), port, plant_id.c_str(), tls && this->ca_certificate_ != nullptr ? "yes" : "NO");
+    this->cloud_enable_pending_ = true;
   } else {
     ESP_LOGI(TAG, "Cloud connection disabled by switch");
   }
@@ -196,6 +201,12 @@ void GbbDongle::publish_response_(GbbHeader &&header) {
 }
 
 void GbbDongle::loop() {
+  if (this->cloud_enable_pending_ && network::is_connected()) {
+    this->cloud_enable_pending_ = false;
+    ESP_LOGI(TAG, "Network is up; connecting to the cloud now");
+    this->mqtt_->enable();
+  }
+
   if (this->executor_.has_result()) {
     this->publish_response_(this->executor_.take_result());
   }

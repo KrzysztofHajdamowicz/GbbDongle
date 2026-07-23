@@ -96,6 +96,7 @@ class GbbDongle : public Component, public uart::UARTDevice {
   bool setup_complete_{false};
   bool settings_dirty_{false};
   bool cloud_configured_{false};
+  bool cloud_enable_pending_{false};
   uint32_t last_keepalive_{0};
   uint32_t requests_received_{0};
   uint32_t requests_handled_{0};
