@@ -1,5 +1,5 @@
 # Development variant for the Waveshare ESP32-S3-RS485-CAN: verbose logging,
-# joins your WiFi from secrets.yaml (see common/dev.yaml).
+# joins your WiFi from secrets.yaml (see common/wifi-dev.yaml).
 # Build & flash: uv run esphome run firmware/gbbdongle-dev.yaml
 
 substitutions:
@@ -8,5 +8,7 @@ substitutions:
 
 packages:
   base: !include common/base.yaml
+  wifi: !include common/wifi.yaml
   board: !include boards/waveshare-esp32-s3-rs485-can.yaml
   dev: !include common/dev.yaml
+  wifi_dev: !include common/wifi-dev.yaml

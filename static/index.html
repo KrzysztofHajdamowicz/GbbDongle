@@ -6,29 +6,61 @@
   <title>GbbDongle — Web Installer</title>
   <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
   <style>
-    body { font-family: -apple-system, system-ui, sans-serif; max-width: 640px; margin: 3rem auto; padding: 0 1rem; color: #222; }
+    body { font-family: -apple-system, system-ui, sans-serif; max-width: 960px; margin: 3rem auto; padding: 0 1rem; color: #222; }
     h1 { margin-bottom: 0.2rem; }
     .subtitle { color: #666; margin-top: 0; }
+    .boards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.2rem; margin: 2rem 0; }
+    .board { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; text-align: center; display: flex; flex-direction: column; }
+    .board img { width: 100%; max-width: 280px; height: 180px; object-fit: contain; align-self: center; }
+    .board h3 { margin: 0.6rem 0 0.3rem; font-size: 1.05rem; }
+    .board .specs { color: #666; font-size: 0.85rem; margin: 0 0 0.8rem; flex-grow: 1; }
+    .board .note { color: #b45309; font-size: 0.8rem; margin: 0.6rem 0 0; }
     ol li { margin: 0.4rem 0; }
-    .install { margin: 2rem 0; }
     footer { margin-top: 3rem; font-size: 0.85rem; color: #888; }
   </style>
 </head>
 <body>
   <h1>GbbDongle</h1>
-  <p class="subtitle">GbbOptimizer &harr; Modbus RTU proxy for the Waveshare ESP32-S3-RS485-CAN and LilyGo T-CAN485</p>
+  <p class="subtitle">GbbOptimizer &harr; Modbus RTU proxy for off-the-shelf ESP32 RS485 boards</p>
 
-  <p>Connect the board over USB and click Install to flash the latest firmware
-     straight from your browser (Chrome or Edge required).</p>
+  <p>Pick your board, connect it over USB and click Install to flash the latest
+     firmware straight from your browser (Chrome or Edge required).</p>
 
-  <div class="install">
-    <esp-web-install-button manifest="firmware/manifest.json"></esp-web-install-button>
+  <div class="boards">
+    <div class="board">
+      <img src="img/waveshare-esp32-s3-rs485-can.jpg" alt="Waveshare ESP32-S3-RS485-CAN">
+      <h3>Waveshare ESP32-S3-RS485-CAN</h3>
+      <p class="specs">ESP32-S3 &middot; WiFi &middot; BLE provisioning &middot; isolated RS485</p>
+      <esp-web-install-button manifest="firmware/manifest-gbbdongle.json"></esp-web-install-button>
+    </div>
+    <div class="board">
+      <img src="img/lilygo-t-can485.jpg" alt="LilyGo T-CAN485">
+      <h3>LilyGo T-CAN485</h3>
+      <p class="specs">ESP32 &middot; WiFi &middot; auto-direction RS485</p>
+      <esp-web-install-button manifest="firmware/manifest-tcan485.json"></esp-web-install-button>
+    </div>
+    <div class="board">
+      <img src="img/kamami-esp32-eth-poe.jpg" alt="Kamami KAmod ESP32 ETH+PoE">
+      <h3>Kamami KAmod ESP32 ETH+PoE</h3>
+      <p class="specs">ESP32 &middot; Ethernet + PoE (no WiFi) &middot; KAmodRPi UART RS485 ISO HAT (isolated, auto-direction)</p>
+      <esp-web-install-button manifest="firmware/manifest-kamami.json"></esp-web-install-button>
+      <p class="note">Flash over USB with the RS485 HAT removed &mdash; the USB
+         converter and the HAT share the same UART pins.</p>
+    </div>
   </div>
 
   <h2>After flashing</h2>
+  <p><strong>WiFi boards</strong> (Waveshare, LilyGo):</p>
   <ol>
     <li>Join the <strong>GbbDongle Setup</strong> WiFi access point and configure your WiFi.</li>
     <li>Open the device's web page (its IP address, shown in the captive portal).</li>
+  </ol>
+  <p><strong>Kamami</strong> (Ethernet-only): unplug USB, mount the RS485 HAT,
+     plug in Ethernet (PoE or 5&nbsp;V) &mdash; the device gets an address via
+     DHCP; open <code>http://gbbdongle-kamami.local</code> or its IP address
+     from your router.</p>
+  <p>Then, on the device's web page:</p>
+  <ol>
     <li>Fill in <em>MQTT Server</em>, <em>Plant Id</em> and <em>Plant Token</em> from your GbbOptimizer account.</li>
     <li>Press <em>Apply Settings (Restart)</em>.</li>
     <li>Wire RS485 A/B to your inverter's Modbus port.</li>
@@ -36,6 +68,10 @@
 
   <footer>
     <a href="https://github.com/KrzysztofHajdamowicz/GbbDongle">Source on GitHub</a>
+    &middot; Board photos courtesy of
+    <a href="https://www.waveshare.com/esp32-s3-rs485-can.htm">Waveshare</a>,
+    <a href="https://lilygo.cc/products/t-can485">LilyGo</a> and
+    <a href="https://wiki.kamamilabs.com/index.php?title=KAmod_ESP32_ETH_POE">Kamami</a>.
   </footer>
 </body>
 </html>

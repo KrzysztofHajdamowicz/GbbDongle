@@ -2,6 +2,12 @@
 # Build: uv run esphome compile firmware/gbbdongle.yaml
 # CI overrides the version: uv run esphome -s version 1.2.3 compile ...
 
+# device_name stays at the base default (gbbdongle) so artifact names keep
+# resolving for update manifests already in the field.
+substitutions:
+  update_manifest_url: https://krzysztofhajdamowicz.github.io/GbbDongle/firmware/update-manifest-gbbdongle.json
+
 packages:
   base: !include common/base.yaml
+  wifi: !include common/wifi.yaml
   board: !include boards/waveshare-esp32-s3-rs485-can.yaml

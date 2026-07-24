@@ -1,0 +1,24 @@
+# Connectivity package: WiFi, with the captive-portal setup AP and improv
+# provisioning over USB serial. Included by WiFi boards' device yamls;
+# Ethernet boards simply leave it out (ethernet: conflicts with wifi:).
+
+wifi:
+  reboot_timeout: 0s
+  ap:
+    ssid: GbbDongle Setup
+
+captive_portal:
+
+improv_serial:
+
+sensor:
+  - platform: wifi_signal
+    name: WiFi Signal
+    entity_category: diagnostic
+    update_interval: 60s
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: IP Address
+      entity_category: diagnostic

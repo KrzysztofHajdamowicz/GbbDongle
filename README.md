@@ -17,19 +17,41 @@ MQTT, the dongle executes them on the bus and sends the responses back. See
 |---|---|---|---|
 | [Waveshare ESP32-S3-RS485-CAN](https://www.waveshare.com/esp32-s3-rs485-can.htm) | ESP32-S3, 16 MB flash, 8 MB PSRAM | TX=GPIO17, RX=GPIO18, direction=GPIO21 | Full feature set incl. BLE provisioning |
 | [LilyGo T-CAN485](https://github.com/Xinyuan-LilyGO/T-CAN485) | ESP32, 4 MB flash, no PSRAM | TX=GPIO22, RX=GPIO21, auto-direction | 8 KB log buffer, no BLE provisioning (WiFi setup via USB/AP) |
+| [Kamami KAmod ESP32 ETH+PoE](https://wiki.kamamilabs.com/index.php?title=KAmod_ESP32_ETH_POE) + [KAmodRPi UART RS485 ISO](https://wiki.kamamilabs.com/index.php/KAmodRPi_UART_RS485_ISO_(PL)) HAT | ESP32, 4 MB flash, no PSRAM | TX=GPIO1, RX=GPIO3 (UART0), auto-direction (MAX13487, isolated) | Ethernet-only (LAN8742, PoE); no WiFi/AP/BLE; serial logging disabled |
 
 On the T-CAN485 the RS485 transceiver is auto-direction; the firmware drives
 its enable pins (GPIO16 5 V booster, GPIO17 auto-direction, GPIO19 enable)
-high at boot. Board specifics live in `firmware/boards/*.yaml` — adding
-another board means writing one such file plus a device yaml combining it
-with `firmware/common/base.yaml`.
+high at boot.
+
+The Kamami board carries the RS485 interface on a Raspberry Pi-compatible
+2×20 header (KAmodRPi UART RS485 ISO HAT). Its caveats:
+
+- The HAT sits on **UART0 (GPIO1/GPIO3) — the same pins as the CH340 USB
+  converter**. Never use USB and the HAT at the same time (electrical
+  conflict); flash over USB with the HAT removed, then unplug USB before
+  mounting the HAT.
+- The ESP32 ROM bootloader prints on GPIO1 at every boot, so devices on the
+  bus see a short burst of garbage (invalid CRC — harmless, Modbus slaves
+  ignore it). Serial logging is disabled in the firmware; logs are available
+  via the web UI and the native API.
+- Ethernet-only: `wifi:` (and the setup AP / improv provisioning) is not
+  compiled in. The device gets an address via DHCP and is reachable as
+  `gbbdongle-kamami.local`.
+
+Board specifics live in `firmware/boards/*.yaml`, WiFi connectivity in
+`firmware/common/wifi.yaml` — adding another board means writing one board
+file plus a device yaml combining it with `firmware/common/base.yaml` (and
+`common/wifi.yaml` for WiFi boards).
 
 ## Installation
 
 1. Open the **[web installer](https://krzysztofhajdamowicz.github.io/GbbDongle/)**
-   in Chrome/Edge, connect the board over USB, click Install (the installer
-   detects the chip and picks the right firmware variant).
-2. Join the `GbbDongle Setup` WiFi AP and configure your WiFi.
+   in Chrome/Edge, pick your board, connect it over USB and click Install.
+2. Get the device online:
+   - WiFi boards (Waveshare, LilyGo): join the `GbbDongle Setup` WiFi AP and
+     configure your WiFi.
+   - Kamami: unplug USB, mount the RS485 HAT, plug in Ethernet (PoE or 5 V) —
+     the device gets an address via DHCP (`gbbdongle-kamami.local`).
 3. Open the device's web UI and fill in the GbbOptimizer settings
    (MQTT Server, Plant Id, Plant Token — from your GbbOptimizer plant page),
    then press **Apply Settings (Restart)**. Settings are stored in flash;
@@ -63,14 +85,19 @@ uv sync
 uv run esphome config firmware/gbbdongle.yaml            # validate (Waveshare)
 uv run esphome compile firmware/gbbdongle.yaml           # release image, Waveshare
 uv run esphome compile firmware/gbbdongle-tcan485.yaml   # release image, T-CAN485
+uv run esphome compile firmware/gbbdongle-kamami.yaml    # release image, Kamami
 uv run esphome run firmware/gbbdongle-dev.yaml           # dev build, flash & logs
 uv run esphome run firmware/gbbdongle-tcan485-dev.yaml   # dev build for T-CAN485
+uv run esphome run firmware/gbbdongle-kamami-dev.yaml    # dev build for Kamami (no secrets needed)
 ```
 
 Firmware configs are layered via ESPHome packages: `firmware/common/base.yaml`
-(board-agnostic), `firmware/boards/*.yaml` (hardware specifics) and
-`firmware/common/dev.yaml` (dev overlay). The dev variants join your WiFi from
-`firmware/secrets.yaml` (see `secrets.yaml.example`) and log verbosely.
+(board- and transport-agnostic), `firmware/common/wifi.yaml` (WiFi
+connectivity — left out on Ethernet boards), `firmware/boards/*.yaml`
+(hardware specifics) and `firmware/common/dev.yaml` (verbose-logging dev
+overlay). The WiFi dev variants additionally include `common/wifi-dev.yaml`,
+which joins your WiFi from `firmware/secrets.yaml` (see
+`secrets.yaml.example`).
 
 ### Using the component in your own ESPHome config
 
@@ -94,8 +121,15 @@ TLS off, and publish a captured `toDevice` request; a Modbus slave simulator
 
 Tagging `v*` builds the firmware for every supported board (matrix build),
 attaches the binaries (`gbbdongle.*.bin` for the Waveshare board,
-`gbbdongle-tcan485.*.bin` for the T-CAN485) to the GitHub Release and deploys
-the web installer plus both manifests (ESP Web Tools + OTA update) to GitHub
-Pages. Each manifest carries one entry per chip family, so both the web
-installer and the on-device update entity pick the right binary
-automatically.
+`gbbdongle-tcan485.*.bin` for the T-CAN485, `gbbdongle-kamami.*.bin` for the
+Kamami) to the GitHub Release and deploys the web installer plus the
+manifests to GitHub Pages.
+
+Manifests are per-board — `manifest-<board>.json` (ESP Web Tools) and
+`update-manifest-<board>.json` (OTA update entity) — because chip family
+alone cannot distinguish the two plain-ESP32 boards (T-CAN485 and Kamami):
+each install button and each device's `update_manifest_url` points at its
+own manifest. The legacy shared `manifest.json`/`update-manifest.json`
+(one entry per chip family: Waveshare + T-CAN485) are still generated so
+devices flashed before the split keep seeing updates and migrate to their
+per-board manifest with their next OTA.

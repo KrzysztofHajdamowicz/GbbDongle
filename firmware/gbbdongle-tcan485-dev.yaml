@@ -1,5 +1,5 @@
 # Development variant for the LilyGo T-CAN485: verbose logging, joins your
-# WiFi from secrets.yaml (see common/dev.yaml).
+# WiFi from secrets.yaml (see common/wifi-dev.yaml).
 # Build & flash: uv run esphome run firmware/gbbdongle-tcan485-dev.yaml
 
 substitutions:
@@ -8,5 +8,7 @@ substitutions:
 
 packages:
   base: !include common/base.yaml
+  wifi: !include common/wifi.yaml
   board: !include boards/lilygo-t-can485.yaml
   dev: !include common/dev.yaml
+  wifi_dev: !include common/wifi-dev.yaml

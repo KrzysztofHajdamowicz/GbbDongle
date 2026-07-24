@@ -1,0 +1,14 @@
+# Development variant for the Kamami KAmod ESP32 ETH+PoE: verbose logging.
+# Networking comes from the Ethernet jack (DHCP) — no secrets.yaml needed.
+# Build & flash: uv run esphome run firmware/gbbdongle-kamami-dev.yaml
+# (flash over USB with the RS485 HAT removed — it shares the UART0 pins)
+
+substitutions:
+  device_name: gbbdongle-kamami-dev
+  friendly_name: GbbDongle Kamami Dev
+  update_manifest_url: https://krzysztofhajdamowicz.github.io/GbbDongle/firmware/update-manifest-kamami.json
+
+packages:
+  base: !include common/base.yaml
+  board: !include boards/kamami-esp32-eth-poe.yaml
+  dev: !include common/dev.yaml

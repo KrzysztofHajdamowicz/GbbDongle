@@ -4,7 +4,9 @@
 
 substitutions:
   device_name: gbbdongle-tcan485
+  update_manifest_url: https://krzysztofhajdamowicz.github.io/GbbDongle/firmware/update-manifest-tcan485.json
 
 packages:
   base: !include common/base.yaml
+  wifi: !include common/wifi.yaml
   board: !include boards/lilygo-t-can485.yaml

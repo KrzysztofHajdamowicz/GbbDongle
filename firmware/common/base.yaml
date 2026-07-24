@@ -1,7 +1,9 @@
-# Board-agnostic configuration shared by all GbbDongle firmware variants.
-# Hardware specifics (esp32/psram, UART pins, RS485 direction control, BLE
-# provisioning) live in firmware/boards/*.yaml; a device yaml combines this
-# file with exactly one board file via `packages:`.
+# Board-agnostic, transport-agnostic configuration shared by all GbbDongle
+# firmware variants. Hardware specifics (esp32/psram, UART pins, RS485
+# direction control, BLE provisioning, ethernet) live in
+# firmware/boards/*.yaml; WiFi connectivity lives in common/wifi.yaml. A
+# device yaml combines this file with exactly one board file (plus wifi.yaml
+# for WiFi boards) via `packages:`.
 
 substitutions:
   device_name: gbbdongle
@@ -31,15 +33,6 @@ api:
 
 web_server:
   version: 3
-
-wifi:
-  reboot_timeout: 0s
-  ap:
-    ssid: GbbDongle Setup
-
-captive_portal:
-
-improv_serial:
 
 safe_mode:
 
@@ -293,10 +286,6 @@ sensor:
     accuracy_decimals: 0
     update_interval: 60s
     lambda: return id(gbb).get_modbus_errors();
-  - platform: wifi_signal
-    name: WiFi Signal
-    entity_category: diagnostic
-    update_interval: 60s
 
 text_sensor:
   - platform: template
@@ -304,7 +293,3 @@ text_sensor:
     entity_category: diagnostic
     update_interval: never
     lambda: return {"${version}"};
-  - platform: wifi_info
-    ip_address:
-      name: IP Address
-      entity_category: diagnostic

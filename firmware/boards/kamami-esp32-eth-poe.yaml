@@ -1,0 +1,46 @@
+# Board package: Kamami KAmod ESP32 ETH+PoE + KAmodRPi UART RS485 ISO HAT
+#   (https://wiki.kamamilabs.com/index.php?title=KAmod_ESP32_ETH_POE)
+#   Ethernet: LAN8742 PHY (LAN8720 driver), PoE powered — Ethernet-only board
+#   RS485: HAT on the RPi header — TX=GPIO1, RX=GPIO3 (UART0, shared with the
+#   CH340 USB converter!); MAX13487, isolated, auto-direction
+#   4 MB flash, no PSRAM — smaller log buffer
+
+esp32:
+  board: esp32dev
+  flash_size: 4MB
+  framework:
+    type: esp-idf
+
+# Ethernet-only board: device yamls using this board must NOT include
+# common/wifi.yaml (ethernet: conflicts with wifi:).
+ethernet:
+  type: LAN8720          # LAN8742 uses the LAN8720 RMII driver
+  mdc_pin: GPIO23
+  mdio_pin: GPIO18
+  clk:
+    mode: CLK_EXT_IN     # PHY provides the 50 MHz RMII clock on GPIO0
+    pin: GPIO0
+  phy_addr: 0
+  power_pin: GPIO16      # PHY reset
+
+# RS485 rides on UART0 (RPi-header pins 8/10 are hard-wired to GPIO1/GPIO3,
+# the same pins as the CH340). Serial logging must be fully off so only
+# Modbus traffic hits the bus; logs stay available via the web UI and the
+# native API. The ROM bootloader still prints on GPIO1 at boot (harmless
+# garbage on the bus — invalid CRC, ignored by Modbus slaves).
+logger:
+  baud_rate: 0
+
+uart:
+  tx_pin: GPIO1
+  rx_pin: GPIO3
+
+gbb_dongle:
+  # No PSRAM: keep the LastLog ring buffer small (same as T-CAN485).
+  log_buffer_size: 8192
+
+text_sensor:
+  - platform: ethernet_info
+    ip_address:
+      name: IP Address
+      entity_category: diagnostic

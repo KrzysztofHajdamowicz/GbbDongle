@@ -16,14 +16,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          # `config` doubles as the artifact basename; the gbbdongle.* names
-          # are kept for the Waveshare board so update manifests already in
-          # the field keep resolving.
-          - config: gbbdongle
-            chip_family: ESP32-S3
-          - config: gbbdongle-tcan485
-            chip_family: ESP32
+        # `config` doubles as the artifact basename; the gbbdongle.* names
+        # are kept for the Waveshare board so update manifests already in
+        # the field keep resolving.
+        config: [gbbdongle, gbbdongle-tcan485, gbbdongle-kamami]
     steps:
       - uses: actions/checkout@v7
 
@@ -77,12 +73,67 @@ jobs:
       - name: Assemble site and manifests
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          cp static/index.html site/
+          RELEASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME}"
+          cp -R static/. site/
+
+          # Board table: <config basename> <chipFamily> <manifest suffix> <display name...>
+          # Per-board manifests are required because chipFamily alone cannot
+          # distinguish the two plain-ESP32 boards (T-CAN485 and Kamami):
+          # each install button and each device's update entity points at its
+          # own manifest instead.
+          BOARDS='
+          gbbdongle          ESP32-S3 gbbdongle Waveshare ESP32-S3-RS485-CAN
+          gbbdongle-tcan485  ESP32    tcan485   LilyGo T-CAN485
+          gbbdongle-kamami   ESP32    kamami    Kamami KAmod ESP32 ETH+PoE
+          '
+
+          while read -r config chip suffix name; do
+            [ -z "$config" ] && continue
+            md5=$(md5sum "site/firmware/${config}.ota.bin" | cut -d' ' -f1)
+
+            # Per-board ESP Web Tools manifest (browser flashing over USB).
+            cat > "site/firmware/manifest-${suffix}.json" <<EOF
+          {
+            "name": "GbbDongle (${name})",
+            "version": "$VERSION",
+            "new_install_prompt_erase": true,
+            "builds": [
+              {
+                "chipFamily": "${chip}",
+                "parts": [{ "path": "${config}.factory.bin", "offset": 0 }]
+              }
+            ]
+          }
+          EOF
+
+            # Per-board manifest for the esphome http_request update entity
+            # (OTA); each device yaml points update_manifest_url at its own.
+            cat > "site/firmware/update-manifest-${suffix}.json" <<EOF
+          {
+            "name": "GbbDongle (${name})",
+            "version": "$VERSION",
+            "builds": [
+              {
+                "chipFamily": "${chip}",
+                "ota": {
+                  "path": "${config}.ota.bin",
+                  "md5": "${md5}",
+                  "summary": "GbbDongle $VERSION",
+                  "release_url": "${RELEASE_URL}"
+                }
+              }
+            ]
+          }
+          EOF
+          done <<< "$BOARDS"
+
+          # ── Legacy shared manifests ──
+          # Kept for devices already in the field (they poll this URL and
+          # migrate to their per-board manifest with their next OTA) and for
+          # old bookmarks. Deliberately NOT extended with the Kamami board:
+          # its chipFamily (ESP32) would collide with the T-CAN485 entry.
           MD5_S3=$(md5sum site/firmware/gbbdongle.ota.bin | cut -d' ' -f1)
           MD5_TCAN485=$(md5sum site/firmware/gbbdongle-tcan485.ota.bin | cut -d' ' -f1)
-
-          # ESP Web Tools manifest (browser flashing over USB); the flasher
-          # picks the build matching the detected chip family.
           cat > site/firmware/manifest.json <<EOF
           {
             "name": "GbbDongle",
@@ -101,8 +152,6 @@ jobs:
           }
           EOF
 
-          # Manifest for the esphome http_request update entity (OTA); the
-          # update component picks the build whose chipFamily matches.
           cat > site/firmware/update-manifest.json <<EOF
           {
             "name": "GbbDongle",
@@ -114,7 +163,7 @@ jobs:
                   "path": "gbbdongle.ota.bin",
                   "md5": "$MD5_S3",
                   "summary": "GbbDongle $VERSION",
-                  "release_url": "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME}"
+                  "release_url": "${RELEASE_URL}"
                 }
               },
               {
@@ -123,12 +172,14 @@ jobs:
                   "path": "gbbdongle-tcan485.ota.bin",
                   "md5": "$MD5_TCAN485",
                   "summary": "GbbDongle $VERSION",
-                  "release_url": "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME}"
+                  "release_url": "${RELEASE_URL}"
                 }
               }
             ]
           }
           EOF
+
+          jq . site/firmware/manifest*.json site/firmware/update-manifest*.json > /dev/null
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
@@ -156,20 +207,12 @@ jobs:
       - name: Attest firmware build provenance
         uses: actions/attest-build-provenance@v4
         with:
-          subject-path: |
-            site/firmware/gbbdongle.factory.bin
-            site/firmware/gbbdongle.ota.bin
-            site/firmware/gbbdongle-tcan485.factory.bin
-            site/firmware/gbbdongle-tcan485.ota.bin
+          subject-path: site/firmware/*.bin
 
       - name: Attest firmware SBOM
         uses: actions/attest@v4
         with:
-          subject-path: |
-            site/firmware/gbbdongle.factory.bin
-            site/firmware/gbbdongle.ota.bin
-            site/firmware/gbbdongle-tcan485.factory.bin
-            site/firmware/gbbdongle-tcan485.ota.bin
+          subject-path: site/firmware/*.bin
           predicate-type: https://cyclonedx.org/bom
           predicate-path: sbom-toolchain.cyclonedx.json
 
@@ -178,10 +221,7 @@ jobs:
         with:
           generate_release_notes: true
           files: |
-            site/firmware/gbbdongle.factory.bin
-            site/firmware/gbbdongle.ota.bin
-            site/firmware/gbbdongle-tcan485.factory.bin
-            site/firmware/gbbdongle-tcan485.ota.bin
+            site/firmware/*.bin
             SBOM-Toolchain-*.cyclonedx.json
 
   deploy-pages:

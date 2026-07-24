@@ -1,10 +1,5 @@
-# Dev overlay: verbose logging, joins your WiFi from secrets.yaml
-# (copy secrets.yaml.example to firmware/secrets.yaml first).
+# Dev overlay: verbose logging. WiFi dev variants additionally include
+# common/wifi-dev.yaml to join your WiFi from secrets.yaml.
 
 substitutions:
   log_level: VERBOSE
-
-wifi:
-  networks:
-    - ssid: !secret wifi_ssid
-      password: !secret wifi_password

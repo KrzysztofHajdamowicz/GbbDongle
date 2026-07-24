@@ -1,0 +1,11 @@
+# Release firmware for GbbDongle (Kamami KAmod ESP32 ETH+PoE + RS485 ISO HAT).
+# Build: uv run esphome compile firmware/gbbdongle-kamami.yaml
+# CI overrides the version: uv run esphome -s version 1.2.3 compile ...
+
+substitutions:
+  device_name: gbbdongle-kamami
+  update_manifest_url: https://krzysztofhajdamowicz.github.io/GbbDongle/firmware/update-manifest-kamami.json
+
+packages:
+  base: !include common/base.yaml
+  board: !include boards/kamami-esp32-eth-poe.yaml
