@@ -5,21 +5,75 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>GbbDongle — Web Installer</title>
   <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+  <script>
+    // Apply the saved theme before first paint to avoid a flash of the wrong theme.
+    (function () {
+      var theme = null;
+      try { theme = localStorage.getItem("theme"); } catch (e) {}
+      if (theme === "light" || theme === "dark") {
+        document.documentElement.setAttribute("data-theme", theme);
+      }
+    })();
+  </script>
   <style>
-    body { font-family: -apple-system, system-ui, sans-serif; max-width: 960px; margin: 3rem auto; padding: 0 1rem; color: #222; }
+    :root {
+      color-scheme: light;
+      --bg: #ffffff;
+      --text: #222222;
+      --muted: #666666;
+      --faint: #888888;
+      --border: #dddddd;
+      --note: #b45309;
+      --link: #0b57d0;
+      --img-bg: #ffffff;
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #16181d;
+      --text: #e4e6eb;
+      --muted: #a0a4ad;
+      --faint: #83878f;
+      --border: #3a3d45;
+      --note: #f0a04b;
+      --link: #8ab4f8;
+      --img-bg: #ffffff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        color-scheme: dark;
+        --bg: #16181d;
+        --text: #e4e6eb;
+        --muted: #a0a4ad;
+        --faint: #83878f;
+        --border: #3a3d45;
+        --note: #f0a04b;
+        --link: #8ab4f8;
+        --img-bg: #ffffff;
+      }
+    }
+    body { font-family: -apple-system, system-ui, sans-serif; max-width: 960px; margin: 3rem auto; padding: 0 1rem; color: var(--text); background: var(--bg); }
+    a { color: var(--link); }
     h1 { margin-bottom: 0.2rem; }
-    .subtitle { color: #666; margin-top: 0; }
+    .subtitle { color: var(--muted); margin-top: 0; }
+    .theme-switch { float: right; margin-top: 0.4rem; display: inline-flex; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; }
+    .theme-switch button { font: inherit; font-size: 0.8rem; padding: 0.25rem 0.7rem; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+    .theme-switch button[aria-pressed="true"] { background: var(--border); color: var(--text); }
     .boards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.2rem; margin: 2rem 0; }
-    .board { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; text-align: center; display: flex; flex-direction: column; }
-    .board img { width: 100%; max-width: 280px; height: 180px; object-fit: contain; align-self: center; }
+    .board { border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; display: flex; flex-direction: column; }
+    .board img { width: 100%; max-width: 280px; height: 180px; object-fit: contain; align-self: center; background: var(--img-bg); border-radius: 6px; }
     .board h3 { margin: 0.6rem 0 0.3rem; font-size: 1.05rem; }
-    .board .specs { color: #666; font-size: 0.85rem; margin: 0 0 0.8rem; flex-grow: 1; }
-    .board .note { color: #b45309; font-size: 0.8rem; margin: 0.6rem 0 0; }
+    .board .specs { color: var(--muted); font-size: 0.85rem; margin: 0 0 0.8rem; flex-grow: 1; }
+    .board .note { color: var(--note); font-size: 0.8rem; margin: 0.6rem 0 0; }
     ol li { margin: 0.4rem 0; }
-    footer { margin-top: 3rem; font-size: 0.85rem; color: #888; }
+    footer { margin-top: 3rem; font-size: 0.85rem; color: var(--faint); }
   </style>
 </head>
 <body>
+  <div class="theme-switch" role="group" aria-label="Color theme">
+    <button type="button" data-set-theme="auto">Auto</button>
+    <button type="button" data-set-theme="light">Light</button>
+    <button type="button" data-set-theme="dark">Dark</button>
+  </div>
   <h1>GbbDongle</h1>
   <p class="subtitle">GbbOptimizer &harr; Modbus RTU proxy for off-the-shelf ESP32 RS485 boards</p>
 
@@ -73,5 +127,38 @@
     <a href="https://lilygo.cc/products/t-can485">LilyGo</a> and
     <a href="https://wiki.kamamilabs.com/index.php?title=KAmod_ESP32_ETH_POE">Kamami</a>.
   </footer>
+
+  <script>
+    (function () {
+      var buttons = document.querySelectorAll(".theme-switch button");
+
+      function apply(theme) {
+        if (theme === "light" || theme === "dark") {
+          document.documentElement.setAttribute("data-theme", theme);
+        } else {
+          theme = "auto";
+          document.documentElement.removeAttribute("data-theme");
+        }
+        buttons.forEach(function (b) {
+          b.setAttribute("aria-pressed", String(b.dataset.setTheme === theme));
+        });
+      }
+
+      buttons.forEach(function (b) {
+        b.addEventListener("click", function () {
+          var theme = b.dataset.setTheme;
+          try {
+            if (theme === "auto") localStorage.removeItem("theme");
+            else localStorage.setItem("theme", theme);
+          } catch (e) {}
+          apply(theme);
+        });
+      });
+
+      var saved = null;
+      try { saved = localStorage.getItem("theme"); } catch (e) {}
+      apply(saved);
+    })();
+  </script>
 </body>
 </html>
