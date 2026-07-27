@@ -38,9 +38,21 @@ struct GbbHeader {
 /// Parse a toDevice JSON payload. Returns false on malformed JSON.
 bool parse_header(const std::string &payload, GbbHeader &out);
 
-/// Serialize a response Header for fromDevice. version/environment are always
-/// stamped; last_log is attached only when non-null.
-std::string build_response(const GbbHeader &header, const std::string &version, const std::string &environment,
+/// Compile-time identity stamped on every fromDevice response. version is
+/// emitted as both ClientVersion and the legacy GbbVersion; environment is
+/// the legacy GbbEnvironment. The legacy keys stay until the cloud fully
+/// migrates to the Client* names.
+struct GbbClientIdentity {
+  const char *version;
+  const char *environment;
+  const char *client_name;
+  const char *client_environment;
+};
+
+/// Serialize a response Header for fromDevice. The identity fields are always
+/// stamped; client_info (built fresh per response) and last_log are attached
+/// only when non-empty / non-null.
+std::string build_response(const GbbHeader &header, const GbbClientIdentity &identity, const std::string &client_info,
                            const std::string *last_log);
 
 /// Uppercase hex <-> bytes ("0103009C0003D5CA"). Decode returns false on

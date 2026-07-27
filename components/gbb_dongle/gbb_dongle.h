@@ -6,8 +6,10 @@
 #include "esphome/components/mqtt/mqtt_client.h"
 #include "esphome/components/number/number.h"
 #include "esphome/components/select/select.h"
+#include "esphome/components/sensor/sensor.h"
 #include "esphome/components/switch/switch.h"
 #include "esphome/components/text/text.h"
+#include "esphome/components/text_sensor/text_sensor.h"
 #include "esphome/components/uart/uart.h"
 #include "esphome/core/component.h"
 #include "esphome/core/gpio.h"
@@ -36,6 +38,7 @@ class GbbDongle : public Component, public uart::UARTDevice {
   void set_flow_control_pin(GPIOPin *pin) { this->flow_control_pin_ = pin; }
   void set_version(const char *version) { this->version_ = version; }
   void set_environment(const char *environment) { this->environment_ = environment; }
+  void set_client_environment(const char *client_environment) { this->client_environment_ = client_environment; }
   void set_ca_certificate(const char *pem) { this->ca_certificate_ = pem; }
 
   void set_mqtt_host_text(text::Text *t) { this->mqtt_host_ = t; }
@@ -47,6 +50,10 @@ class GbbDongle : public Component, public uart::UARTDevice {
   void set_tls_skip_cn_check_switch(switch_::Switch *s) { this->tls_skip_cn_check_ = s; }
   void set_baud_rate_select(select::Select *s) { this->baud_rate_ = s; }
   void set_parity_select(select::Select *s) { this->parity_ = s; }
+  void set_wifi_signal_db_sensor(sensor::Sensor *s) { this->wifi_signal_db_ = s; }
+  void set_wifi_signal_percent_sensor(sensor::Sensor *s) { this->wifi_signal_percent_ = s; }
+  void set_ip_address_text_sensor(text_sensor::TextSensor *t) { this->ip_address_ = t; }
+  void set_uptime_text_sensor(text_sensor::TextSensor *t) { this->uptime_text_ = t; }
 
   void set_response_timeout(uint32_t ms) { this->executor_.set_response_timeout(ms); }
   void set_read_gap(uint32_t ms) { this->executor_.set_read_gap(ms); }
@@ -66,12 +73,14 @@ class GbbDongle : public Component, public uart::UARTDevice {
   void on_cloud_message_(const std::string &payload);
   void apply_log_level_(const std::string &level);
   void publish_response_(GbbHeader &&header);
+  std::string build_client_info_() const;
   void mark_dirty_();
 
   mqtt::MQTTClientComponent *mqtt_{nullptr};
   GPIOPin *flow_control_pin_{nullptr};
   const char *version_{"dev"};
   const char *environment_{"GbbDongle"};
+  const char *client_environment_{"GbbDongle"};
   const char *ca_certificate_{nullptr};
 
   text::Text *mqtt_host_{nullptr};
@@ -83,6 +92,10 @@ class GbbDongle : public Component, public uart::UARTDevice {
   switch_::Switch *tls_skip_cn_check_{nullptr};
   select::Select *baud_rate_{nullptr};
   select::Select *parity_{nullptr};
+  sensor::Sensor *wifi_signal_db_{nullptr};
+  sensor::Sensor *wifi_signal_percent_{nullptr};
+  text_sensor::TextSensor *ip_address_{nullptr};
+  text_sensor::TextSensor *uptime_text_{nullptr};
 
   ModbusExecutor executor_;
   LogRingBuffer log_buffer_;

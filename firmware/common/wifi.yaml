@@ -12,13 +12,31 @@ captive_portal:
 improv_serial:
 
 sensor:
-  - platform: wifi_signal
-    name: WiFi Signal
-    entity_category: diagnostic
+  - platform: wifi_signal # Reports the WiFi signal strength/RSSI in dB
+    name: "WiFi Signal dB"
+    id: wifi_signal_db
     update_interval: 60s
+    entity_category: "diagnostic"
+
+  - platform: copy # Reports the WiFi signal strength in %
+    id: wifi_signal_percent
+    source_id: wifi_signal_db
+    name: "WiFi Signal Percent"
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+    unit_of_measurement: "Signal %"
+    entity_category: "diagnostic"
+    device_class: ""
 
 text_sensor:
   - platform: wifi_info
     ip_address:
+      id: ip_address_text
       name: IP Address
       entity_category: diagnostic
+
+# Feed the WiFi diagnostics into the ClientInfo field of fromDevice responses.
+gbb_dongle:
+  wifi_signal_db_id: wifi_signal_db
+  wifi_signal_percent_id: wifi_signal_percent
+  ip_address_id: ip_address_text

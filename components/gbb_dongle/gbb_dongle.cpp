@@ -1,5 +1,6 @@
 #include "gbb_dongle.h"
 
+#include <cmath>
 #include <cstdlib>
 
 #include "esphome/components/logger/logger.h"
@@ -15,6 +16,10 @@ static const char *const TAG = "gbb_dongle";
 
 static const uint32_t KEEPALIVE_INTERVAL_MS = 60 * 1000;
 static const size_t LAST_LOG_MAX_BYTES = 8 * 1024;
+
+// Product identity for the fromDevice ClientName field — not configurable,
+// it names this firmware regardless of board or transport.
+static const char *const CLIENT_NAME = "GbbDongle";
 
 void GbbDongle::setup() {
   if (this->flow_control_pin_ != nullptr) {
@@ -189,6 +194,30 @@ void GbbDongle::apply_log_level_(const std::string &level) {
   }
 }
 
+std::string GbbDongle::build_client_info_() const {
+  std::string info;
+  const auto append = [&info](const std::string &segment) {
+    if (!info.empty())
+      info += ", ";
+    info += segment;
+  };
+  if (this->wifi_signal_db_ != nullptr && this->wifi_signal_percent_ != nullptr) {
+    if (this->wifi_signal_db_->has_state() && this->wifi_signal_percent_->has_state() &&
+        !std::isnan(this->wifi_signal_db_->state) && !std::isnan(this->wifi_signal_percent_->state)) {
+      append(str_sprintf("Wi-Fi %.0f%% (%.0fdBm)", this->wifi_signal_percent_->state, this->wifi_signal_db_->state));
+    }
+  } else {
+    // The only boards without the WiFi signal sensors wired in are the
+    // Ethernet-only ones (see common/wifi.yaml vs boards/kamami-*.yaml).
+    append("Ethernet");
+  }
+  if (this->ip_address_ != nullptr && this->ip_address_->has_state())
+    append("IP " + this->ip_address_->state);
+  if (this->uptime_text_ != nullptr && this->uptime_text_->has_state())
+    append("uptime " + this->uptime_text_->state);
+  return info;
+}
+
 void GbbDongle::publish_response_(GbbHeader &&header) {
   std::string last_log;
   const std::string *last_log_ptr = nullptr;
@@ -196,7 +225,8 @@ void GbbDongle::publish_response_(GbbHeader &&header) {
     last_log = this->log_buffer_.read_incremental(LAST_LOG_MAX_BYTES);
     last_log_ptr = &last_log;
   }
-  const std::string response = build_response(header, this->version_, this->environment_, last_log_ptr);
+  const GbbClientIdentity identity{this->version_, this->environment_, CLIENT_NAME, this->client_environment_};
+  const std::string response = build_response(header, identity, this->build_client_info_(), last_log_ptr);
   // Summary rather than the whole JSON: with SendLastLog the response also
   // carries up to 8 KB of recent log lines, and the per-line results are
   // already visible in the executor's "<- inverter" log lines above.
