@@ -88,6 +88,11 @@ Files:
   `certificate_authority`, and the `*_id` wiring of the config entities
   declared in `base.yaml`. `version:` defaults to `auto` → resolved from
   `git describe`; release builds stamp it via `esphome -s version X.Y.Z`.
+  `client_environment:` (fed `GbbDongle/${device_name}` in `base.yaml`) plus
+  the optional `wifi_signal_db_id`/`wifi_signal_percent_id`/`ip_address_id`/
+  `uptime_text_id` entities feed the `Client*` fields of fromDevice
+  responses (WiFi ids wired in `common/wifi.yaml`, IP on Ethernet boards in
+  the board file; missing WiFi sensors ⇒ ClientInfo says "Ethernet").
 
 ## MQTT protocol
 

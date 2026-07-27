@@ -53,7 +53,7 @@ bool parse_header(const std::string &payload, GbbHeader &out) {
   });
 }
 
-std::string build_response(const GbbHeader &header, const std::string &version, const std::string &environment,
+std::string build_response(const GbbHeader &header, const GbbClientIdentity &identity, const std::string &client_info,
                            const std::string *last_log) {
   return json::build_json([&](JsonObject root) {
     if (!header.error.empty())
@@ -81,8 +81,13 @@ std::string build_response(const GbbHeader &header, const std::string &version, 
           obj["Error"] = line.error;
       }
     }
-    root["GbbVersion"] = version;
-    root["GbbEnvironment"] = environment;
+    root["GbbVersion"] = identity.version;
+    root["GbbEnvironment"] = identity.environment;
+    root["ClientVersion"] = identity.version;
+    root["ClientEnvironment"] = identity.client_environment;
+    root["ClientName"] = identity.client_name;
+    if (!client_info.empty())
+      root["ClientInfo"] = client_info;
     if (last_log != nullptr)
       root["LastLog"] = *last_log;
   });

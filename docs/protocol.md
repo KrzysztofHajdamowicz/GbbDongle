@@ -41,8 +41,16 @@ JSON `Header` object, PascalCase keys, null fields omitted:
 `Modbus` is an uppercase-hex Modbus RTU frame **including CRC**. The device
 executes each line on the RS485 bus in order and overwrites `Modbus` with the
 raw response frame, then publishes the whole mutated header back on
-`fromDevice`, adding `GbbVersion` and `GbbEnvironment` (and `LastLog` when
-`SendLastLog != 0`).
+`fromDevice`, adding the client-identity fields (and `LastLog` when
+`SendLastLog != 0`):
+
+| Field | Value |
+|---|---|
+| `ClientVersion` | firmware version, e.g. `0.1.1` |
+| `ClientEnvironment` | `GbbDongle/<device_name>`, e.g. `GbbDongle/gbbdongle-kamami` |
+| `ClientName` | `GbbDongle` |
+| `ClientInfo` | live diagnostics, e.g. `Wi-Fi 65% (-78dBm), IP 192.168.1.23, uptime 3d 23h 48min 56s` (`Ethernet, IP …, uptime …` on Ethernet boards); omitted segments simply drop out |
+| `GbbVersion`, `GbbEnvironment` | legacy names for version/environment, kept until the cloud fully migrates to the `Client*` fields |
 
 Error semantics (mirrors GbbConnect2):
 

@@ -4,7 +4,17 @@ from pathlib import Path
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome import pins
-from esphome.components import logger, mqtt, number, select, switch, text, uart
+from esphome.components import (
+    logger,
+    mqtt,
+    number,
+    select,
+    sensor,
+    switch,
+    text,
+    text_sensor,
+    uart,
+)
 from esphome.const import CONF_ID, CONF_VERSION
 
 CODEOWNERS = ["@KrzysztofHajdamowicz"]
@@ -23,6 +33,11 @@ CONF_TLS_ENABLED_ID = "tls_enabled_id"
 CONF_TLS_SKIP_CN_CHECK_ID = "tls_skip_cn_check_id"
 CONF_BAUD_RATE_ID = "baud_rate_id"
 CONF_PARITY_ID = "parity_id"
+CONF_CLIENT_ENVIRONMENT = "client_environment"
+CONF_WIFI_SIGNAL_DB_ID = "wifi_signal_db_id"
+CONF_WIFI_SIGNAL_PERCENT_ID = "wifi_signal_percent_id"
+CONF_IP_ADDRESS_ID = "ip_address_id"
+CONF_UPTIME_TEXT_ID = "uptime_text_id"
 CONF_RESPONSE_TIMEOUT = "response_timeout"
 CONF_READ_GAP = "read_gap"
 CONF_WRITE_GAP = "write_gap"
@@ -33,7 +48,7 @@ GbbDongle = gbb_dongle_ns.class_("GbbDongle", cg.Component, uart.UARTDevice)
 
 
 def _resolve_version(value: str) -> str:
-    """Reported over MQTT as GbbVersion. Release builds pass the exact tag
+    """Reported over MQTT as GbbVersion/ClientVersion. Release builds pass the exact tag
     via `-s version X.Y.Z`; the sentinels below mean "not stamped", in which
     case the git tag of this checkout is used (e.g. 0.1.1 or 0.1.1-3-g1350dc2
     between tags)."""
@@ -58,6 +73,9 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_FLOW_CONTROL_PIN): pins.gpio_output_pin_schema,
             cv.Optional(CONF_VERSION, default="auto"): cv.string_strict,
             cv.Optional(CONF_ENVIRONMENT, default="GbbDongle"): cv.string_strict,
+            cv.Optional(
+                CONF_CLIENT_ENVIRONMENT, default="GbbDongle"
+            ): cv.string_strict,
             cv.Optional(CONF_CERTIFICATE_AUTHORITY): cv.string,
             cv.Required(CONF_MQTT_HOST_ID): cv.use_id(text.Text),
             cv.Required(CONF_MQTT_PORT_ID): cv.use_id(number.Number),
@@ -68,6 +86,10 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_TLS_SKIP_CN_CHECK_ID): cv.use_id(switch.Switch),
             cv.Optional(CONF_BAUD_RATE_ID): cv.use_id(select.Select),
             cv.Optional(CONF_PARITY_ID): cv.use_id(select.Select),
+            cv.Optional(CONF_WIFI_SIGNAL_DB_ID): cv.use_id(sensor.Sensor),
+            cv.Optional(CONF_WIFI_SIGNAL_PERCENT_ID): cv.use_id(sensor.Sensor),
+            cv.Optional(CONF_IP_ADDRESS_ID): cv.use_id(text_sensor.TextSensor),
+            cv.Optional(CONF_UPTIME_TEXT_ID): cv.use_id(text_sensor.TextSensor),
             cv.Optional(
                 CONF_RESPONSE_TIMEOUT, default="1000ms"
             ): cv.positive_time_period_milliseconds,
@@ -99,6 +121,7 @@ async def to_code(config):
 
     cg.add(var.set_version(_resolve_version(config[CONF_VERSION])))
     cg.add(var.set_environment(config[CONF_ENVIRONMENT]))
+    cg.add(var.set_client_environment(config[CONF_CLIENT_ENVIRONMENT]))
 
     if CONF_CERTIFICATE_AUTHORITY in config:
         cg.add(var.set_ca_certificate(config[CONF_CERTIFICATE_AUTHORITY]))
@@ -118,6 +141,10 @@ async def to_code(config):
         (CONF_TLS_SKIP_CN_CHECK_ID, var.set_tls_skip_cn_check_switch),
         (CONF_BAUD_RATE_ID, var.set_baud_rate_select),
         (CONF_PARITY_ID, var.set_parity_select),
+        (CONF_WIFI_SIGNAL_DB_ID, var.set_wifi_signal_db_sensor),
+        (CONF_WIFI_SIGNAL_PERCENT_ID, var.set_wifi_signal_percent_sensor),
+        (CONF_IP_ADDRESS_ID, var.set_ip_address_text_sensor),
+        (CONF_UPTIME_TEXT_ID, var.set_uptime_text_sensor),
     ]:
         if conf_key in config:
             entity = await cg.get_variable(config[conf_key])

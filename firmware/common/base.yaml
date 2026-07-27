@@ -82,6 +82,8 @@ gbb_dongle:
   mqtt_id: gbb_mqtt
   version: ${version}
   environment: GbbDongle
+  client_environment: GbbDongle/${device_name}
+  uptime_text_id: uptime_text
   mqtt_host_id: cfg_mqtt_host
   mqtt_port_id: cfg_mqtt_port
   plant_id_id: cfg_plant_id
@@ -293,3 +295,12 @@ text_sensor:
     entity_category: diagnostic
     update_interval: never
     lambda: return {"${version}"};
+  - platform: uptime
+    id: uptime_text
+    name: Uptime
+    # Sub-30s interval keeps seconds in the formatted value; the format below
+    # matches the ClientInfo convention ("3d 23h 48min 56s").
+    update_interval: 10s
+    format:
+      separator: " "
+      minutes: min

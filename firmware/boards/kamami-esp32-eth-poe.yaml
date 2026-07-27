@@ -38,9 +38,12 @@ uart:
 gbb_dongle:
   # No PSRAM: keep the LastLog ring buffer small (same as T-CAN485).
   log_buffer_size: 8192
+  # Ethernet-only board: no WiFi signal sensors; ClientInfo reports "Ethernet".
+  ip_address_id: ip_address_text
 
 text_sensor:
   - platform: ethernet_info
     ip_address:
+      id: ip_address_text
       name: IP Address
       entity_category: diagnostic

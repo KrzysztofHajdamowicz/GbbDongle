@@ -19,6 +19,7 @@ sensor:
     entity_category: "diagnostic"
 
   - platform: copy # Reports the WiFi signal strength in %
+    id: wifi_signal_percent
     source_id: wifi_signal_db
     name: "WiFi Signal Percent"
     filters:
@@ -30,5 +31,12 @@ sensor:
 text_sensor:
   - platform: wifi_info
     ip_address:
+      id: ip_address_text
       name: IP Address
       entity_category: diagnostic
+
+# Feed the WiFi diagnostics into the ClientInfo field of fromDevice responses.
+gbb_dongle:
+  wifi_signal_db_id: wifi_signal_db
+  wifi_signal_percent_id: wifi_signal_percent
+  ip_address_id: ip_address_text
