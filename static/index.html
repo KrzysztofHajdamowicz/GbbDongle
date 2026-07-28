@@ -64,6 +64,7 @@
     .board h3 { margin: 0.6rem 0 0.3rem; font-size: 1.05rem; }
     .board .specs { color: var(--muted); font-size: 0.85rem; margin: 0 0 0.8rem; flex-grow: 1; }
     .board .note { color: var(--note); font-size: 0.8rem; margin: 0.6rem 0 0; }
+    .board .fw-version { color: var(--muted); font-size: 0.8rem; margin: 0.5rem 0 0; }
     ol li { margin: 0.4rem 0; }
     footer { margin-top: 3rem; font-size: 0.85rem; color: var(--faint); }
   </style>
@@ -158,6 +159,33 @@
       var saved = null;
       try { saved = localStorage.getItem("theme"); } catch (e) {}
       apply(saved);
+    })();
+
+    // Show the firmware version each Install button will flash, taken from
+    // the same manifest the button itself uses.
+    (function () {
+      document.querySelectorAll("esp-web-install-button").forEach(function (button) {
+        var manifest = button.getAttribute("manifest");
+        if (!manifest) return;
+        fetch(manifest, { cache: "no-cache" })
+          .then(function (response) {
+            if (!response.ok) throw new Error(response.status);
+            return response.json();
+          })
+          .then(function (data) {
+            if (!data.version) return;
+            var p = document.createElement("p");
+            p.className = "fw-version";
+            p.append("Installs firmware ");
+            var link = document.createElement("a");
+            link.href = "https://github.com/KrzysztofHajdamowicz/GbbDongle/releases/tag/v" +
+                        encodeURIComponent(data.version);
+            link.textContent = "v" + data.version;
+            p.append(link);
+            button.insertAdjacentElement("afterend", p);
+          })
+          .catch(function () { /* leave the card as-is if the manifest is unreachable */ });
+      });
     })();
   </script>
 </body>
