@@ -36,9 +36,11 @@ jobs:
           path: |
             ~/.cache/esphome
             firmware/.esphome
-          key: pio-${{ runner.os }}-${{ matrix.config }}-${{ hashFiles('uv.lock', 'firmware/**/*.yaml') }}
+          # "=" terminates the config name so restore-keys prefix matching
+          # cannot cross variants ("gbbdongle" is a prefix of the other two).
+          key: pio-${{ runner.os }}-${{ matrix.config }}=${{ hashFiles('uv.lock', 'firmware/**/*.yaml') }}
           restore-keys: |
-            pio-${{ runner.os }}-${{ matrix.config }}-
+            pio-${{ runner.os }}-${{ matrix.config }}=
 
       - name: Compile firmware
         run: |
