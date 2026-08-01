@@ -11,5 +11,8 @@ firmware/.esphome/
 secrets.yaml
 firmware/secrets.yaml
 
+# busscan cross-compiled binaries
+tools/busscan/dist/
+
 # macOS
 .DS_Store
