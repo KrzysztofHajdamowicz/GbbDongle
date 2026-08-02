@@ -65,6 +65,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # Full history + tags so the release-notes step can diff against
+          # the previous release tag.
+          fetch-depth: 0
 
       - uses: actions/download-artifact@v8
         with:
@@ -222,9 +226,30 @@ jobs:
           predicate-type: https://cyclonedx.org/bom
           predicate-path: sbom-toolchain.cyclonedx.json
 
+      # ── Release notes ──
+      # generate_release_notes below only lists merged PRs, so commits pushed
+      # straight to main would be invisible in the changelog. List them here;
+      # action-gh-release prepends this body to the auto-generated PR list
+      # and "Full Changelog" compare link.
+      - name: List direct commits for release notes
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || echo "")
+          RANGE="${PREV_TAG:+${PREV_TAG}..}${GITHUB_REF_NAME}"
+          # --first-parent --no-merges drops PR merge commits (and their branch
+          # commits); the grep drops squash-merged PRs, whose subject GitHub
+          # suffixes with "(#N)". Both are already covered by the PR list.
+          git log --first-parent --no-merges --pretty='* %s (%h)' "$RANGE" \
+            | grep -vE '\(#[0-9]+\) \([0-9a-f]+\)$' > commits.txt || true
+          : > release-notes.md
+          if [ -s commits.txt ]; then
+            printf '## Direct commits\n' > release-notes.md
+            cat commits.txt >> release-notes.md
+          fi
+
       - name: Attach binaries and SBOM to release
         uses: softprops/action-gh-release@v3
         with:
+          body_path: release-notes.md
           generate_release_notes: true
           files: |
             site/firmware/*.bin
