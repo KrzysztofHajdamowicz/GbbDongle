@@ -89,6 +89,22 @@
       <esp-web-install-button manifest="firmware/manifest-gbbdongle.json"></esp-web-install-button>
     </div>
     <div class="board">
+      <img src="img/waveshare-esp32-s3-poe-eth-8di-8do.jpg" alt="Waveshare ESP32-S3-POE-ETH-8DI-8DO">
+      <h3>Waveshare ESP32-S3-POE-ETH-8DI-8DO (WiFi)</h3>
+      <p class="specs">ESP32-S3 &middot; WiFi &middot; BLE provisioning &middot; isolated RS485 (auto-direction)</p>
+      <esp-web-install-button manifest="firmware/manifest-8di8do-wifi.json"></esp-web-install-button>
+      <p class="note">WiFi needs the external SMA antenna attached (no onboard
+         antenna). For wired networking flash the Ethernet variant instead.</p>
+    </div>
+    <div class="board">
+      <img src="img/waveshare-esp32-s3-poe-eth-8di-8do.jpg" alt="Waveshare ESP32-S3-POE-ETH-8DI-8DO">
+      <h3>Waveshare ESP32-S3-POE-ETH-8DI-8DO (Ethernet)</h3>
+      <p class="specs">ESP32-S3 &middot; Ethernet + PoE (no WiFi) &middot; isolated RS485 (auto-direction)</p>
+      <esp-web-install-button manifest="firmware/manifest-8di8do-eth.json"></esp-web-install-button>
+      <p class="note">Same board as the WiFi card &mdash; this firmware is
+         Ethernet-only (WiFi/AP/BLE not compiled in).</p>
+    </div>
+    <div class="board">
       <img src="img/lilygo-t-can485.jpg" alt="LilyGo T-CAN485">
       <h3>LilyGo T-CAN485</h3>
       <p class="specs">ESP32 &middot; WiFi &middot; auto-direction RS485</p>
@@ -105,7 +121,7 @@
   </div>
 
   <h2>After flashing</h2>
-  <p><strong>WiFi boards</strong> (Waveshare, LilyGo):</p>
+  <p><strong>WiFi boards</strong> (Waveshare boards &mdash; WiFi variant, LilyGo):</p>
   <ol>
     <li>Join the <strong>GbbDongle Setup</strong> WiFi access point and configure your WiFi.</li>
     <li>Open the device's web page (its IP address, shown in the captive portal).</li>
@@ -113,6 +129,10 @@
   <p><strong>Kamami</strong> (Ethernet-only): unplug USB, mount the RS485 HAT,
      plug in Ethernet (PoE or 5&nbsp;V) &mdash; the device gets an address via
      DHCP; open <code>http://gbbdongle-kamami.local</code> or its IP address
+     from your router.</p>
+  <p><strong>Waveshare 8DI-8DO</strong> (Ethernet variant): plug in Ethernet
+     (PoE or USB/7&ndash;36&nbsp;V power) &mdash; the device gets an address via
+     DHCP; open <code>http://gbbdongle-8di8do-eth.local</code> or its IP address
      from your router.</p>
   <p>Then, on the device's web page:</p>
   <ol>
@@ -124,7 +144,8 @@
   <footer>
     <a href="https://github.com/KrzysztofHajdamowicz/GbbDongle">Source on GitHub</a>
     &middot; Board photos courtesy of
-    <a href="https://www.waveshare.com/esp32-s3-rs485-can.htm">Waveshare</a>,
+    Waveshare (<a href="https://www.waveshare.com/esp32-s3-rs485-can.htm">RS485-CAN</a>,
+    <a href="https://www.waveshare.com/esp32-s3-poe-eth-8di-8do.htm">8DI-8DO</a>),
     <a href="https://lilygo.cc/products/t-can485">LilyGo</a> and
     <a href="https://wiki.kamamilabs.com/index.php?title=KAmod_ESP32_ETH_POE">Kamami</a>.
   </footer>

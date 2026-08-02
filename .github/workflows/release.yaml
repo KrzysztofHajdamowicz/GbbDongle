@@ -19,7 +19,7 @@ jobs:
         # `config` doubles as the artifact basename; the gbbdongle.* names
         # are kept for the Waveshare board so update manifests already in
         # the field keep resolving.
-        config: [gbbdongle, gbbdongle-tcan485, gbbdongle-kamami]
+        config: [gbbdongle, gbbdongle-tcan485, gbbdongle-kamami, gbbdongle-8di8do-wifi, gbbdongle-8di8do-eth]
     steps:
       - uses: actions/checkout@v7
 
@@ -37,7 +37,7 @@ jobs:
             ~/.cache/esphome
             firmware/.esphome
           # "=" terminates the config name so restore-keys prefix matching
-          # cannot cross variants ("gbbdongle" is a prefix of the other two).
+          # cannot cross variants ("gbbdongle" is a prefix of all the others).
           key: pio-${{ runner.os }}-${{ matrix.config }}=${{ hashFiles('uv.lock', 'firmware/**/*.yaml') }}
           restore-keys: |
             pio-${{ runner.os }}-${{ matrix.config }}=
@@ -84,9 +84,11 @@ jobs:
           # each install button and each device's update entity points at its
           # own manifest instead.
           BOARDS='
-          gbbdongle          ESP32-S3 gbbdongle Waveshare ESP32-S3-RS485-CAN
-          gbbdongle-tcan485  ESP32    tcan485   LilyGo T-CAN485
-          gbbdongle-kamami   ESP32    kamami    Kamami KAmod ESP32 ETH+PoE
+          gbbdongle              ESP32-S3 gbbdongle   Waveshare ESP32-S3-RS485-CAN
+          gbbdongle-tcan485      ESP32    tcan485     LilyGo T-CAN485
+          gbbdongle-kamami       ESP32    kamami      Kamami KAmod ESP32 ETH+PoE
+          gbbdongle-8di8do-wifi  ESP32-S3 8di8do-wifi Waveshare ESP32-S3-POE-ETH-8DI-8DO, WiFi
+          gbbdongle-8di8do-eth   ESP32-S3 8di8do-eth  Waveshare ESP32-S3-POE-ETH-8DI-8DO, Ethernet
           '
 
           while read -r config chip suffix name; do
@@ -132,8 +134,10 @@ jobs:
           # ── Legacy shared manifests ──
           # Kept for devices already in the field (they poll this URL and
           # migrate to their per-board manifest with their next OTA) and for
-          # old bookmarks. Deliberately NOT extended with the Kamami board:
-          # its chipFamily (ESP32) would collide with the T-CAN485 entry.
+          # old bookmarks. Deliberately NOT extended with the Kamami board
+          # (its chipFamily ESP32 would collide with the T-CAN485 entry) nor
+          # the 8DI8DO variants (ESP32-S3 would collide with the Waveshare
+          # RS485-CAN entry).
           MD5_S3=$(md5sum site/firmware/gbbdongle.ota.bin | cut -d' ' -f1)
           MD5_TCAN485=$(md5sum site/firmware/gbbdongle-tcan485.ota.bin | cut -d' ' -f1)
           cat > site/firmware/manifest.json <<EOF

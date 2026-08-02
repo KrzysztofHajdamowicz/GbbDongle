@@ -1,0 +1,7 @@
+# WiFi transport overlay for the Waveshare ESP32-S3-POE-ETH-8DI-8DO.
+# Device yamls using this file must also include common/wifi.yaml
+# (esp32_improv requires wifi:).
+
+# BLE WiFi provisioning — affordable here thanks to PSRAM.
+esp32_improv:
+  authorizer: none

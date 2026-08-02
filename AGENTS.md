@@ -41,6 +41,9 @@ ones, list items concatenate:
 | their `-dev` variants | base + wifi + board + dev + wifi-dev |
 | `gbbdongle-kamami.yaml` | base + board (Ethernet lives in the board file) |
 | `gbbdongle-kamami-dev.yaml` | base + board + dev |
+| `gbbdongle-8di8do-wifi.yaml` | base + wifi + board core + wifi overlay (`boards/waveshare-esp32-s3-poe-eth-8di-8do{,-wifi}.yaml`) |
+| `gbbdongle-8di8do-eth.yaml` | base + board core + eth overlay (`…-eth.yaml`, W5500 Ethernet) |
+| their `-dev` variants | + dev (+ wifi-dev for the WiFi one) |
 
 Adding a board = one `firmware/boards/<board>.yaml` + entrypoint(s) + CI/release
 matrix entries + a card in `static/index.html` + a row in `README.md`.
@@ -61,6 +64,16 @@ matrix entries + a card in `static/index.html` + a row in `README.md`.
   (`logger: baud_rate: 0`), there is no `improv_serial`, and USB must not be
   connected while the HAT is mounted. The ROM bootloader still prints on
   GPIO1 at boot (harmless garbage on the bus, invalid CRC).
+- **Waveshare ESP32-S3-POE-ETH-8DI-8DO** (`gbbdongle-8di8do-wifi.*` /
+  `gbbdongle-8di8do-eth.*`): ESP32-S3, PSRAM, isolated auto-direction RS485
+  (TX=GPIO17, RX=GPIO18, **no** `flow_control_pin`). One board, two firmware
+  variants (`wifi:` and `ethernet:` are mutually exclusive): the board
+  package is split into a core file plus a `-wifi` overlay (esp32_improv) and
+  an `-eth` overlay (W5500 SPI Ethernet — the ethernet component owns spi2,
+  never add an `spi:` block on it). WROOM-1U module: WiFi needs the external
+  SMA antenna. Both variants are ESP32-S3 ⇒ keep them out of the legacy
+  manifests (that slot belongs to `gbbdongle`). The onboard 8×DI/8×DO
+  (TCA9554), RGB LED, buzzer, RTC and TF card are deliberately not exposed.
 
 ## The gbb_dongle component
 
@@ -128,10 +141,11 @@ uv run esphome compile firmware/<variant>.yaml    # build
 uv run esphome run firmware/<variant>-dev.yaml    # flash + logs
 ```
 
-Variants: `gbbdongle`, `gbbdongle-tcan485`, `gbbdongle-kamami` (+ `-dev`).
+Variants: `gbbdongle`, `gbbdongle-tcan485`, `gbbdongle-kamami`,
+`gbbdongle-8di8do-wifi`, `gbbdongle-8di8do-eth` (+ `-dev`).
 WiFi dev variants need `firmware/secrets.yaml` (copy from
-`secrets.yaml.example`); the Kamami dev variant does not. CI validates and
-compiles all three release variants. When touching `release.yaml`'s assemble
+`secrets.yaml.example`); the Ethernet dev variants (Kamami, 8di8do-eth) do
+not. CI validates and compiles all five release variants. When touching `release.yaml`'s assemble
 step, dry-run it locally: extract the `run:` block, create dummy
 `site/firmware/*.bin` files, set `GITHUB_REF_NAME`/`GITHUB_REPOSITORY`, run
 under bash and `jq .` the resulting JSON.

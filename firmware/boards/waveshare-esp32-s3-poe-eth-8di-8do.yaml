@@ -1,0 +1,31 @@
+# Board package (core): Waveshare ESP32-S3-POE-ETH-8DI-8DO
+#   RS485: TX=GPIO17, RX=GPIO18, direction control=GPIO21 (isolated
+#   transceiver, manual DE/RE — without driving GPIO21 the driver stays
+#   enabled and the receiver stays off; bench-verified 2026-08).
+#   16 MB flash, 8 MB Octal PSRAM (ESP32-S3-WROOM-1U-N16R8; external SMA
+#   antenna only — the WiFi variant needs it attached).
+#   Transport is NOT chosen here: pair with common/wifi.yaml +
+#   boards/waveshare-esp32-s3-poe-eth-8di-8do-wifi.yaml, OR with
+#   boards/waveshare-esp32-s3-poe-eth-8di-8do-eth.yaml (W5500 Ethernet).
+#   The onboard 8x DI (GPIO4-11), 8x DO (TCA9554 @0x20), RGB LED, buzzer,
+#   RTC and TF card are deliberately not exposed — dongle-only firmware.
+
+esp32:
+  board: esp32-s3-devkitc-1
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+logger:
+  hardware_uart: USB_SERIAL_JTAG
+
+uart:
+  tx_pin: GPIO17
+  rx_pin: GPIO18
+
+gbb_dongle:
+  flow_control_pin: GPIO21

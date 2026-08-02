@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: [gbbdongle, gbbdongle-tcan485, gbbdongle-kamami]
+        config: [gbbdongle, gbbdongle-tcan485, gbbdongle-kamami, gbbdongle-8di8do-wifi, gbbdongle-8di8do-eth]
     steps:
       - uses: actions/checkout@v7
 
@@ -33,7 +33,7 @@ jobs:
             ~/.cache/esphome
             firmware/.esphome
           # "=" terminates the config name so restore-keys prefix matching
-          # cannot cross variants ("gbbdongle" is a prefix of the other two).
+          # cannot cross variants ("gbbdongle" is a prefix of all the others).
           key: pio-${{ runner.os }}-${{ matrix.config }}=${{ hashFiles('uv.lock', 'firmware/**/*.yaml') }}
           restore-keys: |
             pio-${{ runner.os }}-${{ matrix.config }}=
