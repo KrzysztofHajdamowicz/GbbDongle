@@ -13,12 +13,13 @@ from esphome.components import (
     switch,
     text,
     text_sensor,
+    time as time_,
     uart,
 )
-from esphome.const import CONF_ID, CONF_VERSION
+from esphome.const import CONF_ID, CONF_TIME_ID, CONF_VERSION
 
 CODEOWNERS = ["@KrzysztofHajdamowicz"]
-DEPENDENCIES = ["uart", "mqtt", "logger", "json"]
+DEPENDENCIES = ["uart", "mqtt", "logger", "json", "time"]
 
 CONF_MQTT_ID = "mqtt_id"
 CONF_FLOW_CONTROL_PIN = "flow_control_pin"
@@ -42,6 +43,10 @@ CONF_RESPONSE_TIMEOUT = "response_timeout"
 CONF_READ_GAP = "read_gap"
 CONF_WRITE_GAP = "write_gap"
 CONF_LOG_BUFFER_SIZE = "log_buffer_size"
+CONF_EMERGENCY_PERSIST_ID = "emergency_persist_id"
+CONF_EMERGENCY_MINUTE_THRESHOLD = "emergency_minute_threshold"
+CONF_EMERGENCY_RETRY_INITIAL = "emergency_retry_initial"
+CONF_EMERGENCY_RETRY_MAX = "emergency_retry_max"
 
 gbb_dongle_ns = cg.esphome_ns.namespace("gbb_dongle")
 GbbDongle = gbb_dongle_ns.class_("GbbDongle", cg.Component, uart.UARTDevice)
@@ -100,6 +105,17 @@ CONFIG_SCHEMA = (
                 CONF_WRITE_GAP, default="3000ms"
             ): cv.positive_time_period_milliseconds,
             cv.Optional(CONF_LOG_BUFFER_SIZE, default=65536): cv.positive_int,
+            cv.Required(CONF_TIME_ID): cv.use_id(time_.RealTimeClock),
+            cv.Optional(CONF_EMERGENCY_PERSIST_ID): cv.use_id(switch.Switch),
+            cv.Optional(CONF_EMERGENCY_MINUTE_THRESHOLD, default=10): cv.int_range(
+                min=0, max=59
+            ),
+            cv.Optional(
+                CONF_EMERGENCY_RETRY_INITIAL, default="60s"
+            ): cv.positive_time_period_milliseconds,
+            cv.Optional(
+                CONF_EMERGENCY_RETRY_MAX, default="15min"
+            ): cv.positive_time_period_milliseconds,
         }
     )
     .extend(cv.COMPONENT_SCHEMA)
@@ -145,6 +161,8 @@ async def to_code(config):
         (CONF_WIFI_SIGNAL_PERCENT_ID, var.set_wifi_signal_percent_sensor),
         (CONF_IP_ADDRESS_ID, var.set_ip_address_text_sensor),
         (CONF_UPTIME_TEXT_ID, var.set_uptime_text_sensor),
+        (CONF_TIME_ID, var.set_time_source),
+        (CONF_EMERGENCY_PERSIST_ID, var.set_emergency_persist_switch),
     ]:
         if conf_key in config:
             entity = await cg.get_variable(config[conf_key])
@@ -154,6 +172,9 @@ async def to_code(config):
     cg.add(var.set_read_gap(config[CONF_READ_GAP]))
     cg.add(var.set_write_gap(config[CONF_WRITE_GAP]))
     cg.add(var.set_log_buffer_size(config[CONF_LOG_BUFFER_SIZE]))
+    cg.add(var.set_emergency_minute_threshold(config[CONF_EMERGENCY_MINUTE_THRESHOLD]))
+    cg.add(var.set_emergency_retry_initial(config[CONF_EMERGENCY_RETRY_INITIAL]))
+    cg.add(var.set_emergency_retry_max(config[CONF_EMERGENCY_RETRY_MAX]))
 
     # Needed so logger::Logger::add_log_callback() compiles to a real
     # implementation (USE_LOG_LISTENERS) for the LastLog ring buffer.
