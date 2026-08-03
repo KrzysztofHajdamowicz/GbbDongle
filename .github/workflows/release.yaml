@@ -56,7 +56,7 @@ jobs:
       - name: Compile firmware
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          uv run esphome -s version "$VERSION" compile "firmware/${{ matrix.config }}.yaml"
+          uv run esphome -s version "$VERSION" -s external_components_source ../components compile "firmware/${{ matrix.config }}.yaml"
 
       - name: Collect binaries
         run: |

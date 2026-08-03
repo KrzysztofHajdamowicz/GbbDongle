@@ -14,6 +14,11 @@ substitutions:
   # builds). The factory variants override this with "admin" and rotate it at
   # runtime via the Admin Password entity (common/factory.yaml).
   admin_password: ""
+  # Default: adopted configs fetch the component from GitHub (a local path
+  # would resolve relative to the adopted yaml in /config/esphome and break).
+  # Local builds and CI override this with ../components (relative to the
+  # main config in firmware/) to compile the working-tree component instead.
+  external_components_source: github://KrzysztofHajdamowicz/GbbDongle@main
 
 esphome:
   name: ${device_name}
@@ -24,9 +29,8 @@ esphome:
     version: ${version}
 
 external_components:
-  - source:
-      type: local
-      path: ../components
+  - source: ${external_components_source}
+    components: [gbb_dongle]
 
 logger:
   level: ${log_level}

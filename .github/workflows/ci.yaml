@@ -28,7 +28,7 @@ jobs:
       - name: Validate import targets
         run: |
           for config in gbbdongle gbbdongle-tcan485 gbbdongle-kamami gbbdongle-8di8do-wifi gbbdongle-8di8do-eth; do
-            uv run esphome config "firmware/${config}.yaml" > /dev/null
+            uv run esphome -s external_components_source ../components config "firmware/${config}.yaml" > /dev/null
           done
 
   build:
@@ -72,7 +72,7 @@ jobs:
             pio-${{ runner.os }}-${{ matrix.config }}=
 
       - name: Validate configuration
-        run: uv run esphome config firmware/${{ matrix.config }}.yaml
+        run: uv run esphome -s external_components_source ../components config firmware/${{ matrix.config }}.yaml
 
       - name: Compile firmware
-        run: uv run esphome compile firmware/${{ matrix.config }}.yaml
+        run: uv run esphome -s external_components_source ../components compile firmware/${{ matrix.config }}.yaml

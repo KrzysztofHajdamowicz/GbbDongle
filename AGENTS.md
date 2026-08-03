@@ -141,6 +141,12 @@ uv run esphome compile firmware/<variant>.yaml    # build
 uv run esphome run firmware/<variant>-dev.yaml    # flash + logs
 ```
 
+`base.yaml` defaults `external_components` to `github://…@main` (required
+for dashboard adoption). Non-`-dev` builds against the working-tree
+component need `-s external_components_source ../components` (CI/release
+pass it); the `-dev`/bench variants get the local override from
+`common/dev.yaml`.
+
 Variants: `gbbdongle`, `gbbdongle-tcan485`, `gbbdongle-kamami`,
 `gbbdongle-8di8do-wifi`, `gbbdongle-8di8do-eth` (+ `-dev`).
 WiFi dev variants need `firmware/secrets.yaml` (copy from

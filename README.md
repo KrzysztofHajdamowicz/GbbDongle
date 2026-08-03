@@ -152,6 +152,19 @@ overlay). The WiFi dev variants additionally include `common/wifi-dev.yaml`,
 which joins your WiFi from `firmware/secrets.yaml` (see
 `secrets.yaml.example`).
 
+`base.yaml` pulls the `gbb_dongle` component from
+`github://KrzysztofHajdamowicz/GbbDongle@main` by default so that adopted
+configs (which only fetch the yaml, not the repo) resolve it. To build the
+import targets or the `-factory`/`-ha` images against your working tree,
+override the source:
+
+```sh
+uv run esphome -s external_components_source ../components compile firmware/gbbdongle-ha.yaml
+```
+
+The `-dev` (and bench) variants set this override in `common/dev.yaml`, so
+they always compile the local component without extra flags.
+
 ### Using the component in your own ESPHome config
 
 ```yaml

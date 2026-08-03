@@ -3,3 +3,5 @@
 
 substitutions:
   log_level: VERBOSE
+  # Dev builds always compile the working-tree component, not GitHub.
+  external_components_source: ../components
