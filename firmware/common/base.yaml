@@ -81,6 +81,12 @@ mqtt:
   shutdown_message:
   log_topic:
 
+# Wall clock for the hourly emergency-command check. SNTP (not homeassistant)
+# because the factory line strips the api: block.
+time:
+  - platform: sntp
+    id: sntp_time
+
 # flow_control_pin (boards with manual RS485 direction control) and
 # log_buffer_size (boards without PSRAM) are set in the board file.
 gbb_dongle:
@@ -100,6 +106,8 @@ gbb_dongle:
   tls_skip_cn_check_id: cfg_tls_skip_cn_check
   baud_rate_id: cfg_baud_rate
   parity_id: cfg_parity
+  time_id: sntp_time
+  emergency_persist_id: cfg_persist_emergency
   # Trust anchors for the gbboptimizerX-mqtt.gbbsoft.pl brokers.
   # 1. Certum Trusted Root CA — the root used by *.gbbsoft.pl since the
   #    2026-07-27 certificate renewal (verified 2026-07-28: leaf <- Certum DV
@@ -298,6 +306,15 @@ switch:
     entity_category: config
     optimistic: true
     restore_mode: RESTORE_DEFAULT_OFF
+  # ON: the emergency ("last will") command set survives reboots at the cost
+  # of an NVS write whenever GbbOptimizer changes it. OFF: RAM only.
+  - platform: template
+    id: cfg_persist_emergency
+    name: Persist Emergency Commands
+    icon: mdi:content-save-alert
+    entity_category: config
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
 
 button:
   - platform: restart
@@ -338,6 +355,13 @@ sensor:
     accuracy_decimals: 0
     update_interval: 60s
     lambda: return id(gbb).get_modbus_errors();
+  - platform: template
+    name: Emergency Sets Stored
+    icon: mdi:lifebuoy
+    entity_category: diagnostic
+    accuracy_decimals: 0
+    update_interval: 60s
+    lambda: return id(gbb).get_emergency_sets_stored();
 
 text_sensor:
   - platform: template
