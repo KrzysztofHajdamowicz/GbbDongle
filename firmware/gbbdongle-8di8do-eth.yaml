@@ -1,11 +1,12 @@
-# Release firmware for GbbDongle (Waveshare ESP32-S3-POE-ETH-8DI-8DO),
-# Ethernet variant (W5500, PoE).
+# GbbDongle for the Waveshare ESP32-S3-POE-ETH-8DI-8DO, Ethernet variant
+# (W5500, PoE).
+# Dashboard-adoption import target (see gbbdongle.yaml for details);
+# published images are built from the -factory and -ha variants.
 # Build: uv run esphome compile firmware/gbbdongle-8di8do-eth.yaml
 
 substitutions:
   device_name: gbbdongle-8di8do-eth
   friendly_name: GbbDongle (Waveshare ESP32-S3-POE-ETH-8DI-8DO, Ethernet)
-  update_manifest_url: https://krzysztofhajdamowicz.github.io/GbbDongle/firmware/update-manifest-8di8do-eth.json
 
 packages:
   base: !include common/base.yaml

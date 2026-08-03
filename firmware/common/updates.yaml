@@ -1,0 +1,17 @@
+# Self-update package for the published firmware lines (factory and
+# HA-compatible): pulls new releases from the update manifest on GitHub
+# Pages. Deliberately NOT part of the import targets (firmware/<config>.yaml)
+# — an adopted device is compiled by the user's ESPHome dashboard and must
+# not overwrite that build with images from our releases.
+
+http_request:
+
+ota:
+  - platform: http_request
+
+update:
+  - platform: http_request
+    id: firmware_update
+    name: Firmware
+    source: ${update_manifest_url}
+    update_interval: 6h

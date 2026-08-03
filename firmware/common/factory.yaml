@@ -1,0 +1,46 @@
+# Factory line overlay: the closed, standalone GbbDongle product.
+# - No Home Assistant native API at all (api: !remove strips it from base).
+# - Web dashboard behind HTTP basic auth (admin / ${admin_password}, default
+#   set by the *-factory.yaml variants) with a runtime-changeable password
+#   that also guards esphome-OTA uploads. Factory Reset restores defaults.
+# - Self-updates from GitHub Pages (common/updates.yaml).
+
+packages:
+  updates: !include updates.yaml
+
+api: !remove
+
+web_server_base:
+  id: web_base
+
+web_server:
+  auth:
+    # Digest keeps the password out of the (plain-HTTP) request headers;
+    # it also becomes the ESPHome default in 2027.1.
+    type: digest
+    username: admin
+    password: ${admin_password}
+
+text:
+  - platform: template
+    id: admin_password_txt
+    name: Admin Password
+    icon: mdi:form-textbox-password
+    entity_category: config
+    mode: password
+    optimistic: true
+    restore_value: true
+    initial_value: ""
+    min_length: 0
+    max_length: 64
+    # An empty state_topic marks the entity internal to MQTT — the admin
+    # password is never published to the (GbbOptimizer) broker.
+    state_topic:
+    # Fires on boot with the NVS-restored value too, so a changed password
+    # survives restarts. Empty value = keep the compiled-in default.
+    on_value:
+      - lambda: |-
+          if (!x.empty()) {
+            id(web_base)->set_auth_password(x);
+            id(ota_esphome)->set_auth_password(x);
+          }

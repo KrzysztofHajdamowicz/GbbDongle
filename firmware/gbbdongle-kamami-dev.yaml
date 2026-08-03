@@ -6,7 +6,6 @@
 substitutions:
   device_name: gbbdongle-kamami-dev
   friendly_name: GbbDongle Kamami Dev
-  update_manifest_url: https://krzysztofhajdamowicz.github.io/GbbDongle/firmware/update-manifest-kamami.json
 
 packages:
   base: !include common/base.yaml

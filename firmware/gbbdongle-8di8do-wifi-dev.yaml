@@ -5,9 +5,6 @@
 substitutions:
   device_name: gbbdongle-8di8do-wifi-dev
   friendly_name: GbbDongle 8DI8DO WiFi Dev
-  # Point dev devices at the per-board manifest: the legacy shared manifest's
-  # ESP32-S3 entry is the RS485-CAN board's firmware — wrong board.
-  update_manifest_url: https://krzysztofhajdamowicz.github.io/GbbDongle/firmware/update-manifest-8di8do-wifi.json
 
 packages:
   base: !include common/base.yaml

@@ -16,10 +16,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # `config` doubles as the artifact basename; the gbbdongle.* names
-        # are kept for the Waveshare board so update manifests already in
-        # the field keep resolving.
-        config: [gbbdongle, gbbdongle-tcan485, gbbdongle-kamami, gbbdongle-8di8do-wifi, gbbdongle-8di8do-eth]
+        # Two published lines per board. Factory artifacts drop the
+        # "-factory" suffix (gbbdongle.factory.bin etc.) so update manifests
+        # already in the field keep resolving and stay on the factory line;
+        # the HA-compatible line gets new "-ha" artifact names.
+        config:
+          - gbbdongle-factory
+          - gbbdongle-ha
+          - gbbdongle-tcan485-factory
+          - gbbdongle-tcan485-ha
+          - gbbdongle-kamami-factory
+          - gbbdongle-kamami-ha
+          - gbbdongle-8di8do-wifi-factory
+          - gbbdongle-8di8do-wifi-ha
+          - gbbdongle-8di8do-eth-factory
+          - gbbdongle-8di8do-eth-ha
     steps:
       - uses: actions/checkout@v7
 
@@ -45,14 +56,24 @@ jobs:
       - name: Compile firmware
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          uv run esphome -s version "$VERSION" compile "firmware/${{ matrix.config }}.yaml"
+          uv run esphome -s version "$VERSION" -s external_components_source ../components compile "firmware/${{ matrix.config }}.yaml"
 
       - name: Collect binaries
         run: |
-          BUILD_DIR="firmware/.esphome/build/${{ matrix.config }}/build"
+          # The build dir is named after the device name (the import
+          # target's device_name), which both lines share; the artifact
+          # basename keeps legacy names for -factory and adds -ha otherwise.
+          CONFIG="${{ matrix.config }}"
+          BASE="${CONFIG%-factory}"
+          BASE="${BASE%-ha}"
+          BUILD_DIR="firmware/.esphome/build/${BASE}/build"
+          case "$CONFIG" in
+            *-factory) OUT="$BASE" ;;
+            *-ha)      OUT="${BASE}-ha" ;;
+          esac
           mkdir -p dist
-          cp "$BUILD_DIR/firmware.factory.bin" "dist/${{ matrix.config }}.factory.bin"
-          cp "$BUILD_DIR/firmware.ota.bin" "dist/${{ matrix.config }}.ota.bin"
+          cp "$BUILD_DIR/firmware.factory.bin" "dist/${OUT}.factory.bin"
+          cp "$BUILD_DIR/firmware.ota.bin" "dist/${OUT}.ota.bin"
 
       - uses: actions/upload-artifact@v7
         with:
@@ -95,36 +116,46 @@ jobs:
           gbbdongle-8di8do-eth   ESP32-S3 8di8do-eth  Waveshare ESP32-S3-POE-ETH-8DI-8DO, Ethernet
           '
 
+          # Each board gets four manifests: install + update for the factory
+          # line (legacy names, so devices in the field stay on it) and
+          # install + update for the HA-compatible line ("-ha" suffix).
           while read -r config chip suffix name; do
             [ -z "$config" ] && continue
-            md5=$(md5sum "site/firmware/${config}.ota.bin" | cut -d' ' -f1)
 
-            # Per-board ESP Web Tools manifest (browser flashing over USB).
-            cat > "site/firmware/manifest-${suffix}.json" <<EOF
+            for line in factory ha; do
+              if [ "$line" = "factory" ]; then
+                bin="$config"; msuffix="$suffix"; display="GbbDongle (${name})"
+              else
+                bin="${config}-ha"; msuffix="${suffix}-ha"; display="GbbDongle (${name}, Home Assistant)"
+              fi
+              md5=$(md5sum "site/firmware/${bin}.ota.bin" | cut -d' ' -f1)
+
+              # Per-board ESP Web Tools manifest (browser flashing over USB).
+              cat > "site/firmware/manifest-${msuffix}.json" <<EOF
           {
-            "name": "GbbDongle (${name})",
+            "name": "${display}",
             "version": "$VERSION",
             "new_install_prompt_erase": true,
             "builds": [
               {
                 "chipFamily": "${chip}",
-                "parts": [{ "path": "${config}.factory.bin", "offset": 0 }]
+                "parts": [{ "path": "${bin}.factory.bin", "offset": 0 }]
               }
             ]
           }
           EOF
 
-            # Per-board manifest for the esphome http_request update entity
-            # (OTA); each device yaml points update_manifest_url at its own.
-            cat > "site/firmware/update-manifest-${suffix}.json" <<EOF
+              # Per-board manifest for the esphome http_request update entity
+              # (OTA); each variant yaml points update_manifest_url at its own.
+              cat > "site/firmware/update-manifest-${msuffix}.json" <<EOF
           {
-            "name": "GbbDongle (${name})",
+            "name": "${display}",
             "version": "$VERSION",
             "builds": [
               {
                 "chipFamily": "${chip}",
                 "ota": {
-                  "path": "${config}.ota.bin",
+                  "path": "${bin}.ota.bin",
                   "md5": "${md5}",
                   "summary": "GbbDongle $VERSION",
                   "release_url": "${RELEASE_URL}"
@@ -133,6 +164,7 @@ jobs:
             ]
           }
           EOF
+            done
           done <<< "$BOARDS"
 
           # ── Legacy shared manifests ──

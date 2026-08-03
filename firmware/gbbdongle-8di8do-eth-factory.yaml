@@ -1,0 +1,12 @@
+# Published Factory Image for gbbdongle-8di8do-eth: standalone GbbDongle product, no Home
+# Assistant API, web dashboard and OTA uploads behind the admin password
+# (default admin/admin, changeable via the Admin Password entity).
+# Build: uv run esphome -s version 1.2.3 compile firmware/gbbdongle-8di8do-eth-factory.yaml
+
+substitutions:
+  admin_password: admin
+  update_manifest_url: https://krzysztofhajdamowicz.github.io/GbbDongle/firmware/update-manifest-8di8do-eth.json
+
+packages:
+  device: !include gbbdongle-8di8do-eth.yaml
+  factory: !include common/factory.yaml

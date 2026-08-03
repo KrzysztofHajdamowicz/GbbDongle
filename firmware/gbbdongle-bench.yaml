@@ -1,0 +1,8 @@
+# Bench-only variant (not shipped, not in CI): gbbdongle-dev with a fast
+# emergency-command trigger so the hourly check can be exercised minutes
+# after an hour boundary instead of ten.
+packages:
+  device: !include gbbdongle-dev.yaml
+
+gbb_dongle:
+  emergency_minute_threshold: 1

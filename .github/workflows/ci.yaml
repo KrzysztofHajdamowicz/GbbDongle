@@ -10,12 +10,45 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # The import targets (firmware/<config>.yaml) are what the ESPHome
+  # dashboard pulls in during adoption — validate them standalone even
+  # though the variant builds below include them as packages.
+  validate-import-targets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v8.3.2
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Validate import targets
+        run: |
+          for config in gbbdongle gbbdongle-tcan485 gbbdongle-kamami gbbdongle-8di8do-wifi gbbdongle-8di8do-eth; do
+            uv run esphome -s external_components_source ../components config "firmware/${config}.yaml" > /dev/null
+          done
+
   build:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        config: [gbbdongle, gbbdongle-tcan485, gbbdongle-kamami, gbbdongle-8di8do-wifi, gbbdongle-8di8do-eth]
+        # Both published lines per board: -factory (no api, web auth) and
+        # -ha (api + dashboard_import) compile different code paths.
+        config:
+          - gbbdongle-factory
+          - gbbdongle-ha
+          - gbbdongle-tcan485-factory
+          - gbbdongle-tcan485-ha
+          - gbbdongle-kamami-factory
+          - gbbdongle-kamami-ha
+          - gbbdongle-8di8do-wifi-factory
+          - gbbdongle-8di8do-wifi-ha
+          - gbbdongle-8di8do-eth-factory
+          - gbbdongle-8di8do-eth-ha
     steps:
       - uses: actions/checkout@v7
 
@@ -39,7 +72,7 @@ jobs:
             pio-${{ runner.os }}-${{ matrix.config }}=
 
       - name: Validate configuration
-        run: uv run esphome config firmware/${{ matrix.config }}.yaml
+        run: uv run esphome -s external_components_source ../components config firmware/${{ matrix.config }}.yaml
 
       - name: Compile firmware
-        run: uv run esphome compile firmware/${{ matrix.config }}.yaml
+        run: uv run esphome -s external_components_source ../components compile firmware/${{ matrix.config }}.yaml
