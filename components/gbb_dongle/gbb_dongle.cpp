@@ -1,5 +1,6 @@
 #include "gbb_dongle.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 
@@ -8,6 +9,7 @@
 #include "esphome/core/hal.h"
 #include "esphome/core/helpers.h"
 #include "esphome/core/log.h"
+#include "esphome/core/time.h"
 
 namespace esphome {
 namespace gbb_dongle {
@@ -15,6 +17,7 @@ namespace gbb_dongle {
 static const char *const TAG = "gbb_dongle";
 
 static const uint32_t KEEPALIVE_INTERVAL_MS = 60 * 1000;
+static const uint32_t EMERGENCY_CHECK_INTERVAL_MS = 5 * 1000;
 static const size_t LAST_LOG_MAX_BYTES = 8 * 1024;
 
 // Product identity for the fromDevice ClientName field — not configurable,
@@ -61,6 +64,19 @@ void GbbDongle::setup() {
   this->apply_uart_settings_();
   this->executor_.set_uart(this);
   this->executor_.set_flow_control_pin(this->flow_control_pin_);
+
+  if (this->emergency_persist_ != nullptr) {
+    // LATE priority: the switch has restored its NVS state by now.
+    this->emergency_persist_->add_on_state_callback(
+        [this](bool state) { this->emergency_store_.set_persist_enabled(state); });
+    if (this->emergency_persist_->state) {
+      this->emergency_store_.set_persist_enabled(true);
+      if (this->emergency_store_.load_from_nvs()) {
+        this->boot_loaded_awaiting_time_ = true;
+        this->emergency_state_ = EmergencyState::ARMED;
+      }
+    }
+  }
 
   this->configure_mqtt_();
   this->setup_complete_ = true;
@@ -162,6 +178,7 @@ void GbbDongle::on_cloud_message_(const std::string &payload) {
 
   if (header.has_log_level)
     this->apply_log_level_(header.log_level);
+  this->handle_emergency_fields_(header);
   if (header.has_sub_inverter_sn) {
     // Single RS485 bus: the slave address inside each RTU frame already
     // routes to the right inverter, so SubInverterSN needs no special
@@ -246,22 +263,196 @@ void GbbDongle::loop() {
   }
 
   if (this->executor_.has_result()) {
-    this->publish_response_(this->executor_.take_result());
+    GbbHeader result = this->executor_.take_result();
+    if (result.emergency) {
+      this->handle_emergency_result_(std::move(result));
+    } else {
+      this->publish_response_(std::move(result));
+    }
   }
   if (!this->executor_.busy() && this->pending_request_.has_value()) {
     this->executor_.start(std::move(*this->pending_request_));
     this->pending_request_.reset();
+  } else if (!this->executor_.busy() && !this->pending_request_.has_value() &&
+             this->emergency_state_ == EmergencyState::QUEUED) {
+    // Cloud requests take priority; emergency sets go out only when idle.
+    this->start_next_emergency_set_();
   }
   this->executor_.loop();
 
+  const uint32_t now = millis();
   if (this->cloud_configured_ && this->mqtt_->is_connected()) {
-    const uint32_t now = millis();
     if (now - this->last_keepalive_ >= KEEPALIVE_INTERVAL_MS) {
       this->last_keepalive_ = now;
       this->mqtt_->publish(this->topic_keepalive_, "", 0, 1, false);
       ESP_LOGD(TAG, "Keepalive sent");
     }
   }
+
+  if (now - this->last_emergency_check_ >= EMERGENCY_CHECK_INTERVAL_MS) {
+    this->last_emergency_check_ = now;
+    this->check_emergency_trigger_();
+  }
+}
+
+void GbbDongle::handle_emergency_fields_(GbbHeader &header) {
+  if (header.has_is_inv_setup && header.is_inv_setup != 0) {
+    const ESPTime now = this->time_source_ != nullptr ? this->time_source_->now() : ESPTime{};
+    if (now.is_valid()) {
+      this->last_inv_setup_ts_ = now.timestamp;
+    } else {
+      ESP_LOGW(TAG, "InvSetup received but the clock is not synced yet; emergency check stays disarmed");
+      this->last_inv_setup_ts_ = 0;
+    }
+    this->boot_loaded_awaiting_time_ = false;
+    switch (this->emergency_state_) {
+      case EmergencyState::QUEUED:
+      case EmergencyState::BACKOFF:
+        ESP_LOGI(TAG, "InvSetup received; cancelling the pending emergency send");
+        this->emergency_state_ = EmergencyState::ARMED;
+        break;
+      case EmergencyState::EXECUTING:
+        // The stale result must not clear a freshly received set.
+        this->emergency_cancel_ = true;
+        break;
+      default:
+        break;
+    }
+  }
+
+  if (header.has_lines_on_no_inv_setup) {
+    const std::string key = header.has_sub_inverter_sn ? header.sub_inverter_sn : "";
+    const char *target = key.empty() ? "master" : key.c_str();
+    const size_t count = header.lines_on_no_inv_setup.size();
+    this->emergency_store_.set_lines(key, std::move(header.lines_on_no_inv_setup));
+    this->emergency_store_.sync_nvs();
+    if (count > 0) {
+      ESP_LOGI(TAG, "Stored emergency command set for %s (%u line(s))", target, count);
+    } else {
+      ESP_LOGI(TAG, "Cleared emergency command set for %s", target);
+    }
+    if (this->emergency_store_.empty()) {
+      if (this->emergency_state_ != EmergencyState::EXECUTING)
+        this->emergency_state_ = EmergencyState::EMPTY;
+    } else if (this->emergency_state_ == EmergencyState::EMPTY) {
+      this->emergency_state_ = EmergencyState::ARMED;
+    }
+  }
+}
+
+void GbbDongle::check_emergency_trigger_() {
+  if (this->emergency_state_ == EmergencyState::BACKOFF) {
+    if ((int32_t) (millis() - this->emergency_retry_at_) >= 0) {
+      ESP_LOGI(TAG, "Retrying undelivered emergency command set(s)");
+      this->emergency_walk_from_start_ = true;
+      this->emergency_state_ = EmergencyState::QUEUED;
+    }
+    return;
+  }
+  if (this->emergency_state_ != EmergencyState::ARMED)
+    return;
+  if (this->emergency_store_.empty()) {
+    this->emergency_state_ = EmergencyState::EMPTY;
+    return;
+  }
+  if (this->time_source_ == nullptr)
+    return;
+  const ESPTime now = this->time_source_->now();
+  if (!now.is_valid())
+    return;
+  const time_t ts = now.timestamp;
+  if (this->boot_loaded_awaiting_time_) {
+    // Sets restored from NVS after a reboot: pretend the last InvSetup came
+    // in now, so the hourly deadline starts counting from this moment.
+    this->boot_loaded_awaiting_time_ = false;
+    this->last_inv_setup_ts_ = ts;
+    ESP_LOGI(TAG, "Clock synced; hourly emergency check armed for the restored set(s)");
+    return;
+  }
+  // GbbConnect2 semantics: GbbOptimizer sends InvSetup during the first
+  // <threshold> minutes of every hour; past that window with no InvSetup
+  // this hour, the emergency sets go out.
+  const int minute = (int) ((ts % 3600) / 60);
+  const time_t top_of_hour = ts - (ts % 3600);
+  if (minute > this->emergency_minute_threshold_ && this->last_inv_setup_ts_ != 0 &&
+      this->last_inv_setup_ts_ < top_of_hour) {
+    ESP_LOGW(TAG, "No InvSetup from GbbOptimizer this hour; sending the emergency command set(s)");
+    this->emergency_retry_delay_ms_ = this->emergency_retry_initial_ms_;
+    this->emergency_walk_from_start_ = true;
+    this->emergency_state_ = EmergencyState::QUEUED;
+  }
+}
+
+void GbbDongle::start_next_emergency_set_() {
+  const auto &sets = this->emergency_store_.sets();
+  auto it = this->emergency_walk_from_start_ ? sets.cbegin() : sets.upper_bound(this->current_emergency_key_);
+  if (it == sets.cend()) {
+    this->emergency_state_ = sets.empty() ? EmergencyState::EMPTY : EmergencyState::ARMED;
+    return;
+  }
+  this->emergency_walk_from_start_ = false;
+  this->current_emergency_key_ = it->first;
+
+  GbbHeader header;
+  header.emergency = true;
+  if (!it->first.empty()) {
+    header.has_sub_inverter_sn = true;
+    header.sub_inverter_sn = it->first;
+  }
+  // Copy, not move: the stored set survives until delivery is confirmed.
+  header.lines = it->second;
+  this->emergency_runs_++;
+  ESP_LOGW(TAG, "Executing emergency command set for %s (%u line(s))",
+           it->first.empty() ? "master" : it->first.c_str(), header.lines.size());
+  this->executor_.start(std::move(header));
+  this->emergency_state_ = EmergencyState::EXECUTING;
+}
+
+void GbbDongle::handle_emergency_result_(GbbHeader &&header) {
+  if (this->emergency_cancel_) {
+    this->emergency_cancel_ = false;
+    ESP_LOGI(TAG, "Emergency run cancelled (InvSetup arrived); dropping the result");
+    this->emergency_state_ = this->emergency_store_.empty() ? EmergencyState::EMPTY : EmergencyState::ARMED;
+    return;
+  }
+  const std::string key = this->current_emergency_key_;
+  const char *target = key.empty() ? "master" : key.c_str();
+
+  // "Delivered" = the inverter answered at least one line (the executor
+  // overwrites Modbus with the response frame and clears it on failure).
+  bool delivered = false;
+  for (const auto &line : header.lines) {
+    if (!line.error.empty())
+      ESP_LOGE(TAG, "Emergency %s: LineNo=%" PRId32 ": %s", target, line.line_no, line.error.c_str());
+    if (line.error.empty() && line.has_modbus && !line.modbus.empty())
+      delivered = true;
+  }
+  if (delivered) {
+    this->emergency_delivered_++;
+    this->emergency_store_.clear(key);
+    this->emergency_store_.sync_nvs();
+    ESP_LOGI(TAG, "Emergency command set for %s delivered; cleared", target);
+  } else {
+    ESP_LOGW(TAG, "Emergency command set for %s got no response from the inverter", target);
+  }
+
+  const auto &sets = this->emergency_store_.sets();
+  if (sets.upper_bound(key) != sets.cend()) {
+    this->emergency_state_ = EmergencyState::QUEUED;  // next set of this cycle
+    return;
+  }
+  if (sets.empty()) {
+    // Send once: stay quiet until GbbOptimizer delivers a new set.
+    this->last_inv_setup_ts_ = 0;
+    this->emergency_state_ = EmergencyState::EMPTY;
+    ESP_LOGI(TAG, "All emergency command sets delivered");
+    return;
+  }
+  this->emergency_state_ = EmergencyState::BACKOFF;
+  this->emergency_retry_at_ = millis() + this->emergency_retry_delay_ms_;
+  ESP_LOGW(TAG, "Undelivered emergency command set(s) remain; retrying in %" PRIu32 " s",
+           this->emergency_retry_delay_ms_ / 1000);
+  this->emergency_retry_delay_ms_ = std::min(this->emergency_retry_delay_ms_ * 2, this->emergency_retry_max_ms_);
 }
 
 void GbbDongle::dump_config() {
@@ -270,6 +461,9 @@ void GbbDongle::dump_config() {
   ESP_LOGCONFIG(TAG, "  Cloud configured: %s", YESNO(this->cloud_configured_));
   ESP_LOGCONFIG(TAG, "  CA certificate compiled in: %s", YESNO(this->ca_certificate_ != nullptr));
   ESP_LOGCONFIG(TAG, "  Log buffer: %" PRIu32 " B", this->log_buffer_size_);
+  ESP_LOGCONFIG(TAG, "  Emergency: threshold minute %u, %u set(s) stored, persist %s", this->emergency_minute_threshold_,
+                this->emergency_store_.size(),
+                ONOFF(this->emergency_persist_ != nullptr && this->emergency_persist_->state));
   if (this->flow_control_pin_ != nullptr)
     LOG_PIN("  Flow control pin: ", this->flow_control_pin_);
 }

@@ -89,6 +89,11 @@ Files:
   baud/parity changes apply live. Publishes a keepalive every 60 s.
 - `gbb_protocol.{h,cpp}` — JSON parse/build of the `Header` payload
   (PascalCase keys, ArduinoJson).
+- `emergency_store.{h,cpp}` — the emergency ("last will") command sets
+  received via `LinesOnNoInvSetup`, keyed by `SubInverterSN`, optionally
+  persisted to NVS as one JSON blob (raw `nvs_set_blob`, hash-guarded to
+  limit flash wear). The hourly trigger / retry state machine lives in
+  `gbb_dongle.cpp` (`EmergencyState`); see docs/protocol.md.
 - `modbus_executor.{h,cpp}` — non-blocking state machine (IDLE → GAP →
   TRANSMIT → RX_WAIT → DONE) that executes one request's `Lines` on the bus,
   one frame at a time. Never block the ESPHome main loop here.
@@ -98,6 +103,10 @@ Files:
 - `__init__.py` — config schema. Key knobs: `flow_control_pin` (manual RS485
   direction; omit for auto-direction transceivers), `response_timeout`
   (1000 ms), `read_gap` (100 ms), `write_gap` (3000 ms), `log_buffer_size`,
+  `time_id` (SNTP clock for the emergency check), `emergency_persist_id`,
+  `emergency_minute_threshold` (10) + `emergency_retry_initial`/`_max`
+  (60 s / 15 min; lower the threshold on a scratch dev yaml to bench-test
+  the trigger without waiting an hour),
   `certificate_authority`, and the `*_id` wiring of the config entities
   declared in `base.yaml`. `version:` defaults to `auto` → resolved from
   `git describe`; release builds stamp it via `esphome -s version X.Y.Z`.
