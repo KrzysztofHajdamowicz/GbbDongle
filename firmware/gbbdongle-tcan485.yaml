@@ -1,10 +1,10 @@
-# Release firmware for GbbDongle (LilyGo T-CAN485).
+# GbbDongle for the LilyGo T-CAN485.
+# Dashboard-adoption import target (see gbbdongle.yaml for details);
+# published images are built from the -factory and -ha variants.
 # Build: uv run esphome compile firmware/gbbdongle-tcan485.yaml
-# CI overrides the version: uv run esphome -s version 1.2.3 compile ...
 
 substitutions:
   device_name: gbbdongle-tcan485
-  update_manifest_url: https://krzysztofhajdamowicz.github.io/GbbDongle/firmware/update-manifest-tcan485.json
 
 packages:
   base: !include common/base.yaml

@@ -1,0 +1,14 @@
+# Home Assistant-compatible line overlay: the adoptable image.
+# Broadcasts the package import URL over mDNS so the ESPHome dashboard next
+# to Home Assistant offers to adopt the device; the api: block (keyless
+# encryption, provisioned on first connection) comes from common/base.yaml.
+# After adoption the user's dashboard compiles the import target
+# (firmware/${device_name}.yaml) with a freshly generated encryption key —
+# from that point on the configuration is theirs (Bring Your Own Support).
+
+packages:
+  updates: !include updates.yaml
+
+dashboard_import:
+  package_import_url: github://KrzysztofHajdamowicz/GbbDongle/firmware/${device_name}.yaml@main
+  import_full_config: false

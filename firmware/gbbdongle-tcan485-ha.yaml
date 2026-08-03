@@ -1,0 +1,12 @@
+# Published Home Assistant-compatible image for gbbdongle-tcan485: native API enabled
+# (encryption key provisioned on first connection), broadcasts the ESPHome
+# dashboard adoption URL. No passwords — after adoption the configuration is
+# owned by the user (Bring Your Own Support).
+# Build: uv run esphome -s version 1.2.3 compile firmware/gbbdongle-tcan485-ha.yaml
+
+substitutions:
+  update_manifest_url: https://krzysztofhajdamowicz.github.io/GbbDongle/firmware/update-manifest-tcan485-ha.json
+
+packages:
+  device: !include gbbdongle-tcan485.yaml
+  ha: !include common/ha.yaml

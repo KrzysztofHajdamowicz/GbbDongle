@@ -65,6 +65,7 @@
     .board .specs { color: var(--muted); font-size: 0.85rem; margin: 0 0 0.8rem; flex-grow: 1; }
     .board .note { color: var(--note); font-size: 0.8rem; margin: 0.6rem 0 0; }
     .board .fw-version { color: var(--muted); font-size: 0.8rem; margin: 0.5rem 0 0; }
+    .board select.image-line { font: inherit; font-size: 0.85rem; margin: 0 auto 0.6rem; padding: 0.25rem 0.4rem; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; max-width: 100%; }
     ol li { margin: 0.4rem 0; }
     footer { margin-top: 3rem; font-size: 0.85rem; color: var(--faint); }
   </style>
@@ -81,17 +82,38 @@
   <p>Pick your board, connect it over USB and click Install to flash the latest
      firmware straight from your browser (Chrome or Edge required).</p>
 
+  <p>Each board comes in two firmware flavours:</p>
+  <ul>
+    <li><strong>Factory Image</strong> (default) &mdash; the standalone
+        GbbDongle product. No Home Assistant integration; the web dashboard
+        and firmware uploads are protected by a password
+        (default <code>admin</code>&nbsp;/&nbsp;<code>admin</code>, changeable
+        on the device's web page).</li>
+    <li><strong>Home Assistant-compatible</strong> &mdash; exposes the ESPHome
+        native API and offers itself for adoption in the ESPHome dashboard.
+        After adoption you build and maintain your own configuration
+        (bring&nbsp;your&nbsp;own&nbsp;support).</li>
+  </ul>
+
   <div class="boards">
     <div class="board">
       <img src="img/waveshare-esp32-s3-rs485-can.jpg" alt="Waveshare ESP32-S3-RS485-CAN">
       <h3>Waveshare ESP32-S3-RS485-CAN</h3>
       <p class="specs">ESP32-S3 &middot; WiFi &middot; BLE provisioning &middot; isolated RS485</p>
+      <select class="image-line" aria-label="Firmware image">
+        <option value="firmware/manifest-gbbdongle.json" selected>Factory Image</option>
+        <option value="firmware/manifest-gbbdongle-ha.json">Home Assistant-compatible</option>
+      </select>
       <esp-web-install-button manifest="firmware/manifest-gbbdongle.json"></esp-web-install-button>
     </div>
     <div class="board">
       <img src="img/waveshare-esp32-s3-poe-eth-8di-8do.jpg" alt="Waveshare ESP32-S3-POE-ETH-8DI-8DO">
       <h3>Waveshare ESP32-S3-POE-ETH-8DI-8DO (WiFi)</h3>
       <p class="specs">ESP32-S3 &middot; WiFi &middot; BLE provisioning &middot; isolated RS485 (auto-direction)</p>
+      <select class="image-line" aria-label="Firmware image">
+        <option value="firmware/manifest-8di8do-wifi.json" selected>Factory Image</option>
+        <option value="firmware/manifest-8di8do-wifi-ha.json">Home Assistant-compatible</option>
+      </select>
       <esp-web-install-button manifest="firmware/manifest-8di8do-wifi.json"></esp-web-install-button>
       <p class="note">WiFi needs the external SMA antenna attached (no onboard
          antenna). For wired networking flash the Ethernet variant instead.</p>
@@ -100,6 +122,10 @@
       <img src="img/waveshare-esp32-s3-poe-eth-8di-8do.jpg" alt="Waveshare ESP32-S3-POE-ETH-8DI-8DO">
       <h3>Waveshare ESP32-S3-POE-ETH-8DI-8DO (Ethernet)</h3>
       <p class="specs">ESP32-S3 &middot; Ethernet + PoE (no WiFi) &middot; isolated RS485 (auto-direction)</p>
+      <select class="image-line" aria-label="Firmware image">
+        <option value="firmware/manifest-8di8do-eth.json" selected>Factory Image</option>
+        <option value="firmware/manifest-8di8do-eth-ha.json">Home Assistant-compatible</option>
+      </select>
       <esp-web-install-button manifest="firmware/manifest-8di8do-eth.json"></esp-web-install-button>
       <p class="note">Same board as the WiFi card &mdash; this firmware is
          Ethernet-only (WiFi/AP/BLE not compiled in).</p>
@@ -108,12 +134,20 @@
       <img src="img/lilygo-t-can485.jpg" alt="LilyGo T-CAN485">
       <h3>LilyGo T-CAN485</h3>
       <p class="specs">ESP32 &middot; WiFi &middot; auto-direction RS485</p>
+      <select class="image-line" aria-label="Firmware image">
+        <option value="firmware/manifest-tcan485.json" selected>Factory Image</option>
+        <option value="firmware/manifest-tcan485-ha.json">Home Assistant-compatible</option>
+      </select>
       <esp-web-install-button manifest="firmware/manifest-tcan485.json"></esp-web-install-button>
     </div>
     <div class="board">
       <img src="img/kamami-esp32-eth-poe.jpg" alt="Kamami KAmod ESP32 ETH+PoE">
       <h3>Kamami KAmod ESP32 ETH+PoE</h3>
       <p class="specs">ESP32 &middot; Ethernet + PoE (no WiFi) &middot; KAmodRPi UART RS485 ISO HAT (isolated, auto-direction)</p>
+      <select class="image-line" aria-label="Firmware image">
+        <option value="firmware/manifest-kamami.json" selected>Factory Image</option>
+        <option value="firmware/manifest-kamami-ha.json">Home Assistant-compatible</option>
+      </select>
       <esp-web-install-button manifest="firmware/manifest-kamami.json"></esp-web-install-button>
       <p class="note">Flash over USB with the RS485 HAT removed &mdash; the USB
          converter and the HAT share the same UART pins.</p>
@@ -136,10 +170,19 @@
      from your router.</p>
   <p>Then, on the device's web page:</p>
   <ol>
+    <li><strong>Factory Image only:</strong> log in with
+        <code>admin</code>&nbsp;/&nbsp;<code>admin</code> and set your own
+        password in the <em>Admin Password</em> field (it also protects
+        firmware uploads).</li>
     <li>Fill in <em>MQTT Server</em>, <em>Plant Id</em> and <em>Plant Token</em> from your GbbOptimizer account.</li>
     <li>Press <em>Apply Settings (Restart)</em>.</li>
     <li>Wire RS485 A/B to your inverter's Modbus port.</li>
   </ol>
+  <p><strong>Home Assistant-compatible image:</strong> the device shows up as
+     <em>Discovered</em> in the ESPHome dashboard next to your Home Assistant
+     &mdash; click <em>Adopt</em> (or add it to Home Assistant directly; the
+     API encryption key is generated on first connection). After adoption the
+     configuration is compiled by your own ESPHome dashboard.</p>
 
   <footer>
     <a href="https://github.com/KrzysztofHajdamowicz/GbbDongle">Source on GitHub</a>
@@ -180,6 +223,17 @@
       var saved = null;
       try { saved = localStorage.getItem("theme"); } catch (e) {}
       apply(saved);
+    })();
+
+    // Image-line selector: point the sibling Install button at the chosen
+    // line's manifest (Factory Image vs Home Assistant-compatible).
+    (function () {
+      document.querySelectorAll("select.image-line").forEach(function (select) {
+        select.addEventListener("change", function () {
+          var button = select.parentElement.querySelector("esp-web-install-button");
+          if (button) button.setAttribute("manifest", select.value);
+        });
+      });
     })();
 
     // Show the firmware version each Install button will flash, taken from

@@ -10,7 +10,10 @@ substitutions:
   friendly_name: GbbDongle
   version: 0.0.0-dev
   log_level: DEBUG
-  update_manifest_url: https://krzysztofhajdamowicz.github.io/GbbDongle/firmware/update-manifest.json
+  # Empty = OTA uploads without authentication (HA-compatible/adopted/dev
+  # builds). The factory variants override this with "admin" and rotate it at
+  # runtime via the Admin Password entity (common/factory.yaml).
+  admin_password: ""
 
 esphome:
   name: ${device_name}
@@ -28,27 +31,27 @@ external_components:
 logger:
   level: ${log_level}
 
+# Keyless encryption: the device boots unprovisioned; the first API client
+# (Home Assistant) generates a unique key that is persisted in NVS, after
+# which only that key is accepted (a factory reset clears it). The factory
+# variants strip the whole api: block with `api: !remove`.
 api:
   reboot_timeout: 0s
+  encryption:
 
 web_server:
   version: 3
 
 safe_mode:
 
+# An empty password compiles the auth path but skips the challenge, so the
+# factory variants can both set a default via ${admin_password} and rotate it
+# at runtime through set_auth_password().
 ota:
   - platform: esphome
+    id: ota_esphome
+    password: ${admin_password}
   - platform: web_server
-  - platform: http_request
-
-http_request:
-
-update:
-  - platform: http_request
-    id: firmware_update
-    name: Firmware
-    source: ${update_manifest_url}
-    update_interval: 6h
 
 # TX/RX pins come from the board file.
 uart:
@@ -296,6 +299,12 @@ button:
   - platform: restart
     name: Apply Settings (Restart)
     icon: mdi:restart
+  # Clears everything persisted in NVS: device settings, the provisioned API
+  # encryption key (HA-compatible line) and the admin password (factory line).
+  - platform: factory_reset
+    name: Factory Reset
+    icon: mdi:restore-alert
+    entity_category: diagnostic
 
 binary_sensor:
   - platform: template

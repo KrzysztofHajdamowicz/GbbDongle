@@ -1,11 +1,12 @@
-# Release firmware for GbbDongle (Waveshare ESP32-S3-RS485-CAN).
+# GbbDongle for the Waveshare ESP32-S3-RS485-CAN.
+# This file is the dashboard-adoption import target: the ESPHome dashboard
+# pulls it via github:// when adopting a device running the HA-compatible
+# image. Published images are built from gbbdongle-factory.yaml and
+# gbbdongle-ha.yaml.
 # Build: uv run esphome compile firmware/gbbdongle.yaml
-# CI overrides the version: uv run esphome -s version 1.2.3 compile ...
 
 # device_name stays at the base default (gbbdongle) so artifact names keep
 # resolving for update manifests already in the field.
-substitutions:
-  update_manifest_url: https://krzysztofhajdamowicz.github.io/GbbDongle/firmware/update-manifest-gbbdongle.json
 
 packages:
   base: !include common/base.yaml

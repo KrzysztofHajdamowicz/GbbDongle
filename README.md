@@ -59,8 +59,27 @@ file plus a device yaml combining it with `firmware/common/base.yaml` (and
 
 ## Installation
 
+Every board ships in two firmware flavours, selectable in the web installer:
+
+- **Factory Image** (default) — the standalone GbbDongle product. No Home
+  Assistant API; the web dashboard and firmware uploads are protected by a
+  password (default `admin` / `admin`) which you can change via the
+  **Admin Password** entity on the device's web page. **Factory Reset**
+  restores the defaults. Firmware auto-updates through the `Firmware` update
+  entity (manifest hosted on GitHub Pages).
+- **Home Assistant-compatible** — exposes the ESPHome native API and
+  broadcasts an adoption offer to the ESPHome dashboard. The API encryption
+  key is generated and persisted on the first connection (until then the
+  API accepts unprovisioned connections — standard ESPHome factory-image
+  behaviour). After adoption your ESPHome dashboard compiles the
+  configuration from this repo (`firmware/<config>.yaml`) with a fresh
+  encryption key, and further updates are yours to build — bring your own
+  support. No web/OTA passwords: add your own in the adopted config if you
+  want them.
+
 1. Open the **[web installer](https://krzysztofhajdamowicz.github.io/GbbDongle/)**
-   in Chrome/Edge, pick your board, connect it over USB and click Install.
+   in Chrome/Edge, pick your board and flavour, connect it over USB and
+   click Install.
 2. Get the device online:
    - WiFi boards (Waveshare boards — WiFi variant, LilyGo): In web installer choose an option to configure Wi-Fi or join the
      `GbbDongle Setup` WiFi AP and configure your WiFi.
@@ -69,16 +88,19 @@ file plus a device yaml combining it with `firmware/common/base.yaml` (and
    - Waveshare 8DI-8DO (Ethernet variant): plug in Ethernet (PoE, USB or
      7–36 V power) — the device gets an address via DHCP
      (`gbbdongle-8di8do-eth.local`).
-3. Open the device's web UI and fill in the GbbOptimizer settings
+3. Open the device's web UI (Factory Image: log in with `admin` / `admin`
+   and set your own Admin Password) and fill in the GbbOptimizer settings
    (MQTT Server, Plant Id, Plant Token — from your GbbOptimizer plant page),
    then press **Apply Settings (Restart)**. Settings are stored in flash;
    changes to cloud settings take effect after a restart.
 4. Wire RS485 A/B to the inverter (default 9600 baud, 8N1 — configurable
    live, no restart needed).
 
-The device also exposes the ESPHome native API, so it can be adopted into
-Home Assistant; firmware auto-update is available through the `Firmware`
-update entity (manifest hosted on GitHub Pages).
+With the Home Assistant-compatible image the device appears as *Discovered*
+in the ESPHome dashboard (click **Adopt**) and can also be added to Home
+Assistant directly. If you changed nothing else, adoption works
+out-of-the-box; the first upload is unauthenticated by design (the factory
+state has no OTA password).
 
 ## Configuration entities
 
@@ -89,9 +111,11 @@ update entity (manifest hosted on GitHub Pages).
 | Cloud Connection | master enable switch |
 | TLS / TLS Skip CN Check | TLS is on by default (Certum Trusted Network CA + ISRG Root X1 compiled in) |
 | RS485 Baud Rate / Parity | serial parameters, applied live |
+| Admin Password | Factory Image only: changes the web-dashboard and OTA-upload password (login stays `admin`) |
 
-Note: the Plant Token is masked in the web UI but visible to the Home
-Assistant API, like any ESPHome text entity.
+Note: the Plant Token is masked in the web UI but — on the Home
+Assistant-compatible image — visible to the native API, like any ESPHome
+text entity.
 
 ## Development
 
@@ -99,21 +123,29 @@ Requires [uv](https://docs.astral.sh/uv/) (`brew install uv`).
 
 ```sh
 uv sync
-uv run esphome config firmware/gbbdongle.yaml            # validate (Waveshare)
-uv run esphome compile firmware/gbbdongle.yaml           # release image, Waveshare
-uv run esphome compile firmware/gbbdongle-tcan485.yaml   # release image, T-CAN485
-uv run esphome compile firmware/gbbdongle-kamami.yaml    # release image, Kamami
-uv run esphome compile firmware/gbbdongle-8di8do-wifi.yaml  # release image, 8DI-8DO WiFi variant
-uv run esphome compile firmware/gbbdongle-8di8do-eth.yaml   # release image, 8DI-8DO Ethernet variant
-uv run esphome run firmware/gbbdongle-dev.yaml           # dev build, flash & logs
-uv run esphome run firmware/gbbdongle-tcan485-dev.yaml   # dev build for T-CAN485
-uv run esphome run firmware/gbbdongle-kamami-dev.yaml    # dev build for Kamami (no secrets needed)
-uv run esphome run firmware/gbbdongle-8di8do-wifi-dev.yaml  # dev build for 8DI-8DO WiFi
-uv run esphome run firmware/gbbdongle-8di8do-eth-dev.yaml   # dev build for 8DI-8DO Ethernet (no secrets needed)
+uv run esphome config firmware/gbbdongle.yaml              # validate (Waveshare, import target)
+uv run esphome compile firmware/gbbdongle-factory.yaml     # Factory Image, Waveshare
+uv run esphome compile firmware/gbbdongle-ha.yaml          # HA-compatible image, Waveshare
+uv run esphome compile firmware/gbbdongle-tcan485-factory.yaml   # T-CAN485 (…-ha.yaml likewise)
+uv run esphome compile firmware/gbbdongle-kamami-factory.yaml    # Kamami
+uv run esphome compile firmware/gbbdongle-8di8do-wifi-factory.yaml  # 8DI-8DO WiFi variant
+uv run esphome compile firmware/gbbdongle-8di8do-eth-factory.yaml   # 8DI-8DO Ethernet variant
+uv run esphome run firmware/gbbdongle-dev.yaml             # dev build, flash & logs
+uv run esphome run firmware/gbbdongle-tcan485-dev.yaml     # dev build for T-CAN485
+uv run esphome run firmware/gbbdongle-kamami-dev.yaml      # dev build for Kamami (no secrets needed)
+uv run esphome run firmware/gbbdongle-8di8do-wifi-dev.yaml # dev build for 8DI-8DO WiFi
+uv run esphome run firmware/gbbdongle-8di8do-eth-dev.yaml  # dev build for 8DI-8DO Ethernet (no secrets needed)
 ```
 
-Firmware configs are layered via ESPHome packages: `firmware/common/base.yaml`
-(board- and transport-agnostic), `firmware/common/wifi.yaml` (WiFi
+Firmware configs are layered via ESPHome packages. `firmware/<config>.yaml`
+is the board's core config and the dashboard-adoption **import target**; the
+published images wrap it: `<config>-factory.yaml` (adds
+`firmware/common/factory.yaml`: strips `api:`, adds web auth + the Admin
+Password entity + self-updates) and `<config>-ha.yaml` (adds
+`firmware/common/ha.yaml`: `dashboard_import` + self-updates). Shared
+packages: `firmware/common/base.yaml` (board- and transport-agnostic,
+includes keyless `api: encryption:`), `firmware/common/updates.yaml`
+(update entity, published images only), `firmware/common/wifi.yaml` (WiFi
 connectivity — left out on Ethernet boards), `firmware/boards/*.yaml`
 (hardware specifics) and `firmware/common/dev.yaml` (verbose-logging dev
 overlay). The WiFi dev variants additionally include `common/wifi-dev.yaml`,
@@ -140,19 +172,23 @@ TLS off, and publish a captured `toDevice` request; a Modbus slave simulator
 
 ## Releases
 
-Tagging `v*` builds the firmware for every supported board (matrix build),
-attaches the binaries (`gbbdongle.*.bin` for the Waveshare RS485-CAN board,
-`gbbdongle-tcan485.*.bin` for the T-CAN485, `gbbdongle-kamami.*.bin` for the
-Kamami, `gbbdongle-8di8do-wifi.*.bin` / `gbbdongle-8di8do-eth.*.bin` for the
-Waveshare 8DI-8DO variants) to the GitHub Release and deploys the web
-installer plus the manifests to GitHub Pages.
+Tagging `v*` builds both firmware lines for every supported board (matrix
+build), attaches the binaries to the GitHub Release and deploys the web
+installer plus the manifests to GitHub Pages. Factory Image binaries keep
+the legacy basenames (`gbbdongle.*.bin`, `gbbdongle-tcan485.*.bin`, …) so
+update manifests already in the field keep resolving — **devices installed
+before the factory/HA split therefore auto-update onto the Factory line**
+(no native API, web UI and OTA behind `admin`/`admin`). If such a device is
+used with Home Assistant, reflash it once with the Home Assistant-compatible
+image (`<config>-ha.*.bin`) from the web installer.
 
-Manifests are per-board — `manifest-<board>.json` (ESP Web Tools) and
-`update-manifest-<board>.json` (OTA update entity) — because chip family
-alone cannot distinguish the two plain-ESP32 boards (T-CAN485 and Kamami),
-nor the three ESP32-S3 images (RS485-CAN and the two 8DI-8DO variants):
-each install button and each device's `update_manifest_url` points at its
-own manifest. The legacy shared `manifest.json`/`update-manifest.json`
-(one entry per chip family: Waveshare + T-CAN485) are still generated so
-devices flashed before the split keep seeing updates and migrate to their
-per-board manifest with their next OTA.
+Manifests are per-board and per-line — `manifest-<board>[-ha].json` (ESP Web
+Tools) and `update-manifest-<board>[-ha].json` (OTA update entity) — because
+chip family alone cannot distinguish the two plain-ESP32 boards (T-CAN485
+and Kamami), nor the three ESP32-S3 images (RS485-CAN and the two 8DI-8DO
+variants): each install button and each variant's `update_manifest_url`
+points at its own manifest. The legacy shared
+`manifest.json`/`update-manifest.json` (one entry per chip family:
+Waveshare + T-CAN485, Factory line) are still generated so devices flashed
+before the split keep seeing updates and migrate to their per-board manifest
+with their next OTA.
