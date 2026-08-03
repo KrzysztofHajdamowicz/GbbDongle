@@ -216,7 +216,7 @@ jobs:
           subject-path: site/firmware/*.bin
 
       - name: Attest firmware SBOM
-        uses: actions/attest@v4
+        uses: actions/attest@v4.2.0
         with:
           subject-path: site/firmware/*.bin
           predicate-type: https://cyclonedx.org/bom
