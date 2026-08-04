@@ -31,6 +31,12 @@ class ModbusExecutor {
   /// Move the finished header out; resets to IDLE.
   GbbHeader take_result();
 
+  /// Stop the running batch at the next safe boundary: never mid-frame, but
+  /// before the next line is transmitted (or right after the in-flight
+  /// response/timeout completes). Already-sent lines keep their results,
+  /// remaining lines stay untouched; the result is delivered as usual.
+  void abort_pending_lines() { this->abort_requested_ = true; }
+
   void loop();
 
   uint32_t get_error_count() const { return this->error_count_; }
@@ -44,6 +50,7 @@ class ModbusExecutor {
   void finish_line_ok_();
   void fail_line_(const char *message);
   void finish_all_();
+  void abort_batch_();
   uint32_t silence_gap_ms_() const;
 
   uart::UARTDevice *uart_{nullptr};
@@ -63,6 +70,7 @@ class ModbusExecutor {
   uint32_t last_rx_byte_at_{0};
   uint32_t next_gap_ms_{0};  // required silence before the *next* command
   uint32_t error_count_{0};
+  bool abort_requested_{false};
 };
 
 }  // namespace gbb_dongle
