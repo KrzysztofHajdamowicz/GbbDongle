@@ -90,8 +90,10 @@ GbbDongle deviations from the original:
   Otherwise the set is kept and retried with exponential backoff
   (`emergency_retry_initial` 60 s doubling up to `emergency_retry_max`
   15 min) until it succeeds or a fresh `IsInvSetup` arrives, which cancels
-  pending sends (the cloud is back in charge). The original sent blindly
-  once per hour-miss.
+  pending sends (the cloud is back in charge) — including an in-flight
+  batch, which is aborted at the next safe Modbus line boundary (never
+  mid-frame; the current response/timeout completes first). The original
+  sent blindly once per hour-miss.
 - **Optional persistence**: the "Persist Emergency Commands" switch (default
   off) keeps the sets in NVS across reboots (written only when the content
   actually changes, to limit flash wear). After a reboot restores sets, the
