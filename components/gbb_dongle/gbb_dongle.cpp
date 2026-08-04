@@ -418,6 +418,7 @@ void GbbDongle::start_next_emergency_set_() {
   }
   this->emergency_walk_from_start_ = false;
   this->current_emergency_key_ = it->first;
+  this->current_emergency_revision_ = this->emergency_store_.revision(it->first);
 
   GbbHeader header;
   header.emergency = true;
@@ -455,9 +456,16 @@ void GbbDongle::handle_emergency_result_(GbbHeader &&header) {
   }
   if (delivered) {
     this->emergency_delivered_++;
-    this->emergency_store_.clear(key);
-    this->emergency_store_.sync_nvs();
-    ESP_LOGI(TAG, "Emergency command set for %s delivered; cleared", target);
+    if (this->emergency_store_.revision(key) == this->current_emergency_revision_) {
+      this->emergency_store_.clear(key);
+      this->emergency_store_.sync_nvs();
+      ESP_LOGI(TAG, "Emergency command set for %s delivered; cleared", target);
+    } else {
+      // The set was replaced while this run was on the bus; the replacement
+      // was never executed, so it must stay stored.
+      ESP_LOGI(TAG, "Emergency command set for %s delivered, but a newer revision arrived mid-run; keeping it",
+               target);
+    }
   } else {
     ESP_LOGW(TAG, "Emergency command set for %s got no response from the inverter", target);
   }
