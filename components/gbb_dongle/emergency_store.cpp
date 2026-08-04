@@ -33,13 +33,32 @@ static void nvs_erase_sets(nvs_handle_t handle) {
     ESP_LOGW(TAG, "nvs_erase_key failed: %s", esp_err_to_name(err));
 }
 
-void EmergencyStore::set_lines(const std::string &sub_inverter_sn, std::vector<GbbLine> &&lines) {
-  if (lines.empty()) {
-    this->clear(sub_inverter_sn);
-    return;
+// Only LineNo and the Modbus payload affect emergency execution; Tag and
+// Timestamp are ignored so an hourly re-send with fresh timestamps still
+// counts as unchanged.
+static bool same_execution_content(const std::vector<GbbLine> &a, const std::vector<GbbLine> &b) {
+  if (a.size() != b.size())
+    return false;
+  for (size_t i = 0; i < a.size(); i++) {
+    if (a[i].line_no != b[i].line_no || a[i].has_modbus != b[i].has_modbus || a[i].modbus != b[i].modbus)
+      return false;
   }
+  return true;
+}
+
+bool EmergencyStore::set_lines(const std::string &sub_inverter_sn, std::vector<GbbLine> &&lines) {
+  if (lines.empty()) {
+    if (this->sets_.find(sub_inverter_sn) == this->sets_.end())
+      return false;
+    this->clear(sub_inverter_sn);
+    return true;
+  }
+  auto it = this->sets_.find(sub_inverter_sn);
+  if (it != this->sets_.end() && same_execution_content(it->second, lines))
+    return false;
   this->sets_[sub_inverter_sn] = std::move(lines);
   this->revisions_[sub_inverter_sn] = ++this->next_revision_;
+  return true;
 }
 
 void EmergencyStore::clear(const std::string &sub_inverter_sn) {

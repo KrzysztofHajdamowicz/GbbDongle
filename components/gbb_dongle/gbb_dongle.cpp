@@ -29,6 +29,16 @@ static const size_t LAST_LOG_MAX_BYTES = 3 * 1024;
 // it names this firmware regardless of board or transport.
 static const char *const CLIENT_NAME = "GbbDongle";
 
+// .NET string.Trim() equivalent (GbbConnect2 trims SubInverterSN this way).
+static std::string str_trim_copy(const std::string &s) {
+  const char *ws = " \t\r\n\f\v";
+  const size_t begin = s.find_first_not_of(ws);
+  if (begin == std::string::npos)
+    return "";
+  const size_t end = s.find_last_not_of(ws);
+  return s.substr(begin, end - begin + 1);
+}
+
 void GbbDongle::setup() {
   if (this->flow_control_pin_ != nullptr) {
     this->flow_control_pin_->setup();
@@ -343,15 +353,20 @@ void GbbDongle::handle_emergency_fields_(GbbHeader &header) {
   }
 
   if (header.has_lines_on_no_inv_setup) {
-    const std::string key = header.has_sub_inverter_sn ? header.sub_inverter_sn : "";
+    // GbbConnect2 matches SubInverterSN with .NET Trim() semantics.
+    const std::string key = header.has_sub_inverter_sn ? str_trim_copy(header.sub_inverter_sn) : "";
     const char *target = key.empty() ? "master" : key.c_str();
     const size_t count = header.lines_on_no_inv_setup.size();
-    this->emergency_store_.set_lines(key, std::move(header.lines_on_no_inv_setup));
-    this->emergency_store_.sync_nvs();
-    if (count > 0) {
-      ESP_LOGI(TAG, "Stored emergency command set for %s (%u line(s))", target, count);
+    const bool changed = this->emergency_store_.set_lines(key, std::move(header.lines_on_no_inv_setup));
+    if (changed) {
+      this->emergency_store_.sync_nvs();
+      if (count > 0) {
+        ESP_LOGI(TAG, "Stored emergency command set for %s (%u line(s))", target, count);
+      } else {
+        ESP_LOGI(TAG, "Cleared emergency command set for %s", target);
+      }
     } else {
-      ESP_LOGI(TAG, "Cleared emergency command set for %s", target);
+      ESP_LOGD(TAG, "Emergency command set for %s unchanged", target);
     }
     if (this->emergency_store_.empty()) {
       if (this->emergency_state_ != EmergencyState::EXECUTING)
