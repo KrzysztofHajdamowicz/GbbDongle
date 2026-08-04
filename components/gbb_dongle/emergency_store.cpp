@@ -113,6 +113,14 @@ void EmergencyStore::sync_nvs() {
     return;
   }
   const std::string blob = build_emergency_sets(this->sets_);
+  if (blob.size() >= JSON_BUILD_TRUNCATED_SIZE) {
+    // build_json truncated the document; persisting it would store invalid
+    // JSON that load_from_nvs() erases on the next boot. Keep the previous
+    // NVS content (the RAM copy stays complete and usable).
+    ESP_LOGE(TAG, "Emergency sets exceed the JSON size cap (%u B); not persisting", blob.size());
+    nvs_close(handle);
+    return;
+  }
   const uint32_t hash = fnv1_hash(blob);
   if (hash == this->persisted_hash_) {
     // The cloud re-sends the same set every hour; skip identical writes to

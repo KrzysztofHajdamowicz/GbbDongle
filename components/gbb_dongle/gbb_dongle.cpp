@@ -18,7 +18,12 @@ static const char *const TAG = "gbb_dongle";
 
 static const uint32_t KEEPALIVE_INTERVAL_MS = 60 * 1000;
 static const uint32_t EMERGENCY_CHECK_INTERVAL_MS = 5 * 1000;
-static const size_t LAST_LOG_MAX_BYTES = 8 * 1024;
+// Budgeted against json::build_json()'s 5120 B truncation cap: 3 KiB of raw
+// log with ~1.3x JSON escaping plus the ~0.5 KiB rest of the response stays
+// safely below it. Steady-state increments between the cloud's ~1/min
+// SendLastLog polls are ~1-1.5 KiB, so this only shortens the backlog
+// served after a connectivity gap.
+static const size_t LAST_LOG_MAX_BYTES = 3 * 1024;
 
 // Product identity for the fromDevice ClientName field — not configurable,
 // it names this firmware regardless of board or transport.
@@ -243,7 +248,18 @@ void GbbDongle::publish_response_(GbbHeader &&header) {
     last_log_ptr = &last_log;
   }
   const GbbClientIdentity identity{this->version_, this->environment_, CLIENT_NAME, this->client_environment_};
-  const std::string response = build_response(header, identity, this->build_client_info_(), last_log_ptr);
+  std::string response = build_response(header, identity, this->build_client_info_(), last_log_ptr);
+  if (response.size() >= JSON_BUILD_TRUNCATED_SIZE && last_log_ptr != nullptr) {
+    // build_json truncated the document (invalid JSON). The log is the only
+    // sizeable payload, so drop it and answer with a valid response instead;
+    // the dropped lines stay lost (the ring's read cursor already advanced).
+    ESP_LOGE(TAG, "Response with LastLog exceeded the JSON size cap; sending it without the log");
+    response = build_response(header, identity, this->build_client_info_(), nullptr);
+  }
+  if (response.size() >= JSON_BUILD_TRUNCATED_SIZE) {
+    ESP_LOGE(TAG, "Response exceeds the JSON size cap even without LastLog; dropping it");
+    return;
+  }
   // Summary rather than the whole JSON: with SendLastLog the response also
   // carries up to 8 KB of recent log lines, and the per-line results are
   // already visible in the executor's "<- inverter" log lines above.
