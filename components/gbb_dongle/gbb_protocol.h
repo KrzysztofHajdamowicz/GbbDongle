@@ -15,6 +15,11 @@ namespace gbb_dongle {
 // Header.CURR_PROTOCOL_VERSION in GbbConnect2 2.0.0.
 static constexpr int32_t CURR_PROTOCOL_VERSION = 2;
 
+// esphome json::build_json() stops growing its buffer at 5120 B and returns a
+// TRUNCATED (invalid) document of exactly this many bytes. Any serialization
+// this long must be treated as corrupt, and payload budgets must stay below it.
+static constexpr size_t JSON_BUILD_TRUNCATED_SIZE = 5119;
+
 struct GbbLine {
   int32_t line_no{0};
   bool has_tag{false};
