@@ -153,6 +153,11 @@ class GbbDongle : public Component, public uart::UARTDevice {
   bool emergency_cancel_{false};  // InvSetup arrived mid-run; drop the stale result
   bool emergency_walk_from_start_{false};
   std::string current_emergency_key_;
+  // Revision of the set handed to the executor; a delivered result may clear
+  // the stored set only while these still match (a LinesOnNoInvSetup replace
+  // mid-run — possible without IsInvSetup, so without the cancel flag — must
+  // not be wiped by the stale run's success).
+  uint32_t current_emergency_revision_{0};
   uint32_t emergency_retry_delay_ms_{60 * 1000};
   uint32_t emergency_retry_at_{0};
   uint32_t last_emergency_check_{0};
