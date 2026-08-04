@@ -26,6 +26,11 @@ class EmergencyStore {
   size_t size() const { return this->sets_.size(); }
   const std::map<std::string, std::vector<GbbLine>> &sets() const { return this->sets_; }
 
+  /// Monotonic per-key revision, bumped on every store/replace (never reused,
+  /// 0 = key absent). Lets an execution result prove the set it ran is still
+  /// the stored one before clearing it.
+  uint32_t revision(const std::string &sub_inverter_sn) const;
+
   /// ON: writes the current sets to NVS immediately; OFF: erases the NVS copy
   /// (the RAM copy stays live either way).
   void set_persist_enabled(bool enabled);
@@ -39,6 +44,8 @@ class EmergencyStore {
 
  protected:
   std::map<std::string, std::vector<GbbLine>> sets_;
+  std::map<std::string, uint32_t> revisions_;  // values from next_revision_, never repeat
+  uint32_t next_revision_{0};
   bool persist_enabled_{false};
   uint32_t persisted_hash_{0};  // fnv1_hash of the last blob written, 0 = none
 };
