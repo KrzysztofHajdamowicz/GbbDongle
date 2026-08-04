@@ -6,6 +6,7 @@ namespace esphome {
 namespace gbb_dongle {
 
 static void parse_line_array(JsonArray lines_array, std::vector<GbbLine> &out) {
+  out.reserve(out.size() + lines_array.size());
   for (JsonObject line_obj : lines_array) {
     GbbLine line;
     line.line_no = line_obj["LineNo"] | 0;

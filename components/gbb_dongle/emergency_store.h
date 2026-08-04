@@ -17,8 +17,11 @@ namespace gbb_dongle {
 class EmergencyStore {
  public:
   /// Replace the set for one SubInverterSN; an empty vector clears that key
-  /// (GbbConnect2 replace semantics). Call sync_nvs() afterwards.
-  void set_lines(const std::string &sub_inverter_sn, std::vector<GbbLine> &&lines);
+  /// (GbbConnect2 replace semantics). Returns false when the execution-
+  /// relevant content (LineNo + Modbus) is identical to what is stored — the
+  /// cloud re-sends the same set hourly — in which case nothing is touched:
+  /// no replacement, no revision bump, and the caller can skip sync_nvs().
+  bool set_lines(const std::string &sub_inverter_sn, std::vector<GbbLine> &&lines);
   void clear(const std::string &sub_inverter_sn);
   void clear_all();
 
