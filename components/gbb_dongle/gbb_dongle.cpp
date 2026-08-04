@@ -300,9 +300,10 @@ void GbbDongle::handle_emergency_fields_(GbbHeader &header) {
     const ESPTime now = this->time_source_ != nullptr ? this->time_source_->now() : ESPTime{};
     if (now.is_valid()) {
       this->last_inv_setup_ts_ = now.timestamp;
+      this->inv_setup_awaiting_time_ = false;
     } else {
-      ESP_LOGW(TAG, "InvSetup received but the clock is not synced yet; emergency check stays disarmed");
-      this->last_inv_setup_ts_ = 0;
+      ESP_LOGW(TAG, "InvSetup received before the clock synced; the emergency check arms on the first sync");
+      this->inv_setup_awaiting_time_ = true;
     }
     this->boot_loaded_awaiting_time_ = false;
     switch (this->emergency_state_) {
@@ -361,12 +362,16 @@ void GbbDongle::check_emergency_trigger_() {
   if (!now.is_valid())
     return;
   const time_t ts = now.timestamp;
-  if (this->boot_loaded_awaiting_time_) {
-    // Sets restored from NVS after a reboot: pretend the last InvSetup came
-    // in now, so the hourly deadline starts counting from this moment.
+  if (this->inv_setup_awaiting_time_ || this->boot_loaded_awaiting_time_) {
+    // The last InvSetup receive time is unknown (it arrived before the clock
+    // synced, or the sets were restored from NVS after a reboot): approximate
+    // it with the sync moment, so the hourly deadline counts from now. Late
+    // stamping can only delay the trigger, never fire it early.
+    ESP_LOGI(TAG, "Clock synced; hourly emergency check armed (%s)",
+             this->inv_setup_awaiting_time_ ? "InvSetup preceded the sync" : "sets restored from NVS");
+    this->inv_setup_awaiting_time_ = false;
     this->boot_loaded_awaiting_time_ = false;
     this->last_inv_setup_ts_ = ts;
-    ESP_LOGI(TAG, "Clock synced; hourly emergency check armed for the restored set(s)");
     return;
   }
   // GbbConnect2 semantics: GbbOptimizer sends InvSetup during the first
