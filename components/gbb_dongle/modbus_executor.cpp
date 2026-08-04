@@ -53,7 +53,10 @@ void ModbusExecutor::loop() {
         this->abort_batch_();
         break;
       }
-      if (millis() >= this->gap_until_)
+      // Signed difference, not >=: gap_until_ may sit across the ~49.7-day
+      // millis() rollover, where the absolute compare either skips the gap
+      // or parks the executor until the next wrap.
+      if ((int32_t) (millis() - this->gap_until_) >= 0)
         this->transmit_current_();
       break;
     case State::TRANSMIT:
