@@ -39,11 +39,23 @@ void EmergencyStore::set_lines(const std::string &sub_inverter_sn, std::vector<G
     return;
   }
   this->sets_[sub_inverter_sn] = std::move(lines);
+  this->revisions_[sub_inverter_sn] = ++this->next_revision_;
 }
 
-void EmergencyStore::clear(const std::string &sub_inverter_sn) { this->sets_.erase(sub_inverter_sn); }
+void EmergencyStore::clear(const std::string &sub_inverter_sn) {
+  this->sets_.erase(sub_inverter_sn);
+  this->revisions_.erase(sub_inverter_sn);
+}
 
-void EmergencyStore::clear_all() { this->sets_.clear(); }
+void EmergencyStore::clear_all() {
+  this->sets_.clear();
+  this->revisions_.clear();
+}
+
+uint32_t EmergencyStore::revision(const std::string &sub_inverter_sn) const {
+  auto it = this->revisions_.find(sub_inverter_sn);
+  return it != this->revisions_.end() ? it->second : 0;
+}
 
 void EmergencyStore::set_persist_enabled(bool enabled) {
   if (enabled == this->persist_enabled_)
@@ -91,8 +103,10 @@ bool EmergencyStore::load_from_nvs() {
   nvs_close(handle);
   this->persisted_hash_ = fnv1_hash(blob);
   size_t total_lines = 0;
-  for (const auto &entry : this->sets_)
+  for (const auto &entry : this->sets_) {
+    this->revisions_[entry.first] = ++this->next_revision_;
     total_lines += entry.second.size();
+  }
   ESP_LOGI(TAG, "Restored %u emergency set(s) (%u line(s)) from NVS", this->sets_.size(), total_lines);
   return !this->sets_.empty();
 }
