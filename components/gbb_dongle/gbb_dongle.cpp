@@ -329,8 +329,13 @@ void GbbDongle::handle_emergency_fields_(GbbHeader &header) {
         this->emergency_state_ = EmergencyState::ARMED;
         break;
       case EmergencyState::EXECUTING:
-        // The stale result must not clear a freshly received set.
+        // The cloud is back: stop putting stale emergency lines on the bus
+        // (the executor yields at the next safe line boundary; EXECUTING
+        // always means the running batch is ours) and make sure the stale
+        // result does not clear a freshly received set.
+        ESP_LOGI(TAG, "InvSetup received; aborting the in-flight emergency send");
         this->emergency_cancel_ = true;
+        this->executor_.abort_pending_lines();
         break;
       default:
         break;
