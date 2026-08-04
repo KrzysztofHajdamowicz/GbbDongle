@@ -108,7 +108,10 @@ GbbDongle deviations from the original:
   Solarman TCP dongle.)
 - `LastLog` is served from a 64 KB ring buffer of recent ESPHome log lines
   held in PSRAM (incremental: each request returns what was logged since the
-  previous one, capped at 8 KB).
+  previous one, capped at 3 KiB — budgeted so the escaped log plus the rest
+  of the response stays under esphome `json::build_json()`'s 5120 B
+  truncation cap; an oversized response is re-sent without `LastLog` rather
+  than published as truncated, invalid JSON).
 - `LogLevel` (`OnlyErrors`/`Min`/`Max`) gates what gets recorded into that
   ring buffer and is persisted across reboots. It does not change the global
   ESPHome logger level.
