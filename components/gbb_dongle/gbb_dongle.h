@@ -146,6 +146,10 @@ class GbbDongle : public Component, public uart::UARTDevice {
   // Persisted sets restored on boot: stamp last_inv_setup_ts_ with the first
   // valid wall time so a reboot during an outage still fires next hour.
   bool boot_loaded_awaiting_time_{false};
+  // IsInvSetup arrived before SNTP synced (MQTT can beat NTP after a power
+  // cycle): stamp last_inv_setup_ts_ with the first valid wall time, else an
+  // outage starting before the sync would leave the check disarmed forever.
+  bool inv_setup_awaiting_time_{false};
   bool emergency_cancel_{false};  // InvSetup arrived mid-run; drop the stale result
   bool emergency_walk_from_start_{false};
   std::string current_emergency_key_;

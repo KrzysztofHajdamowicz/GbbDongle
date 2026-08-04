@@ -76,7 +76,10 @@ Trigger (mirrors GbbConnect2): past minute 10 of the hour
 (`emergency_minute_threshold`, wall clock from SNTP — the check is inert
 until the clock syncs), if an `IsInvSetup` message has been seen before but
 none arrived since the top of the current hour, the device executes every
-stored set on the RS485 bus. Results are **only logged** (they land in
+stored set on the RS485 bus. An `IsInvSetup` that arrives **before** the
+first clock sync (MQTT can beat NTP after a power cycle) still arms the
+check: its receive time is approximated with the sync moment, which can only
+delay the trigger, never fire it early. Results are **only logged** (they land in
 `LastLog`), never published to `fromDevice`, and normal cloud requests take
 priority on the bus.
 
