@@ -13,25 +13,33 @@ static const size_t MAX_FRAME_SIZE = 300;
 
 // Space-separated uppercase hex for the human-readable debug log lines, e.g.
 // "01 03 02 04 00 03 45 B2". Easier to eyeball byte-by-byte than a run-on
-// hex string.
-static std::string frame_to_log_hex(const std::vector<uint8_t> &frame) {
+// hex string. Returns a shared static buffer: ESP_LOG* arguments are
+// evaluated even below the runtime log level, so this must not allocate on
+// every frame; the executor only ever runs on the single main-loop task, and
+// no log statement formats two frames at once.
+static const char *frame_to_log_hex(const std::vector<uint8_t> &frame) {
   static const char HEX[] = "0123456789ABCDEF";
-  std::string out;
-  if (frame.empty())
-    return out;
-  out.reserve(frame.size() * 3 - 1);
-  for (size_t i = 0; i < frame.size(); i++) {
+  static char buf[MAX_FRAME_SIZE * 3 + 1];
+  const size_t n = frame.size() < MAX_FRAME_SIZE ? frame.size() : MAX_FRAME_SIZE;
+  char *p = buf;
+  for (size_t i = 0; i < n; i++) {
     if (i != 0)
-      out.push_back(' ');
-    out.push_back(HEX[frame[i] >> 4]);
-    out.push_back(HEX[frame[i] & 0x0F]);
+      *p++ = ' ';
+    *p++ = HEX[frame[i] >> 4];
+    *p++ = HEX[frame[i] & 0x0F];
   }
-  return out;
+  *p = '\0';
+  return buf;
 }
 
 void ModbusExecutor::start(GbbHeader &&header) {
   this->header_ = std::move(header);
   this->line_index_ = 0;
+  this->abort_requested_ = false;
+  // One-time worst-case capacity; clear() never shrinks, so the steady state
+  // stays allocation-free regardless of frame sizes seen so far.
+  this->tx_frame_.reserve(MAX_FRAME_SIZE);
+  this->rx_frame_.reserve(MAX_FRAME_SIZE);
   this->state_ = State::GAP;  // honors the gap left over from the previous batch
   this->start_next_line_();
 }
@@ -47,7 +55,15 @@ void ModbusExecutor::loop() {
     case State::DONE:
       break;
     case State::GAP:
-      if (millis() >= this->gap_until_)
+      // Safe boundary: the next frame has not been transmitted yet.
+      if (this->abort_requested_) {
+        this->abort_batch_();
+        break;
+      }
+      // Signed difference, not >=: gap_until_ may sit across the ~49.7-day
+      // millis() rollover, where the absolute compare either skips the gap
+      // or parks the executor until the next wrap.
+      if ((int32_t) (millis() - this->gap_until_) >= 0)
         this->transmit_current_();
       break;
     case State::TRANSMIT:
@@ -60,6 +76,12 @@ void ModbusExecutor::loop() {
 }
 
 void ModbusExecutor::start_next_line_() {
+  // Safe boundary: the previous line's response (or timeout) is complete and
+  // the next frame is not on the bus yet.
+  if (this->abort_requested_) {
+    this->abort_batch_();
+    return;
+  }
   // Skip lines without a Modbus payload (GbbConnect2 only processes lines
   // that carry one).
   while (this->line_index_ < this->header_.lines.size() &&
@@ -97,7 +119,7 @@ void ModbusExecutor::transmit_current_() {
   // GbbConnect2 there is no SolarmanV5 wrapper, so this frame is exactly the
   // Modbus hex unpacked from the request line.
   ESP_LOGD(TAG, "Line %" PRId32 " -> inverter: %s", this->header_.lines[this->line_index_].line_no,
-           frame_to_log_hex(this->tx_frame_).c_str());
+           frame_to_log_hex(this->tx_frame_));
 
   if (this->flow_control_pin_ != nullptr)
     this->flow_control_pin_->digital_write(true);
@@ -162,7 +184,7 @@ void ModbusExecutor::handle_rx_() {
       ESP_LOGW(TAG,
                "Line %" PRId32 ": incomplete reply after %" PRIu32 " ms, got %u byte(s): %s",
                this->header_.lines[this->line_index_].line_no, this->response_timeout_ms_,
-               this->rx_frame_.size(), frame_to_log_hex(this->rx_frame_).c_str());
+               this->rx_frame_.size(), frame_to_log_hex(this->rx_frame_));
     }
     this->fail_line_("Response timeout");
   }
@@ -172,7 +194,7 @@ void ModbusExecutor::finish_line_ok_() {
   if (this->rx_frame_.size() < 4) {
     ESP_LOGW(TAG, "Line %" PRId32 ": inverter reply too short to be valid (%u byte(s)): %s",
              this->header_.lines[this->line_index_].line_no, this->rx_frame_.size(),
-             frame_to_log_hex(this->rx_frame_).c_str());
+             frame_to_log_hex(this->rx_frame_));
     this->fail_line_("Response too short");
     return;
   }
@@ -181,7 +203,7 @@ void ModbusExecutor::finish_line_ok_() {
   const uint16_t got = static_cast<uint16_t>(this->rx_frame_[n - 2]) | (static_cast<uint16_t>(this->rx_frame_[n - 1]) << 8);
   if (crc != got) {
     ESP_LOGW(TAG, "Line %" PRId32 " <- inverter: %s (bad checksum: calculated %04X, frame says %04X)",
-             this->header_.lines[this->line_index_].line_no, frame_to_log_hex(this->rx_frame_).c_str(), crc, got);
+             this->header_.lines[this->line_index_].line_no, frame_to_log_hex(this->rx_frame_), crc, got);
     this->fail_line_("Invalid CRC in response");
     return;
   }
@@ -189,7 +211,7 @@ void ModbusExecutor::finish_line_ok_() {
   GbbLine &line = this->header_.lines[this->line_index_];
   line.modbus = bytes_to_hex(this->rx_frame_.data(), n);
   ESP_LOGD(TAG, "Line %" PRId32 " <- inverter: %s (OK, %u byte(s))", line.line_no,
-           frame_to_log_hex(this->rx_frame_).c_str(), n);
+           frame_to_log_hex(this->rx_frame_), n);
 
   this->gap_until_ = millis() + this->next_gap_ms_;
   this->line_index_++;
@@ -214,6 +236,12 @@ void ModbusExecutor::finish_all_() {
   this->tx_frame_.clear();
   this->rx_frame_.clear();
   this->state_ = State::DONE;
+}
+
+void ModbusExecutor::abort_batch_() {
+  ESP_LOGI(TAG, "Batch aborted at a line boundary; %u of %u line(s) not sent",
+           this->header_.lines.size() - this->line_index_, this->header_.lines.size());
+  this->finish_all_();
 }
 
 }  // namespace gbb_dongle

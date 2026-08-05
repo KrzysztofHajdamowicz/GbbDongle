@@ -5,6 +5,45 @@
 namespace esphome {
 namespace gbb_dongle {
 
+static void parse_line_array(JsonArray lines_array, std::vector<GbbLine> &out) {
+  out.reserve(out.size() + lines_array.size());
+  for (JsonObject line_obj : lines_array) {
+    GbbLine line;
+    line.line_no = line_obj["LineNo"] | 0;
+    if (line_obj["Tag"].is<const char *>()) {
+      line.has_tag = true;
+      line.tag = line_obj["Tag"].as<const char *>();
+    }
+    if (line_obj["Timestamp"].is<int64_t>()) {
+      line.has_timestamp = true;
+      line.timestamp = line_obj["Timestamp"].as<int64_t>();
+    }
+    if (line_obj["Modbus"].is<const char *>()) {
+      line.has_modbus = true;
+      line.modbus = line_obj["Modbus"].as<const char *>();
+    }
+    if (line_obj["Error"].is<const char *>()) {
+      line.error = line_obj["Error"].as<const char *>();
+    }
+    out.push_back(std::move(line));
+  }
+}
+
+static void serialize_line_array(JsonArray lines, const std::vector<GbbLine> &source) {
+  for (const auto &line : source) {
+    JsonObject obj = lines.add<JsonObject>();
+    obj["LineNo"] = line.line_no;
+    if (line.has_tag)
+      obj["Tag"] = line.tag;
+    if (line.has_timestamp)
+      obj["Timestamp"] = line.timestamp;
+    if (line.has_modbus)
+      obj["Modbus"] = line.modbus;
+    if (!line.error.empty())
+      obj["Error"] = line.error;
+  }
+}
+
 bool parse_header(const std::string &payload, GbbHeader &out) {
   return json::parse_json(payload, [&out](JsonObject root) -> bool {
     if (root["Error"].is<const char *>()) {
@@ -27,27 +66,15 @@ bool parse_header(const std::string &payload, GbbHeader &out) {
       out.sub_inverter_sn = root["SubInverterSN"].as<const char *>();
     }
     if (root["Lines"].is<JsonArray>()) {
-      JsonArray lines_array = root["Lines"].as<JsonArray>();
-      for (JsonObject line_obj : lines_array) {
-        GbbLine line;
-        line.line_no = line_obj["LineNo"] | 0;
-        if (line_obj["Tag"].is<const char *>()) {
-          line.has_tag = true;
-          line.tag = line_obj["Tag"].as<const char *>();
-        }
-        if (line_obj["Timestamp"].is<int64_t>()) {
-          line.has_timestamp = true;
-          line.timestamp = line_obj["Timestamp"].as<int64_t>();
-        }
-        if (line_obj["Modbus"].is<const char *>()) {
-          line.has_modbus = true;
-          line.modbus = line_obj["Modbus"].as<const char *>();
-        }
-        if (line_obj["Error"].is<const char *>()) {
-          line.error = line_obj["Error"].as<const char *>();
-        }
-        out.lines.push_back(std::move(line));
-      }
+      parse_line_array(root["Lines"].as<JsonArray>(), out.lines);
+    }
+    if (root["IsInvSetup"].is<int32_t>()) {
+      out.has_is_inv_setup = true;
+      out.is_inv_setup = root["IsInvSetup"].as<int32_t>();
+    }
+    if (root["LinesOnNoInvSetup"].is<JsonArray>()) {
+      out.has_lines_on_no_inv_setup = true;
+      parse_line_array(root["LinesOnNoInvSetup"].as<JsonArray>(), out.lines_on_no_inv_setup);
     }
     return true;
   });
@@ -67,20 +94,11 @@ std::string build_response(const GbbHeader &header, const GbbClientIdentity &ide
     if (header.has_sub_inverter_sn)
       root["SubInverterSN"] = header.sub_inverter_sn;
     if (!header.lines.empty()) {
-      JsonArray lines = root["Lines"].to<JsonArray>();
-      for (const auto &line : header.lines) {
-        JsonObject obj = lines.add<JsonObject>();
-        obj["LineNo"] = line.line_no;
-        if (line.has_tag)
-          obj["Tag"] = line.tag;
-        if (line.has_timestamp)
-          obj["Timestamp"] = line.timestamp;
-        if (line.has_modbus)
-          obj["Modbus"] = line.modbus;
-        if (!line.error.empty())
-          obj["Error"] = line.error;
-      }
+      serialize_line_array(root["Lines"].to<JsonArray>(), header.lines);
     }
+    // LinesOnNoInvSetup is deliberately not echoed back (GbbConnect2 does,
+    // but only as a serializer side effect; the cloud ignores it).
+    root["ProtocolVersion"] = CURR_PROTOCOL_VERSION;
     root["GbbVersion"] = identity.version;
     root["GbbEnvironment"] = identity.environment;
     root["ClientVersion"] = identity.version;
@@ -90,6 +108,36 @@ std::string build_response(const GbbHeader &header, const GbbClientIdentity &ide
       root["ClientInfo"] = client_info;
     if (last_log != nullptr)
       root["LastLog"] = *last_log;
+  });
+}
+
+std::string build_emergency_sets(const std::map<std::string, std::vector<GbbLine>> &sets) {
+  return json::build_json([&](JsonObject root) {
+    JsonArray sets_array = root["Sets"].to<JsonArray>();
+    for (const auto &entry : sets) {
+      JsonObject set_obj = sets_array.add<JsonObject>();
+      set_obj["SubInverterSN"] = entry.first;
+      serialize_line_array(set_obj["Lines"].to<JsonArray>(), entry.second);
+    }
+  });
+}
+
+bool parse_emergency_sets(const std::string &payload, std::map<std::string, std::vector<GbbLine>> &out) {
+  return json::parse_json(payload, [&out](JsonObject root) -> bool {
+    if (!root["Sets"].is<JsonArray>())
+      return false;
+    JsonArray sets_array = root["Sets"].as<JsonArray>();
+    for (JsonObject set_obj : sets_array) {
+      std::string sn;
+      if (set_obj["SubInverterSN"].is<const char *>())
+        sn = set_obj["SubInverterSN"].as<const char *>();
+      std::vector<GbbLine> lines;
+      if (set_obj["Lines"].is<JsonArray>())
+        parse_line_array(set_obj["Lines"].as<JsonArray>(), lines);
+      if (!lines.empty())
+        out[sn] = std::move(lines);
+    }
+    return true;
   });
 }
 

@@ -10,11 +10,13 @@
 #include "esphome/components/switch/switch.h"
 #include "esphome/components/text/text.h"
 #include "esphome/components/text_sensor/text_sensor.h"
+#include "esphome/components/time/real_time_clock.h"
 #include "esphome/components/uart/uart.h"
 #include "esphome/core/component.h"
 #include "esphome/core/gpio.h"
 #include "esphome/core/preferences.h"
 
+#include "emergency_store.h"
 #include "gbb_protocol.h"
 #include "log_ring_buffer.h"
 #include "modbus_executor.h"
@@ -60,14 +62,29 @@ class GbbDongle : public Component, public uart::UARTDevice {
   void set_write_gap(uint32_t ms) { this->executor_.set_write_gap(ms); }
   void set_log_buffer_size(uint32_t size) { this->log_buffer_size_ = size; }
 
+  void set_time_source(time::RealTimeClock *t) { this->time_source_ = t; }
+  void set_emergency_persist_switch(switch_::Switch *s) { this->emergency_persist_ = s; }
+  void set_emergency_minute_threshold(uint8_t minute) { this->emergency_minute_threshold_ = minute; }
+  void set_emergency_retry_initial(uint32_t ms) { this->emergency_retry_initial_ms_ = ms; }
+  void set_emergency_retry_max(uint32_t ms) { this->emergency_retry_max_ms_ = ms; }
+
   // For template sensors / binary sensors in YAML.
   bool is_settings_dirty() const { return this->settings_dirty_; }
   bool is_cloud_configured() const { return this->cloud_configured_; }
   uint32_t get_requests_received() const { return this->requests_received_; }
   uint32_t get_requests_handled() const { return this->requests_handled_; }
   uint32_t get_modbus_errors() const { return this->executor_.get_error_count(); }
+  uint32_t get_emergency_sets_stored() const { return this->emergency_store_.size(); }
+  uint32_t get_emergency_runs() const { return this->emergency_runs_; }
 
  protected:
+  // Emergency ("last will") delivery lifecycle. EMPTY: nothing stored.
+  // ARMED: sets stored, watching the hourly InvSetup deadline. QUEUED: a
+  // send cycle is due, waiting for the executor (cloud requests first).
+  // EXECUTING: an emergency set is on the RS485 bus. BACKOFF: the inverter
+  // did not respond; waiting for the retry timer.
+  enum class EmergencyState : uint8_t { EMPTY, ARMED, QUEUED, EXECUTING, BACKOFF };
+
   void configure_mqtt_();
   void apply_uart_settings_();
   void on_cloud_message_(const std::string &payload);
@@ -75,6 +92,10 @@ class GbbDongle : public Component, public uart::UARTDevice {
   void publish_response_(GbbHeader &&header);
   std::string build_client_info_() const;
   void mark_dirty_();
+  void handle_emergency_fields_(GbbHeader &header);
+  void check_emergency_trigger_();
+  void start_next_emergency_set_();
+  void handle_emergency_result_(GbbHeader &&header);
 
   mqtt::MQTTClientComponent *mqtt_{nullptr};
   GPIOPin *flow_control_pin_{nullptr};
@@ -113,6 +134,35 @@ class GbbDongle : public Component, public uart::UARTDevice {
   uint32_t last_keepalive_{0};
   uint32_t requests_received_{0};
   uint32_t requests_handled_{0};
+
+  time::RealTimeClock *time_source_{nullptr};
+  switch_::Switch *emergency_persist_{nullptr};
+  EmergencyStore emergency_store_;
+  EmergencyState emergency_state_{EmergencyState::EMPTY};
+  uint8_t emergency_minute_threshold_{10};
+  uint32_t emergency_retry_initial_ms_{60 * 1000};
+  uint32_t emergency_retry_max_ms_{15 * 60 * 1000};
+  time_t last_inv_setup_ts_{0};  // epoch UTC, 0 = no InvSetup seen (never fires)
+  // Persisted sets restored on boot: stamp last_inv_setup_ts_ with the first
+  // valid wall time so a reboot during an outage still fires next hour.
+  bool boot_loaded_awaiting_time_{false};
+  // IsInvSetup arrived before SNTP synced (MQTT can beat NTP after a power
+  // cycle): stamp last_inv_setup_ts_ with the first valid wall time, else an
+  // outage starting before the sync would leave the check disarmed forever.
+  bool inv_setup_awaiting_time_{false};
+  bool emergency_cancel_{false};  // InvSetup arrived mid-run; drop the stale result
+  bool emergency_walk_from_start_{false};
+  std::string current_emergency_key_;
+  // Revision of the set handed to the executor; a delivered result may clear
+  // the stored set only while these still match (a LinesOnNoInvSetup replace
+  // mid-run — possible without IsInvSetup, so without the cancel flag — must
+  // not be wiped by the stale run's success).
+  uint32_t current_emergency_revision_{0};
+  uint32_t emergency_retry_delay_ms_{60 * 1000};
+  uint32_t emergency_retry_at_{0};
+  uint32_t last_emergency_check_{0};
+  uint32_t emergency_runs_{0};
+  uint32_t emergency_delivered_{0};
 };
 
 }  // namespace gbb_dongle
