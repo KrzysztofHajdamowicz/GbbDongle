@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+missing=()
+for command in cmake ninja mosquitto pkg-config uv; do
+  command -v "$command" >/dev/null 2>&1 || missing+=("$command")
+done
+if ! pkg-config --exists libmosquitto 2>/dev/null; then
+  missing+=("libmosquitto")
+fi
+if ((${#missing[@]})); then
+  echo "Missing host-test dependencies: ${missing[*]}" >&2
+  echo "macOS: brew install cmake ninja mosquitto pkg-config uv" >&2
+  echo "Debian/Ubuntu: sudo apt-get install cmake ninja-build mosquitto libmosquitto-dev pkg-config" >&2
+  echo "Install uv separately from https://docs.astral.sh/uv/getting-started/installation/ if your distribution does not package it." >&2
+  exit 2
+fi
+
+build_dir="${GBB_HOST_BUILD_DIR:-build/host}"
+cmake -S tests/host -B "$build_dir" -G Ninja "$@"
+cmake --build "$build_dir"
+ctest --test-dir "$build_dir" --output-on-failure
+GBB_HOST_BINARY="$build_dir/gbb_dongle_host" uv run pytest -q tests/host/integration

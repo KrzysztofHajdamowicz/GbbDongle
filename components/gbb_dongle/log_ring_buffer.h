@@ -15,7 +15,7 @@ namespace gbb_dongle {
 /// returns everything appended since the previous one.
 class LogRingBuffer {
  public:
-  bool init(size_t capacity);
+  bool init(char *storage, size_t capacity);
 
   /// Registered with logger::Logger::add_log_callback().
   static void log_hook(void *self, uint8_t level, const char *tag, const char *message, size_t message_len);

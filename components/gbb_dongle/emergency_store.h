@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "core_interfaces.h"
 #include "gbb_protocol.h"
 
 namespace esphome {
@@ -16,11 +17,12 @@ namespace gbb_dongle {
 /// and retry logic lives in GbbDongle.
 class EmergencyStore {
  public:
+  void set_blob_store(BlobStore *store) { this->blob_store_ = store; }
   /// Replace the set for one SubInverterSN; an empty vector clears that key
   /// (GbbConnect2 replace semantics). Returns false when the execution-
   /// relevant content (LineNo + Modbus) is identical to what is stored — the
   /// cloud re-sends the same set hourly — in which case nothing is touched:
-  /// no replacement, no revision bump, and the caller can skip sync_nvs().
+  /// no replacement, no revision bump, and the caller can skip sync().
   bool set_lines(const std::string &sub_inverter_sn, std::vector<GbbLine> &&lines);
   void clear(const std::string &sub_inverter_sn);
   void clear_all();
@@ -37,13 +39,13 @@ class EmergencyStore {
   /// ON: writes the current sets to NVS immediately; OFF: erases the NVS copy
   /// (the RAM copy stays live either way).
   void set_persist_enabled(bool enabled);
-  /// Restore sets from NVS. Returns true if non-empty sets were loaded.
+  /// Restore sets from the configured blob store. Returns true if non-empty sets were loaded.
   /// A corrupt blob is erased and ignored.
-  bool load_from_nvs();
-  /// Write the sets to NVS if persistence is on and the serialized content
+  bool load();
+  /// Write the sets if persistence is on and the serialized content
   /// changed since the last write (flash-wear guard); erases the key when the
   /// store is empty.
-  void sync_nvs();
+  void sync();
 
  protected:
   std::map<std::string, std::vector<GbbLine>> sets_;
@@ -51,6 +53,7 @@ class EmergencyStore {
   uint32_t next_revision_{0};
   bool persist_enabled_{false};
   uint32_t persisted_hash_{0};  // fnv1_hash of the last blob written, 0 = none
+  BlobStore *blob_store_{nullptr};
 };
 
 }  // namespace gbb_dongle

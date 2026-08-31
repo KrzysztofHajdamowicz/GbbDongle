@@ -1,6 +1,8 @@
 #include "gbb_protocol.h"
 
-#include "esphome/components/json/json_util.h"
+#define ARDUINOJSON_ENABLE_STD_STRING 1
+#define ARDUINOJSON_USE_LONG_LONG 1
+#include <ArduinoJson.h>
 
 namespace esphome {
 namespace gbb_dongle {
@@ -45,7 +47,11 @@ static void serialize_line_array(JsonArray lines, const std::vector<GbbLine> &so
 }
 
 bool parse_header(const std::string &payload, GbbHeader &out) {
-  return json::parse_json(payload, [&out](JsonObject root) -> bool {
+  JsonDocument doc;
+  if (deserializeJson(doc, payload) != DeserializationError::Ok || !doc.is<JsonObject>())
+    return false;
+  JsonObject root = doc.as<JsonObject>();
+  {
     if (root["Error"].is<const char *>()) {
       out.error = root["Error"].as<const char *>();
     }
@@ -77,12 +83,24 @@ bool parse_header(const std::string &payload, GbbHeader &out) {
       parse_line_array(root["LinesOnNoInvSetup"].as<JsonArray>(), out.lines_on_no_inv_setup);
     }
     return true;
-  });
+  }
 }
 
-std::string build_response(const GbbHeader &header, const GbbClientIdentity &identity, const std::string &client_info,
-                           const std::string *last_log) {
-  return json::build_json([&](JsonObject root) {
+static GbbJsonResult serialize_document(JsonDocument &doc) {
+  const size_t size = measureJson(doc);
+  if (size >= JSON_BUILD_TRUNCATED_SIZE)
+    return {{}, true};
+  GbbJsonResult result;
+  result.payload.reserve(size);
+  serializeJson(doc, result.payload);
+  return result;
+}
+
+GbbJsonResult build_response(const GbbHeader &header, const GbbClientIdentity &identity,
+                             const std::string &client_info, const std::string *last_log) {
+  JsonDocument doc;
+  JsonObject root = doc.to<JsonObject>();
+  {
     if (!header.error.empty())
       root["Error"] = header.error;
     if (header.has_order_id)
@@ -108,37 +126,43 @@ std::string build_response(const GbbHeader &header, const GbbClientIdentity &ide
       root["ClientInfo"] = client_info;
     if (last_log != nullptr)
       root["LastLog"] = *last_log;
-  });
+  }
+  return serialize_document(doc);
 }
 
-std::string build_emergency_sets(const std::map<std::string, std::vector<GbbLine>> &sets) {
-  return json::build_json([&](JsonObject root) {
+GbbJsonResult build_emergency_sets(const std::map<std::string, std::vector<GbbLine>> &sets) {
+  JsonDocument doc;
+  JsonObject root = doc.to<JsonObject>();
+  {
     JsonArray sets_array = root["Sets"].to<JsonArray>();
     for (const auto &entry : sets) {
       JsonObject set_obj = sets_array.add<JsonObject>();
       set_obj["SubInverterSN"] = entry.first;
       serialize_line_array(set_obj["Lines"].to<JsonArray>(), entry.second);
     }
-  });
+  }
+  return serialize_document(doc);
 }
 
 bool parse_emergency_sets(const std::string &payload, std::map<std::string, std::vector<GbbLine>> &out) {
-  return json::parse_json(payload, [&out](JsonObject root) -> bool {
-    if (!root["Sets"].is<JsonArray>())
-      return false;
-    JsonArray sets_array = root["Sets"].as<JsonArray>();
-    for (JsonObject set_obj : sets_array) {
-      std::string sn;
-      if (set_obj["SubInverterSN"].is<const char *>())
-        sn = set_obj["SubInverterSN"].as<const char *>();
-      std::vector<GbbLine> lines;
-      if (set_obj["Lines"].is<JsonArray>())
-        parse_line_array(set_obj["Lines"].as<JsonArray>(), lines);
-      if (!lines.empty())
-        out[sn] = std::move(lines);
-    }
-    return true;
-  });
+  JsonDocument doc;
+  if (deserializeJson(doc, payload) != DeserializationError::Ok || !doc.is<JsonObject>())
+    return false;
+  JsonObject root = doc.as<JsonObject>();
+  if (!root["Sets"].is<JsonArray>())
+    return false;
+  JsonArray sets_array = root["Sets"].as<JsonArray>();
+  for (JsonObject set_obj : sets_array) {
+    std::string sn;
+    if (set_obj["SubInverterSN"].is<const char *>())
+      sn = set_obj["SubInverterSN"].as<const char *>();
+    std::vector<GbbLine> lines;
+    if (set_obj["Lines"].is<JsonArray>())
+      parse_line_array(set_obj["Lines"].as<JsonArray>(), lines);
+    if (!lines.empty())
+      out[sn] = std::move(lines);
+  }
+  return true;
 }
 
 std::string bytes_to_hex(const uint8_t *data, size_t len) {

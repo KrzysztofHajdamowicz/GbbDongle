@@ -183,6 +183,40 @@ Run a local mosquitto (`brew install mosquitto`), point the dongle at it with
 TLS off, and publish a captured `toDevice` request; a Modbus slave simulator
 (e.g. `pymodbus`) on a USB-RS485 adapter stands in for the inverter.
 
+### Host tests without an ESP32
+
+The protocol, Modbus executor, emergency state machine and log buffer live in
+a portable C++ core shared by the ESPHome component and the host test runner.
+The integration suite starts an isolated Mosquitto broker and connects that
+runner to a pseudo-terminal standing in for RS485, so a request crosses the
+full MQTT -> core -> Modbus -> core -> MQTT path without production cloud
+credentials or physical hardware.
+
+Install the native dependencies and run the suite:
+
+```sh
+# macOS
+brew install cmake ninja mosquitto pkg-config uv
+
+# Debian/Ubuntu
+sudo apt-get install cmake ninja-build mosquitto libmosquitto-dev pkg-config
+
+./scripts/test-host
+```
+
+Useful variants:
+
+```sh
+./scripts/test-host -DGBB_ENABLE_SANITIZERS=ON
+GBB_RUN_SOAK=1 GBB_SOAK_ITERATIONS=10000 ./scripts/test-host
+```
+
+The regular suite is required on Linux amd64 CI. ASan/UBSan and a non-gating
+coverage report run separately; a longer leak/descriptor/thread soak runs
+nightly and can also be started manually. Hardware-specific TLS, ESP-MQTT,
+PHY, RS485 direction, watchdog and power-loss behavior remain the job of the
+future hardware-in-the-loop tier.
+
 ## Releases
 
 Tagging `v*` builds both firmware lines for every supported board (matrix

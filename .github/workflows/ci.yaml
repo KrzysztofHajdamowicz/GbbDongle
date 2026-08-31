@@ -10,6 +10,94 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  host-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v9.0.0
+        with:
+          enable-cache: true
+
+      - name: Install host dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build mosquitto libmosquitto-dev pkg-config
+
+      - name: Install Python dependencies
+        run: uv sync
+
+      - name: Build host core and runner
+        run: cmake -S tests/host -B build/host -G Ninja && cmake --build build/host
+
+      - name: Run C++ unit tests
+        run: ctest --test-dir build/host --output-on-failure
+
+      - name: Run MQTT and PTY integration tests
+        env:
+          GBB_HOST_BINARY: build/host/gbb_dongle_host
+        run: uv run pytest -q tests/host/integration
+
+  host-sanitizers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v9.0.0
+        with:
+          enable-cache: true
+
+      - name: Install host dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build mosquitto libmosquitto-dev pkg-config
+
+      - name: Install Python dependencies
+        run: uv sync
+
+      - name: Build with ASan and UBSan
+        run: cmake -S tests/host -B build/sanitizers -G Ninja -DGBB_ENABLE_SANITIZERS=ON && cmake --build build/sanitizers
+
+      - name: Run sanitized unit tests
+        run: ctest --test-dir build/sanitizers --output-on-failure
+
+      - name: Run sanitized integration tests
+        env:
+          GBB_HOST_BINARY: build/sanitizers/gbb_dongle_host
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: uv run pytest -q tests/host/integration
+
+  host-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v9.0.0
+        with:
+          enable-cache: true
+
+      - name: Install host dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build mosquitto libmosquitto-dev pkg-config
+
+      - name: Install Python dependencies
+        run: uv sync
+
+      - name: Build with coverage instrumentation
+        run: cmake -S tests/host -B build/coverage -G Ninja -DGBB_ENABLE_COVERAGE=ON && cmake --build build/coverage
+
+      - name: Exercise unit and integration paths
+        env:
+          GBB_HOST_BINARY: build/coverage/gbb_dongle_host
+        run: ctest --test-dir build/coverage --output-on-failure && uv run pytest -q tests/host/integration
+
+      - name: Generate coverage report
+        run: uv run gcovr --root . --filter components/gbb_dongle --html-details build/coverage/coverage.html --xml build/coverage/coverage.xml --print-summary
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: host-coverage
+          path: |
+            build/coverage/coverage.html
+            build/coverage/coverage.*.html
+            build/coverage/coverage.xml
+
   # The import targets (firmware/<config>.yaml) are what the ESPHome
   # dashboard pulls in during adoption — validate them standalone even
   # though the variant builds below include them as packages.

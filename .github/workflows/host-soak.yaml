@@ -1,0 +1,40 @@
+name: Host soak
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+    inputs:
+      iterations:
+        description: MQTT/Modbus roundtrips
+        required: false
+        default: "10000"
+
+permissions:
+  contents: read
+
+jobs:
+  soak:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v9.0.0
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build mosquitto libmosquitto-dev pkg-config
+
+      - run: uv sync
+
+      - name: Build host runner
+        run: cmake -S tests/host -B build/host -G Ninja && cmake --build build/host
+
+      - name: Run soak test
+        env:
+          GBB_HOST_BINARY: build/host/gbb_dongle_host
+          GBB_RUN_SOAK: "1"
+          GBB_SOAK_ITERATIONS: ${{ inputs.iterations || '10000' }}
+        run: uv run pytest -q tests/host/integration/test_soak.py

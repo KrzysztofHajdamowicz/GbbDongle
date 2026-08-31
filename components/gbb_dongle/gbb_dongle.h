@@ -1,6 +1,5 @@
 #pragma once
 
-#include <optional>
 #include <string>
 
 #include "esphome/components/mqtt/mqtt_client.h"
@@ -16,10 +15,8 @@
 #include "esphome/core/gpio.h"
 #include "esphome/core/preferences.h"
 
-#include "emergency_store.h"
-#include "gbb_protocol.h"
-#include "log_ring_buffer.h"
-#include "modbus_executor.h"
+#include "dongle_core.h"
+#include "nvs_blob_store.h"
 
 namespace esphome {
 namespace gbb_dongle {
@@ -29,7 +26,12 @@ namespace gbb_dongle {
 /// (AFTER_WIFI) and after template entities restored their NVS state (DATA);
 /// with mqtt enable_on_boot=false the broker settings applied here are the
 /// ones the esp-mqtt client is initialized with on first connect.
-class GbbDongle : public Component, public uart::UARTDevice {
+class GbbDongle : public Component,
+                  public uart::UARTDevice,
+                  public CoreClock,
+                  public ModbusPort,
+                  public CloudTransport,
+                  public CoreLogger {
  public:
   void setup() override;
   void loop() override;
@@ -57,45 +59,42 @@ class GbbDongle : public Component, public uart::UARTDevice {
   void set_ip_address_text_sensor(text_sensor::TextSensor *t) { this->ip_address_ = t; }
   void set_uptime_text_sensor(text_sensor::TextSensor *t) { this->uptime_text_ = t; }
 
-  void set_response_timeout(uint32_t ms) { this->executor_.set_response_timeout(ms); }
-  void set_read_gap(uint32_t ms) { this->executor_.set_read_gap(ms); }
-  void set_write_gap(uint32_t ms) { this->executor_.set_write_gap(ms); }
+  void set_response_timeout(uint32_t ms) { this->core_.set_response_timeout(ms); }
+  void set_read_gap(uint32_t ms) { this->core_.set_read_gap(ms); }
+  void set_write_gap(uint32_t ms) { this->core_.set_write_gap(ms); }
   void set_log_buffer_size(uint32_t size) { this->log_buffer_size_ = size; }
 
   void set_time_source(time::RealTimeClock *t) { this->time_source_ = t; }
   void set_emergency_persist_switch(switch_::Switch *s) { this->emergency_persist_ = s; }
-  void set_emergency_minute_threshold(uint8_t minute) { this->emergency_minute_threshold_ = minute; }
-  void set_emergency_retry_initial(uint32_t ms) { this->emergency_retry_initial_ms_ = ms; }
-  void set_emergency_retry_max(uint32_t ms) { this->emergency_retry_max_ms_ = ms; }
+  void set_emergency_minute_threshold(uint8_t minute) { this->core_.set_emergency_minute_threshold(minute); }
+  void set_emergency_retry_initial(uint32_t ms) { this->core_.set_emergency_retry_initial(ms); }
+  void set_emergency_retry_max(uint32_t ms) { this->core_.set_emergency_retry_max(ms); }
 
   // For template sensors / binary sensors in YAML.
   bool is_settings_dirty() const { return this->settings_dirty_; }
   bool is_cloud_configured() const { return this->cloud_configured_; }
-  uint32_t get_requests_received() const { return this->requests_received_; }
-  uint32_t get_requests_handled() const { return this->requests_handled_; }
-  uint32_t get_modbus_errors() const { return this->executor_.get_error_count(); }
-  uint32_t get_emergency_sets_stored() const { return this->emergency_store_.size(); }
-  uint32_t get_emergency_runs() const { return this->emergency_runs_; }
+  uint32_t get_requests_received() const { return this->core_.get_requests_received(); }
+  uint32_t get_requests_handled() const { return this->core_.get_requests_handled(); }
+  uint32_t get_modbus_errors() const { return this->core_.get_modbus_errors(); }
+  uint32_t get_emergency_sets_stored() const { return this->core_.get_emergency_sets_stored(); }
+  uint32_t get_emergency_runs() const { return this->core_.get_emergency_runs(); }
+
+  uint32_t monotonic_ms() const override;
+  bool wall_time(time_t &timestamp) const override;
+  size_t serial_available() override;
+  bool serial_read(uint8_t *byte) override;
+  void serial_write(const uint8_t *data, size_t size) override;
+  void serial_flush() override;
+  void set_transmit_enabled(bool enabled) override;
+  bool cloud_connected() const override;
+  bool cloud_publish(const std::string &topic, const char *payload, size_t size, uint8_t qos, bool retain) override;
+  void core_log(CoreLogLevel level, const char *tag, const char *message) override;
 
  protected:
-  // Emergency ("last will") delivery lifecycle. EMPTY: nothing stored.
-  // ARMED: sets stored, watching the hourly InvSetup deadline. QUEUED: a
-  // send cycle is due, waiting for the executor (cloud requests first).
-  // EXECUTING: an emergency set is on the RS485 bus. BACKOFF: the inverter
-  // did not respond; waiting for the retry timer.
-  enum class EmergencyState : uint8_t { EMPTY, ARMED, QUEUED, EXECUTING, BACKOFF };
-
   void configure_mqtt_();
   void apply_uart_settings_();
-  void on_cloud_message_(const std::string &payload);
-  void apply_log_level_(const std::string &level);
-  void publish_response_(GbbHeader &&header);
   std::string build_client_info_() const;
   void mark_dirty_();
-  void handle_emergency_fields_(GbbHeader &header);
-  void check_emergency_trigger_();
-  void start_next_emergency_set_();
-  void handle_emergency_result_(GbbHeader &&header);
 
   mqtt::MQTTClientComponent *mqtt_{nullptr};
   GPIOPin *flow_control_pin_{nullptr};
@@ -118,51 +117,18 @@ class GbbDongle : public Component, public uart::UARTDevice {
   text_sensor::TextSensor *ip_address_{nullptr};
   text_sensor::TextSensor *uptime_text_{nullptr};
 
-  ModbusExecutor executor_;
-  LogRingBuffer log_buffer_;
+  DongleCore core_;
+  NvsBlobStore emergency_blob_store_;
+  char *log_buffer_storage_{nullptr};
   uint32_t log_buffer_size_{65536};
   ESPPreferenceObject log_level_pref_;
-
-  std::string topic_from_device_;
-  std::string topic_keepalive_;
-
-  std::optional<GbbHeader> pending_request_;
   bool setup_complete_{false};
   bool settings_dirty_{false};
   bool cloud_configured_{false};
   bool cloud_enable_pending_{false};
-  uint32_t last_keepalive_{0};
-  uint32_t requests_received_{0};
-  uint32_t requests_handled_{0};
 
   time::RealTimeClock *time_source_{nullptr};
   switch_::Switch *emergency_persist_{nullptr};
-  EmergencyStore emergency_store_;
-  EmergencyState emergency_state_{EmergencyState::EMPTY};
-  uint8_t emergency_minute_threshold_{10};
-  uint32_t emergency_retry_initial_ms_{60 * 1000};
-  uint32_t emergency_retry_max_ms_{15 * 60 * 1000};
-  time_t last_inv_setup_ts_{0};  // epoch UTC, 0 = no InvSetup seen (never fires)
-  // Persisted sets restored on boot: stamp last_inv_setup_ts_ with the first
-  // valid wall time so a reboot during an outage still fires next hour.
-  bool boot_loaded_awaiting_time_{false};
-  // IsInvSetup arrived before SNTP synced (MQTT can beat NTP after a power
-  // cycle): stamp last_inv_setup_ts_ with the first valid wall time, else an
-  // outage starting before the sync would leave the check disarmed forever.
-  bool inv_setup_awaiting_time_{false};
-  bool emergency_cancel_{false};  // InvSetup arrived mid-run; drop the stale result
-  bool emergency_walk_from_start_{false};
-  std::string current_emergency_key_;
-  // Revision of the set handed to the executor; a delivered result may clear
-  // the stored set only while these still match (a LinesOnNoInvSetup replace
-  // mid-run — possible without IsInvSetup, so without the cancel flag — must
-  // not be wiped by the stale run's success).
-  uint32_t current_emergency_revision_{0};
-  uint32_t emergency_retry_delay_ms_{60 * 1000};
-  uint32_t emergency_retry_at_{0};
-  uint32_t last_emergency_check_{0};
-  uint32_t emergency_runs_{0};
-  uint32_t emergency_delivered_{0};
 };
 
 }  // namespace gbb_dongle

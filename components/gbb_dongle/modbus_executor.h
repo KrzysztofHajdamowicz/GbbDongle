@@ -2,9 +2,7 @@
 
 #include <vector>
 
-#include "esphome/components/uart/uart.h"
-#include "esphome/core/gpio.h"
-
+#include "core_interfaces.h"
 #include "gbb_protocol.h"
 
 namespace esphome {
@@ -16,8 +14,9 @@ namespace gbb_dongle {
 /// line and all subsequent lines is cleared and processing stops.
 class ModbusExecutor {
  public:
-  void set_uart(uart::UARTDevice *uart) { this->uart_ = uart; }
-  void set_flow_control_pin(GPIOPin *pin) { this->flow_control_pin_ = pin; }
+  void set_port(ModbusPort *port) { this->port_ = port; }
+  void set_clock(CoreClock *clock) { this->clock_ = clock; }
+  void set_logger(CoreLogger *logger) { this->logger_ = logger; }
   void set_response_timeout(uint32_t ms) { this->response_timeout_ms_ = ms; }
   void set_read_gap(uint32_t ms) { this->read_gap_ms_ = ms; }
   void set_write_gap(uint32_t ms) { this->write_gap_ms_ = ms; }
@@ -52,9 +51,11 @@ class ModbusExecutor {
   void finish_all_();
   void abort_batch_();
   uint32_t silence_gap_ms_() const;
+  void log_(CoreLogLevel level, const std::string &message) const;
 
-  uart::UARTDevice *uart_{nullptr};
-  GPIOPin *flow_control_pin_{nullptr};
+  ModbusPort *port_{nullptr};
+  CoreClock *clock_{nullptr};
+  CoreLogger *logger_{nullptr};
   uint32_t response_timeout_ms_{1000};
   uint32_t read_gap_ms_{100};
   uint32_t write_gap_ms_{3000};

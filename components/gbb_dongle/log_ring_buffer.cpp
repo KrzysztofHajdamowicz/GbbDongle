@@ -2,21 +2,21 @@
 
 #include <cctype>
 
-#include "esphome/core/helpers.h"
-
 namespace esphome {
 namespace gbb_dongle {
 
-bool LogRingBuffer::init(size_t capacity) {
-  RAMAllocator<char> allocator;
-  this->buffer_ = allocator.allocate(capacity);
-  if (this->buffer_ == nullptr)
+bool LogRingBuffer::init(char *storage, size_t capacity) {
+  if (storage == nullptr || capacity == 0)
     return false;
+  this->buffer_ = storage;
   this->capacity_ = capacity;
+  this->write_off_ = 0;
+  this->read_off_ = 0;
   return true;
 }
 
 void LogRingBuffer::log_hook(void *self, uint8_t level, const char *tag, const char *message, size_t message_len) {
+  (void) tag;
   static_cast<LogRingBuffer *>(self)->append_(level, message, message_len);
 }
 

@@ -15,10 +15,14 @@ namespace gbb_dongle {
 // Header.CURR_PROTOCOL_VERSION in GbbConnect2 2.0.0.
 static constexpr int32_t CURR_PROTOCOL_VERSION = 2;
 
-// esphome json::build_json() stops growing its buffer at 5120 B and returns a
-// TRUNCATED (invalid) document of exactly this many bytes. Any serialization
-// this long must be treated as corrupt, and payload budgets must stay below it.
+// Preserve ESPHome's historical 5120-byte JSON allocation budget. The local
+// codec reports overflow explicitly instead of returning a truncated document.
 static constexpr size_t JSON_BUILD_TRUNCATED_SIZE = 5119;
+
+struct GbbJsonResult {
+  std::string payload;
+  bool overflow{false};
+};
 
 struct GbbLine {
   int32_t line_no{0};
@@ -70,13 +74,13 @@ struct GbbClientIdentity {
 /// Serialize a response Header for fromDevice. The identity fields are always
 /// stamped; client_info (built fresh per response) and last_log are attached
 /// only when non-empty / non-null.
-std::string build_response(const GbbHeader &header, const GbbClientIdentity &identity, const std::string &client_info,
-                           const std::string *last_log);
+GbbJsonResult build_response(const GbbHeader &header, const GbbClientIdentity &identity,
+                             const std::string &client_info, const std::string *last_log);
 
 /// Serialize / parse the emergency ("last will") sets for NVS persistence:
 /// {"Sets":[{"SubInverterSN":"","Lines":[...]}]}. Key "" = master.
 /// parse_emergency_sets returns false on malformed JSON.
-std::string build_emergency_sets(const std::map<std::string, std::vector<GbbLine>> &sets);
+GbbJsonResult build_emergency_sets(const std::map<std::string, std::vector<GbbLine>> &sets);
 bool parse_emergency_sets(const std::string &payload, std::map<std::string, std::vector<GbbLine>> &out);
 
 /// Uppercase hex <-> bytes ("0103009C0003D5CA"). Decode returns false on

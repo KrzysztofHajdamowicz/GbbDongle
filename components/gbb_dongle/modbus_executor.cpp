@@ -1,7 +1,6 @@
 #include "modbus_executor.h"
 
-#include "esphome/core/hal.h"
-#include "esphome/core/log.h"
+#include <cstdio>
 
 namespace esphome {
 namespace gbb_dongle {
@@ -10,6 +9,11 @@ static const char *const TAG = "gbb_dongle.modbus";
 
 // Response frames: 1 addr + 1 fn + 250 data max + 2 CRC, with headroom.
 static const size_t MAX_FRAME_SIZE = 300;
+
+void ModbusExecutor::log_(CoreLogLevel level, const std::string &message) const {
+  if (this->logger_ != nullptr)
+    this->logger_->core_log(level, TAG, message.c_str());
+}
 
 // Space-separated uppercase hex for the human-readable debug log lines, e.g.
 // "01 03 02 04 00 03 45 B2". Easier to eyeball byte-by-byte than a run-on
@@ -63,7 +67,7 @@ void ModbusExecutor::loop() {
       // Signed difference, not >=: gap_until_ may sit across the ~49.7-day
       // millis() rollover, where the absolute compare either skips the gap
       // or parks the executor until the next wrap.
-      if ((int32_t) (millis() - this->gap_until_) >= 0)
+      if ((int32_t) (this->clock_->monotonic_ms() - this->gap_until_) >= 0)
         this->transmit_current_();
       break;
     case State::TRANSMIT:
@@ -95,8 +99,10 @@ void ModbusExecutor::start_next_line_() {
 
   GbbLine &line = this->header_.lines[this->line_index_];
   if (!hex_to_bytes(line.modbus, this->tx_frame_) || this->tx_frame_.size() < 4) {
-    ESP_LOGW(TAG, "Line %" PRId32 ": the request carried an invalid Modbus frame ('%s'); skipping this and the rest",
-             line.line_no, line.modbus.c_str());
+    char message[420];
+    snprintf(message, sizeof(message), "Line %d: invalid Modbus frame ('%s'); skipping this and the rest",
+             static_cast<int>(line.line_no), line.modbus.c_str());
+    this->log_(CoreLogLevel::WARN, message);
     this->fail_line_("Invalid Modbus hex string");
     return;
   }
@@ -105,9 +111,9 @@ void ModbusExecutor::start_next_line_() {
 
 void ModbusExecutor::transmit_current_() {
   // Drain any stale bytes so the response frame starts clean.
-  while (this->uart_->available()) {
+  while (this->port_->serial_available()) {
     uint8_t discard;
-    this->uart_->read_byte(&discard);
+    this->port_->serial_read(&discard);
   }
 
   const uint8_t function = this->tx_frame_[1];
@@ -118,18 +124,18 @@ void ModbusExecutor::transmit_current_() {
   // This is the raw Modbus RTU frame that goes onto the RS485 bus. Unlike
   // GbbConnect2 there is no SolarmanV5 wrapper, so this frame is exactly the
   // Modbus hex unpacked from the request line.
-  ESP_LOGD(TAG, "Line %" PRId32 " -> inverter: %s", this->header_.lines[this->line_index_].line_no,
-           frame_to_log_hex(this->tx_frame_));
+  char message[960];
+  snprintf(message, sizeof(message), "Line %d -> inverter: %s",
+           static_cast<int>(this->header_.lines[this->line_index_].line_no), frame_to_log_hex(this->tx_frame_));
+  this->log_(CoreLogLevel::DEBUG, message);
 
-  if (this->flow_control_pin_ != nullptr)
-    this->flow_control_pin_->digital_write(true);
-  this->uart_->write_array(this->tx_frame_);
-  this->uart_->flush();  // blocks only for the frame TX time (~10 ms at 9600 for 8 bytes)
-  if (this->flow_control_pin_ != nullptr)
-    this->flow_control_pin_->digital_write(false);
+  this->port_->set_transmit_enabled(true);
+  this->port_->serial_write(this->tx_frame_.data(), this->tx_frame_.size());
+  this->port_->serial_flush();  // blocks only for the frame TX time (~10 ms at 9600 for 8 bytes)
+  this->port_->set_transmit_enabled(false);
 
   this->rx_frame_.clear();
-  this->tx_done_at_ = millis();
+  this->tx_done_at_ = this->clock_->monotonic_ms();
   this->last_rx_byte_at_ = this->tx_done_at_;
   this->state_ = State::RX_WAIT;
 }
@@ -141,11 +147,11 @@ uint32_t ModbusExecutor::silence_gap_ms_() const {
 }
 
 void ModbusExecutor::handle_rx_() {
-  const uint32_t now = millis();
+  const uint32_t now = this->clock_->monotonic_ms();
 
-  while (this->uart_->available() && this->rx_frame_.size() < MAX_FRAME_SIZE) {
+  while (this->port_->serial_available() && this->rx_frame_.size() < MAX_FRAME_SIZE) {
     uint8_t byte;
-    if (!this->uart_->read_byte(&byte))
+    if (!this->port_->serial_read(&byte))
       break;
     this->rx_frame_.push_back(byte);
     this->last_rx_byte_at_ = now;
@@ -176,15 +182,18 @@ void ModbusExecutor::handle_rx_() {
 
   if (now - this->tx_done_at_ >= this->response_timeout_ms_) {
     if (this->rx_frame_.empty()) {
-      ESP_LOGW(TAG,
-               "Line %" PRId32 ": no reply from the inverter after %" PRIu32 " ms. "
-               "Check the RS485 wiring (A/B may be swapped), the baud rate and the parity.",
-               this->header_.lines[this->line_index_].line_no, this->response_timeout_ms_);
+      char message[260];
+      snprintf(message, sizeof(message), "Line %d: no reply from the inverter after %u ms",
+               static_cast<int>(this->header_.lines[this->line_index_].line_no),
+               static_cast<unsigned>(this->response_timeout_ms_));
+      this->log_(CoreLogLevel::WARN, message);
     } else {
-      ESP_LOGW(TAG,
-               "Line %" PRId32 ": incomplete reply after %" PRIu32 " ms, got %u byte(s): %s",
-               this->header_.lines[this->line_index_].line_no, this->response_timeout_ms_,
-               this->rx_frame_.size(), frame_to_log_hex(this->rx_frame_));
+      char message[960];
+      snprintf(message, sizeof(message), "Line %d: incomplete reply after %u ms, got %u byte(s): %s",
+               static_cast<int>(this->header_.lines[this->line_index_].line_no),
+               static_cast<unsigned>(this->response_timeout_ms_), static_cast<unsigned>(this->rx_frame_.size()),
+               frame_to_log_hex(this->rx_frame_));
+      this->log_(CoreLogLevel::WARN, message);
     }
     this->fail_line_("Response timeout");
   }
@@ -192,28 +201,36 @@ void ModbusExecutor::handle_rx_() {
 
 void ModbusExecutor::finish_line_ok_() {
   if (this->rx_frame_.size() < 4) {
-    ESP_LOGW(TAG, "Line %" PRId32 ": inverter reply too short to be valid (%u byte(s)): %s",
-             this->header_.lines[this->line_index_].line_no, this->rx_frame_.size(),
-             frame_to_log_hex(this->rx_frame_));
+    char message[960];
+    snprintf(message, sizeof(message), "Line %d: inverter reply too short (%u byte(s)): %s",
+             static_cast<int>(this->header_.lines[this->line_index_].line_no),
+             static_cast<unsigned>(this->rx_frame_.size()), frame_to_log_hex(this->rx_frame_));
+    this->log_(CoreLogLevel::WARN, message);
     this->fail_line_("Response too short");
     return;
   }
   const size_t n = this->rx_frame_.size();
   const uint16_t crc = modbus_crc16(this->rx_frame_.data(), n - 2);
-  const uint16_t got = static_cast<uint16_t>(this->rx_frame_[n - 2]) | (static_cast<uint16_t>(this->rx_frame_[n - 1]) << 8);
+  const uint16_t got = static_cast<uint16_t>(static_cast<uint16_t>(this->rx_frame_[n - 2]) |
+                                             static_cast<uint16_t>(this->rx_frame_[n - 1] << 8));
   if (crc != got) {
-    ESP_LOGW(TAG, "Line %" PRId32 " <- inverter: %s (bad checksum: calculated %04X, frame says %04X)",
-             this->header_.lines[this->line_index_].line_no, frame_to_log_hex(this->rx_frame_), crc, got);
+    char message[960];
+    snprintf(message, sizeof(message), "Line %d <- inverter: %s (bad checksum: calculated %04X, frame says %04X)",
+             static_cast<int>(this->header_.lines[this->line_index_].line_no), frame_to_log_hex(this->rx_frame_), crc,
+             got);
+    this->log_(CoreLogLevel::WARN, message);
     this->fail_line_("Invalid CRC in response");
     return;
   }
 
   GbbLine &line = this->header_.lines[this->line_index_];
   line.modbus = bytes_to_hex(this->rx_frame_.data(), n);
-  ESP_LOGD(TAG, "Line %" PRId32 " <- inverter: %s (OK, %u byte(s))", line.line_no,
-           frame_to_log_hex(this->rx_frame_), n);
+  char message[960];
+  snprintf(message, sizeof(message), "Line %d <- inverter: %s (OK, %u byte(s))", static_cast<int>(line.line_no),
+           frame_to_log_hex(this->rx_frame_), static_cast<unsigned>(n));
+  this->log_(CoreLogLevel::DEBUG, message);
 
-  this->gap_until_ = millis() + this->next_gap_ms_;
+  this->gap_until_ = this->clock_->monotonic_ms() + this->next_gap_ms_;
   this->line_index_++;
   this->start_next_line_();
 }
@@ -228,7 +245,7 @@ void ModbusExecutor::fail_line_(const char *message) {
     this->header_.lines[i].has_modbus = false;
     this->header_.lines[i].modbus.clear();
   }
-  this->gap_until_ = millis() + this->next_gap_ms_;
+  this->gap_until_ = this->clock_->monotonic_ms() + this->next_gap_ms_;
   this->finish_all_();
 }
 
@@ -239,8 +256,11 @@ void ModbusExecutor::finish_all_() {
 }
 
 void ModbusExecutor::abort_batch_() {
-  ESP_LOGI(TAG, "Batch aborted at a line boundary; %u of %u line(s) not sent",
-           this->header_.lines.size() - this->line_index_, this->header_.lines.size());
+  char message[160];
+  snprintf(message, sizeof(message), "Batch aborted at a line boundary; %u of %u line(s) not sent",
+           static_cast<unsigned>(this->header_.lines.size() - this->line_index_),
+           static_cast<unsigned>(this->header_.lines.size()));
+  this->log_(CoreLogLevel::INFO, message);
   this->finish_all_();
 }
 

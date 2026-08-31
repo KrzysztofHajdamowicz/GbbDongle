@@ -9,6 +9,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "gcovr>=8.0",
     "pytest>=8.0",
     "paho-mqtt>=1.6",
 ]
@@ -20,4 +21,9 @@ package = false
 environments = [
     "sys_platform == 'darwin' and platform_machine == 'arm64'",
     "sys_platform == 'linux'",
+]
+
+[tool.pytest.ini_options]
+markers = [
+    "soak: long-running host stability tests",
 ]
