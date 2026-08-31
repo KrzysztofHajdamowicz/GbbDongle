@@ -76,3 +76,29 @@ jobs:
 
       - name: Compile firmware
         run: uv run esphome -s external_components_source ../components compile firmware/${{ matrix.config }}.yaml
+
+      # OTA images for testers: flashable onto an already-running board via
+      # the device web UI or the ESPHome dashboard, no Pages/manifest churn.
+      # Same naming scheme as release.yaml so artifacts match release names.
+      - name: Collect OTA image
+        if: github.event_name == 'pull_request'
+        run: |
+          CONFIG="${{ matrix.config }}"
+          BASE="${CONFIG%-factory}"
+          BASE="${BASE%-ha}"
+          BUILD_DIR="firmware/.esphome/build/${BASE}/build"
+          case "$CONFIG" in
+            *-factory) OUT="$BASE" ;;
+            *-ha)      OUT="${BASE}-ha" ;;
+          esac
+          mkdir -p dist
+          cp "$BUILD_DIR/firmware.ota.bin" "dist/${OUT}.ota.bin"
+
+      - name: Upload OTA image
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ota-${{ matrix.config }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
