@@ -41,6 +41,9 @@ text:
     on_value:
       - lambda: |-
           if (!x.empty()) {
-            id(web_base)->set_auth_password(x);
+            // web_server_base stores the raw pointer without copying, so it
+            // must point at storage that outlives the lambda: the text
+            // component's state member, refreshed here on every change.
+            id(web_base)->set_auth_password(id(admin_password_txt).state.c_str());
             id(ota_esphome)->set_auth_password(x);
           }
