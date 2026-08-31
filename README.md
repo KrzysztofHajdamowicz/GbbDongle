@@ -64,7 +64,8 @@ Every board ships in two firmware flavours, selectable in the web installer:
 - **Factory Image** (default) — the standalone GbbDongle product. No Home
   Assistant API; the web dashboard and firmware uploads are protected by a
   password (default `admin` / `admin`) which you can change via the
-  **Admin Password** entity on the device's web page. **Factory Reset**
+  **Admin Password** entity on the device's web page; clearing the field
+  restores the default password. **Factory Reset**
   restores the defaults. Firmware auto-updates through the `Firmware` update
   entity (manifest hosted on GitHub Pages).
 - **Home Assistant-compatible** — exposes the ESPHome native API and
@@ -111,7 +112,7 @@ state has no OTA password).
 | Cloud Connection | master enable switch |
 | TLS / TLS Skip CN Check | TLS is on by default (Certum Trusted Network CA + ISRG Root X1 compiled in) |
 | RS485 Baud Rate / Parity | serial parameters, applied live |
-| Admin Password | Factory Image only: changes the web-dashboard and OTA-upload password (login stays `admin`) |
+| Admin Password | Factory Image only: changes the web-dashboard and OTA-upload password (login stays `admin`); empty restores the default password |
 
 Note: the Plant Token is masked in the web UI but — on the Home
 Assistant-compatible image — visible to the native API, like any ESPHome
