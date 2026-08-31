@@ -37,7 +37,7 @@ text:
     # password is never published to the (GbbOptimizer) broker.
     state_topic:
     # Fires on boot with the NVS-restored value too, so a changed password
-    # survives restarts. Empty value = keep the compiled-in default.
+    # survives restarts. Empty value restores the compiled-in default.
     on_value:
       - lambda: |-
           if (!x.empty()) {
@@ -46,4 +46,11 @@ text:
             // component's state member, refreshed here on every change.
             id(web_base)->set_auth_password(id(admin_password_txt).state.c_str());
             id(ota_esphome)->set_auth_password(x);
+          } else {
+            // The web credentials pointer aliases the state buffer, so a
+            // cleared field would silently turn the effective web password
+            // into "" until reboot; set the default explicitly instead, for
+            // both auth paths, matching what a reboot restores.
+            id(web_base)->set_auth_password("${admin_password}");
+            id(ota_esphome)->set_auth_password("${admin_password}");
           }
