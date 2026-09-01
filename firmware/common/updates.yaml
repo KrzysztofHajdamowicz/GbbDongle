@@ -15,3 +15,24 @@ update:
     name: Firmware
     source: ${update_manifest_url}
     update_interval: 6h
+    # Fires once per detected release (on the NO_UPDATE -> AVAILABLE
+    # transition), not on every 6h poll. A reboot during the spread delay is
+    # harmless: the boot-time check re-detects the release and re-arms the
+    # script with a fresh delay.
+    on_update_available:
+      then:
+        - script.execute: auto_install_firmware
+
+script:
+  # Spreads fleet installs over 0-5h so devices don't all flash at the same
+  # moment. The update.is_available guard skips the install if the manifest
+  # was rolled back while we were waiting.
+  - id: auto_install_firmware
+    mode: restart
+    then:
+      - delay: !lambda 'return random_uint32() % (5UL * 60UL * 60UL * 1000UL);'
+      - if:
+          condition:
+            update.is_available: firmware_update
+          then:
+            - update.perform: firmware_update
