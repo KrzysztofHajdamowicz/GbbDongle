@@ -1,0 +1,12 @@
+# Bench-only variant (not shipped, not in CI): the factory line exactly as
+# published (web auth + Admin Password rotation), joining the bench WiFi from
+# secrets.yaml and with verbose logging for bench debugging.
+# Build & flash: uv run esphome run firmware/gbbdongle-factory-bench.yaml
+substitutions:
+  device_name: gbbdongle-dev
+  friendly_name: GbbDongle Dev
+
+packages:
+  factory_variant: !include gbbdongle-factory.yaml
+  dev: !include common/dev.yaml
+  wifi_dev: !include common/wifi-dev.yaml

@@ -53,9 +53,11 @@ flash time:
   TF slot are deliberately not exposed — this is dongle-only firmware.
 
 Board specifics live in `firmware/boards/*.yaml`, WiFi connectivity in
-`firmware/common/wifi.yaml` — adding another board means writing one board
-file plus a device yaml combining it with `firmware/common/base.yaml` (and
-`common/wifi.yaml` for WiFi boards).
+`firmware/common/wifi.yaml` — adding another board means writing a board
+file, a device yaml combining it with `firmware/common/base.yaml` (and
+`common/wifi.yaml` for WiFi boards) plus its `-factory`/`-ha`/`-dev`
+wrappers, and registering it in CI, the release workflow and the web
+installer (checklist in [AGENTS.md](AGENTS.md)).
 
 ## Installation
 
@@ -66,8 +68,10 @@ Every board ships in two firmware flavours, selectable in the web installer:
   password (default `admin` / `admin`) which you can change via the
   **Admin Password** entity on the device's web page; clearing the field
   restores the default password. **Factory Reset**
-  restores the defaults. Firmware auto-updates through the `Firmware` update
-  entity (manifest hosted on GitHub Pages).
+  restores the defaults. Firmware updates itself through the `Firmware`
+  update entity (manifest hosted on GitHub Pages, checked every 6 h): a new
+  release is installed automatically after a random delay of up to 5 hours,
+  so the fleet does not update all at once.
 - **Home Assistant-compatible** — exposes the ESPHome native API and
   broadcasts an adoption offer to the ESPHome dashboard. The API encryption
   key is generated and persisted on the first connection (until then the
@@ -76,7 +80,8 @@ Every board ships in two firmware flavours, selectable in the web installer:
   configuration from this repo (`firmware/<config>.yaml`) with a fresh
   encryption key, and further updates are yours to build — bring your own
   support. No web/OTA passwords: add your own in the adopted config if you
-  want them.
+  want them. Until adoption it self-updates like the Factory Image; the
+  adopted configuration does not.
 
 1. Open the **[web installer](https://krzysztofhajdamowicz.github.io/GbbDongle/)**
    in Chrome/Edge, pick your board and flavour, connect it over USB and
@@ -110,8 +115,9 @@ state has no OTA password).
 | MQTT Server / MQTT Port | e.g. `gbboptimizer1-mqtt.gbbsoft.pl` : `8883` |
 | Plant Id / Plant Token | from GbbOptimizer |
 | Cloud Connection | master enable switch |
-| TLS / TLS Skip CN Check | TLS is on by default (Certum Trusted Network CA + ISRG Root X1 compiled in) |
+| TLS / TLS Skip CN Check | TLS is on by default (Certum Trusted Root CA, Certum Trusted Network CA and ISRG Root X1 compiled in) |
 | RS485 Baud Rate / Parity | serial parameters, applied live |
+| Persist Emergency Commands | keep the emergency ("last will") command sets from GbbOptimizer across reboots (NVS write on every change); off = RAM only — see [docs/protocol.md](docs/protocol.md) |
 | Admin Password | Factory Image only: changes the web-dashboard and OTA-upload password (login stays `admin`); empty restores the default password |
 
 Note: the Plant Token is masked in the web UI but — on the Home
