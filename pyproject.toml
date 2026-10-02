@@ -1,7 +1,7 @@
 [project]
 name = "gbbdongle"
 version = "0.1.0"
-description = "GbbDongle - ESPHome-based MQTT<->Modbus RTU proxy for GbbOptimizer (GbbConnect2 replacement on ESP32-S3)"
+description = "GbbDongle - ESPHome-based MQTT<->Modbus RTU proxy for GbbOptimizer (GbbConnect2 replacement on ESP32/ESP32-S3 boards)"
 requires-python = ">=3.12,<3.14"
 dependencies = [
     "esphome==2026.9.0",

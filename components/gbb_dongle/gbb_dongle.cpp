@@ -271,7 +271,7 @@ void GbbDongle::publish_response_(GbbHeader &&header) {
     return;
   }
   // Summary rather than the whole JSON: with SendLastLog the response also
-  // carries up to 8 KB of recent log lines, and the per-line results are
+  // carries up to 3 KiB of recent log lines, and the per-line results are
   // already visible in the executor's "<- inverter" log lines above.
   ESP_LOGD(TAG, "Device -> cloud: sending the response back (%u B, %u line(s)%s)", response.size(),
            header.lines.size(), last_log_ptr != nullptr ? ", incl. recent log" : "");

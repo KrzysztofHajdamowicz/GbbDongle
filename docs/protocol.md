@@ -4,13 +4,13 @@ Reverse-engineered from GbbConnect2 (`GbbEngine2/Server/JobManager-mqtt.cs`,
 `GbbConnect2Protocol/Protocol.cs`) and documented in depth in the
 [gbbconnect-go](https://github.com/KrzysztofHajdamowicz/gbbconnect-go) design
 docs. GbbDongle is a faithful re-implementation of the *device* side on an
-ESP32-S3 with a direct RS485 connection to the inverter.
+ESP32/ESP32-S3 board with a direct RS485 connection to the inverter.
 
 ## MQTT session
 
 | Parameter | Value |
 |---|---|
-| Broker | `gbboptimizerX-mqtt.gbbsoft.pl`, port 8883, TLS |
+| Broker | `gbboptimizerX-mqtt.gbbsoft.pl`, port 8883, TLS (host, port, TLS and TLS Skip CN Check are runtime settings; trust anchors compiled in via `certificate_authority` in `base.yaml`) |
 | Client ID | `GbbConnect2_{PlantId}` |
 | Username | `{PlantId}` |
 | Password | `{PlantToken}` |
@@ -26,7 +26,8 @@ Topics:
 
 ## Payload
 
-JSON `Header` object, PascalCase keys, null fields omitted:
+JSON `Header` object, PascalCase keys, null fields omitted (an optional
+per-line `Tag` string is passed through unchanged):
 
 ```json
 {
@@ -55,12 +56,24 @@ raw response frame, then publishes the whole mutated header back on
 
 Error semantics (mirrors GbbConnect2):
 
-- Per-line failure (timeout, bad CRC, bad hex): `Line.Error` is set, `Modbus`
-  of that line **and every subsequent line** is removed, processing stops.
+- Per-line failure: `Line.Error` is set, `Modbus` of that line **and every
+  subsequent line** is removed, processing stops. `Error` strings:
+  `Response timeout`, `Invalid CRC in response`, `Response too short` (reply
+  under 4 bytes) and `Invalid Modbus hex string` (unparseable hex or a
+  request frame under 4 bytes).
+- Lines without a `Modbus` value are skipped (left untouched).
 - The response is still published; the response itself is the acknowledgment.
+- Cases that get **no** response: a malformed/unparseable `toDevice` payload is ignored; the
+  request queue holds one pending request, so a newer request replaces a
+  queued one that has not started yet; a response that exceeds the JSON
+  size cap even without `LastLog` is dropped.
 
-Timing between commands: ≥100 ms after a read, ≥3000 ms after a write
-(write = Modbus function ≥ 5 and ≠ 23).
+Timing: a line fails with `Response timeout` after 1000 ms without a
+complete reply (`response_timeout`). Between commands the device waits
+≥100 ms after a read and ≥3000 ms after a write (`read_gap`/`write_gap`;
+write = Modbus function ≥ 5 and ≠ 23), measured from the end of the previous
+command's reply or timeout — including across request boundaries, so the
+first frame of the next request honours the gap left by the last one.
 
 ## Emergency command set ("last will", protocol v2)
 
@@ -70,11 +83,12 @@ fields:
 | Field | Meaning |
 |---|---|
 | `IsInvSetup` | int; non-zero marks a message carrying inverter setup data. GbbOptimizer sends one during the first 10 minutes of every hour. |
-| `LinesOnNoInvSetup` | `Line[]`; emergency Modbus commands to run if the cloud goes silent. Stored (replacing the previous set) keyed by `SubInverterSN` (absent = master); an **empty array clears** the stored set for that key. |
+| `LinesOnNoInvSetup` | `Line[]`; emergency Modbus commands to run if the cloud goes silent. Stored (replacing the previous set) keyed by `SubInverterSN` (trimmed like .NET `Trim()`; absent/empty = master); an **empty array clears** the stored set for that key. A set counts as unchanged when every line's `LineNo` and `Modbus` match — `Tag`/`Timestamp` are ignored, so the hourly re-send with fresh timestamps is not a change. |
 
 Trigger (mirrors GbbConnect2): past minute 10 of the hour
-(`emergency_minute_threshold`, wall clock from SNTP — the check is inert
-until the clock syncs), if an `IsInvSetup` message has been seen before but
+(`emergency_minute_threshold`; minutes are taken from the SNTP clock's
+UTC epoch — `ts % 3600` — which matches local time in whole-hour time zones;
+the check is inert until the clock syncs), if an `IsInvSetup` message has been seen before but
 none arrived since the top of the current hour, the device executes every
 stored set on the RS485 bus. An `IsInvSetup` that arrives **before** the
 first clock sync (MQTT can beat NTP after a power cycle) still arms the
@@ -92,11 +106,16 @@ GbbDongle deviations from the original:
   15 min) until it succeeds or a fresh `IsInvSetup` arrives, which cancels
   pending sends (the cloud is back in charge) — including an in-flight
   batch, which is aborted at the next safe Modbus line boundary (never
-  mid-frame; the current response/timeout completes first). The original
-  sent blindly once per hour-miss.
+  mid-frame; the current response/timeout completes first). If the set is
+  replaced while it is being executed, a successful run does not clear the
+  replacement — it stays stored and goes through the normal retry. The
+  original sent blindly once per hour-miss.
 - **Optional persistence**: the "Persist Emergency Commands" switch (default
   off) keeps the sets in NVS across reboots (written only when the content
-  actually changes, to limit flash wear). After a reboot restores sets, the
+  actually changes, to limit flash wear). Turning the switch off erases the
+  NVS copy. Sets whose JSON would reach the 5120 B `build_json()` cap are
+  not persisted (the previous NVS copy stays, a warning is logged; the RAM
+  copy is complete and still used). After a reboot restores sets, the
   hourly deadline counts from the first clock sync. The original kept the
   set in RAM only.
 - `LinesOnNoInvSetup` is not echoed back in responses (GbbConnect2 echoes it
@@ -108,12 +127,17 @@ GbbDongle deviations from the original:
   physical RS485 bus and the slave address inside each RTU frame already
   selects the target inverter. (GbbConnect2 used it to pick a different
   Solarman TCP dongle.)
-- `LastLog` is served from a 64 KB ring buffer of recent ESPHome log lines
-  held in PSRAM (incremental: each request returns what was logged since the
-  previous one, capped at 3 KiB — budgeted so the escaped log plus the rest
-  of the response stays under esphome `json::build_json()`'s 5120 B
-  truncation cap; an oversized response is re-sent without `LastLog` rather
-  than published as truncated, invalid JSON).
-- `LogLevel` (`OnlyErrors`/`Min`/`Max`) gates what gets recorded into that
-  ring buffer and is persisted across reboots. It does not change the global
-  ESPHome logger level.
+- `LastLog` is served from a ring buffer of recent ESPHome log lines
+  (`log_buffer_size`: 64 KB in PSRAM by default, 8 KB in internal RAM on
+  the no-PSRAM boards T-CAN485 and Kamami). It is incremental: each request
+  returns what was logged since the previous one, capped at 3 KiB — when
+  more is pending, only the newest 3 KiB is sent and the older lines are
+  dropped. The cap is budgeted so the escaped log plus the rest of the
+  response stays under esphome `json::build_json()`'s 5120 B truncation
+  cap; an oversized response is re-sent without `LastLog` rather than
+  published as truncated, invalid JSON. A single log message longer than a
+  quarter of the buffer is truncated.
+- `LogLevel` gates what gets recorded into that ring buffer: `OnlyErrors` =
+  warnings and errors, `Min` = up to DEBUG (also the default until the cloud
+  sets a level), `Max` = everything the ESPHome logger emits. The level is persisted across reboots
+  and does not change the global ESPHome logger level.

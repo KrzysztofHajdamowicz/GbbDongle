@@ -17,8 +17,9 @@ Modbus 0x03).
 2. Narzędzie wypisze listę adresów IP komputera. W web UI dongla
    (`http://gbbdongle.local`, `http://gbbdongle-tcan485.local`,
    `http://gbbdongle-kamami.local`, `http://gbbdongle-8di8do-wifi.local` albo
-   `http://gbbdongle-8di8do-eth.local`) **zanotuj obecne wartości**, po czym
-   ustaw:
+   `http://gbbdongle-8di8do-eth.local`; na obrazie Factory zaloguj się jako
+   `admin` z hasłem z encji Admin Password, domyślnie `admin`) **zanotuj
+   obecne wartości**, po czym ustaw:
    - `MQTT Server` = IP komputera z listy (ta sama sieć co dongle),
    - `MQTT Port` = `1883`,
    - `TLS` = off,
@@ -37,6 +38,10 @@ narzędzie zrobi samo (także po przerwaniu Ctrl-C):
 ```bash
 ./busscan --dongle gbbdongle.local
 ```
+
+Tryb automatyczny nie obsługuje logowania do web UI, więc działa tylko
+z obrazem Home Assistant-compatible (bez hasła). Na obrazie Factory (web UI
+za hasłem `admin`) REST zwróci błąd HTTP 401 — użyj trybu ręcznego.
 
 Zamiast nazwy mDNS można podać adres IP dongla.
 

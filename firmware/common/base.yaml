@@ -2,8 +2,9 @@
 # firmware variants. Hardware specifics (esp32/psram, UART pins, RS485
 # direction control, BLE provisioning, ethernet) live in
 # firmware/boards/*.yaml; WiFi connectivity lives in common/wifi.yaml. A
-# device yaml combines this file with exactly one board file (plus wifi.yaml
-# for WiFi boards) via `packages:`.
+# device yaml combines this file with one board package (the board file, or
+# a core file plus its transport overlay) and wifi.yaml for WiFi boards, via
+# `packages:`.
 
 substitutions:
   device_name: gbbdongle
