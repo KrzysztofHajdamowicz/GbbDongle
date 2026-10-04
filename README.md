@@ -188,7 +188,9 @@ messages) and the entity wiring.
 
 Run a local mosquitto (`brew install mosquitto`), point the dongle at it with
 TLS off, and publish a captured `toDevice` request; a Modbus slave simulator
-(e.g. `pymodbus`) on a USB-RS485 adapter stands in for the inverter.
+(`tools/bench/modbus_slave.py`, pymodbus) on a USB-RS485 adapter stands in
+for the inverter. The full procedure and test scenarios are in
+[tools/bench/README.md](tools/bench/README.md).
 
 ## Releases
 

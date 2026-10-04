@@ -11,6 +11,7 @@ dependencies = [
 dev = [
     "pytest>=8.0",
     "paho-mqtt>=1.6",
+    "pymodbus>=3.8",
 ]
 
 [tool.uv]
