@@ -274,12 +274,18 @@ void GbbDongle::loop() {
       this->publish_response_(std::move(result));
     }
   }
-  if (!this->executor_.busy() && this->pending_request_.has_value()) {
-    this->executor_.start(std::move(*this->pending_request_));
-    this->pending_request_.reset();
-  } else if (!this->executor_.busy() && !this->pending_request_.has_value() && this->emergency_.wants_bus()) {
-    // Cloud requests take priority; emergency sets go out only when idle.
-    this->emergency_.start_next_set();
+  if (!this->executor_.busy()) {
+    if (this->emergency_.wants_bus()) {
+      // A triggered emergency cycle owns the bus until every stored set has
+      // been executed: the inverter must never be left with a half-applied
+      // emergency state. The cloud's commands overwrite it afterwards (the
+      // cloud sends one request at a time, so the single pending slot holds
+      // it for the whole cycle).
+      this->emergency_.start_next_set();
+    } else if (this->pending_request_.has_value()) {
+      this->executor_.start(std::move(*this->pending_request_));
+      this->pending_request_.reset();
+    }
   }
   this->executor_.loop();
 

@@ -56,20 +56,20 @@ void EmergencyManager::handle_fields(GbbHeader &header) {
     }
     this->boot_loaded_awaiting_time_ = false;
     switch (this->state_) {
-      case State::QUEUED:
       case State::BACKOFF:
+        // Nothing of this attempt reached the inverter; the cloud's own
+        // setup supersedes the retry.
         ESP_LOGI(TAG, "InvSetup received; cancelling the pending emergency send");
         this->state_ = State::ARMED;
         break;
+      case State::QUEUED:
       case State::EXECUTING:
-        // The cloud is back: stop putting stale emergency lines on the bus
-        // (the executor yields at the next safe line boundary; EXECUTING
-        // always means the running batch is ours) and make sure the stale
-        // result does not clear a freshly received set.
-        ESP_LOGI(TAG, "InvSetup received; aborting the in-flight emergency send");
-        this->cancel_ = true;
-        if (this->executor_ != nullptr)
-          this->executor_->abort_pending_lines();
+        // GbbOptimizer semantics: an emergency set, once its send started,
+        // goes out in full and only then gets overwritten by the cloud's
+        // commands. Interrupting here would leave the inverter with a
+        // half-applied state, so the cycle runs on; the cloud request waits.
+        ESP_LOGI(TAG, "InvSetup received during the emergency send; finishing the set(s) first");
+        this->cloud_back_ = true;
         break;
       default:
         break;
@@ -151,6 +151,7 @@ void EmergencyManager::start_next_set() {
   const auto &sets = this->store_.sets();
   auto it = this->walk_from_start_ ? sets.cbegin() : sets.upper_bound(this->current_key_);
   if (it == sets.cend()) {
+    this->cloud_back_ = false;
     this->state_ = sets.empty() ? State::EMPTY : State::ARMED;
     return;
   }
@@ -176,12 +177,6 @@ void EmergencyManager::start_next_set() {
 }
 
 void EmergencyManager::handle_result(GbbHeader &&header) {
-  if (this->cancel_) {
-    this->cancel_ = false;
-    ESP_LOGI(TAG, "Emergency run cancelled (InvSetup arrived); dropping the result");
-    this->state_ = this->store_.empty() ? State::EMPTY : State::ARMED;
-    return;
-  }
   const std::string key = this->current_key_;
   const char *target = key.empty() ? "master" : key.c_str();
 
@@ -218,8 +213,15 @@ void EmergencyManager::handle_result(GbbHeader &&header) {
   if (sets.empty()) {
     // Send once: stay quiet until GbbOptimizer delivers a new set.
     this->last_inv_setup_ts_ = 0;
+    this->cloud_back_ = false;
     this->state_ = State::EMPTY;
     ESP_LOGI(TAG, "All emergency command sets delivered");
+    return;
+  }
+  if (this->cloud_back_) {
+    this->cloud_back_ = false;
+    this->state_ = State::ARMED;
+    ESP_LOGW(TAG, "Undelivered emergency command set(s) remain, but the cloud is back; not retrying");
     return;
   }
   this->state_ = State::BACKOFF;

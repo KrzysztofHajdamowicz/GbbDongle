@@ -125,9 +125,10 @@ Files:
 - `emergency_manager.{h,cpp}` — the emergency state machine (EMPTY → ARMED
   → QUEUED → EXECUTING → BACKOFF): hourly InvSetup deadline, send cycle over
   the stored sets, delivery confirmation and retry backoff. Owns the
-  `EmergencyStore`; `gbb_dongle.cpp` only arbitrates the bus (cloud requests
-  first, `wants_bus()` / `start_next_set()`) and routes executor results
-  with `header.emergency` back to it. See docs/protocol.md.
+  `EmergencyStore`; `gbb_dongle.cpp` only arbitrates the bus (a running
+  emergency cycle first via `wants_bus()` / `start_next_set()`, then the
+  pending cloud request — a cycle is never interrupted) and routes executor
+  results with `header.emergency` back to it. See docs/protocol.md.
 - `modbus_executor.{h,cpp}` — non-blocking state machine (IDLE → GAP →
   TRANSMIT → RX_WAIT → DONE) that executes one request's `Lines` on the bus,
   one frame at a time. Never block the ESPHome main loop here.

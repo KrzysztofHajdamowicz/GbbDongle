@@ -35,7 +35,6 @@ static const char *frame_to_log_hex(const std::vector<uint8_t> &frame) {
 void ModbusExecutor::start(GbbHeader &&header) {
   this->header_ = std::move(header);
   this->line_index_ = 0;
-  this->abort_requested_ = false;
   // One-time worst-case capacity; clear() never shrinks, so the steady state
   // stays allocation-free regardless of frame sizes seen so far.
   this->tx_frame_.reserve(MAX_FRAME_SIZE);
@@ -55,11 +54,6 @@ void ModbusExecutor::loop() {
     case State::DONE:
       break;
     case State::GAP:
-      // Safe boundary: the next frame has not been transmitted yet.
-      if (this->abort_requested_) {
-        this->abort_batch_();
-        break;
-      }
       // Signed difference, not >=: gap_until_ may sit across the ~49.7-day
       // millis() rollover, where the absolute compare either skips the gap
       // or parks the executor until the next wrap.
@@ -76,12 +70,6 @@ void ModbusExecutor::loop() {
 }
 
 void ModbusExecutor::start_next_line_() {
-  // Safe boundary: the previous line's response (or timeout) is complete and
-  // the next frame is not on the bus yet.
-  if (this->abort_requested_) {
-    this->abort_batch_();
-    return;
-  }
   // Skip lines without a Modbus payload (GbbConnect2 only processes lines
   // that carry one).
   while (this->line_index_ < this->header_.lines.size() &&
@@ -236,12 +224,6 @@ void ModbusExecutor::finish_all_() {
   this->tx_frame_.clear();
   this->rx_frame_.clear();
   this->state_ = State::DONE;
-}
-
-void ModbusExecutor::abort_batch_() {
-  ESP_LOGI(TAG, "Batch aborted at a line boundary; %u of %u line(s) not sent",
-           this->header_.lines.size() - this->line_index_, this->header_.lines.size());
-  this->finish_all_();
 }
 
 }  // namespace gbb_dongle

@@ -88,8 +88,21 @@ trigger fires at minute 2 of the next hour instead of minute 11).
   system clock (ESP-IDF stores it in RTC registers), so the check is live
   immediately; only a power cycle waits for SNTP.
 
-- **Cancel** — send the emergency request again while a send is pending or
-  in BACKOFF: `InvSetup received; cancelling the pending emergency send`.
+- **Cloud returns mid-send** — trigger the cycle as above and, right after
+  `sending the emergency command set(s)`, send the emergency request again
+  (the window is the 3 s write gap between the two FC06 lines). Expected
+  order in the log: `InvSetup received during the emergency send; finishing
+  the set(s) first`, both emergency `Line 0/1 -> inverter` frames,
+  `delivered; cleared`, and only then the request's SOC read followed by
+  the `fromDevice` response printed by `cloud_roundtrip.py` (its 30 s
+  timeout covers the cycle). The cloud never interleaves with an emergency
+  set. With the slave stopped the same sequence ends in `Undelivered
+  emergency command set(s) remain, but the cloud is back; not retrying`
+  instead of `retrying in 60 s`.
+
+- **Cancel in BACKOFF** — stop the slave, trigger, wait for `retrying in
+  60 s`, then send the emergency request: `InvSetup received; cancelling
+  the pending emergency send`.
 
 Register frames carry a Modbus CRC; to craft new ones:
 
