@@ -157,6 +157,13 @@ void GbbDongle::mark_dirty_() {
 
 void GbbDongle::on_cloud_message_(const std::string &payload) {
   this->requests_received_++;
+  if (payload.size() > MAX_TODEVICE_PAYLOAD) {
+    // Checked before parsing (and before echoing it to the log): see
+    // MAX_TODEVICE_PAYLOAD in gbb_protocol.h.
+    ESP_LOGW(TAG, "Ignoring oversized toDevice payload (%u B, limit %u B)", (unsigned) payload.size(),
+             (unsigned) MAX_TODEVICE_PAYLOAD);
+    return;
+  }
   // Full request as it arrived from the cloud, so on the bench you can see
   // exactly what was asked for and match it against the Modbus frames the
   // executor sends out below.

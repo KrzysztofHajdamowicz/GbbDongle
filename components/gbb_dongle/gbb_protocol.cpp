@@ -1,12 +1,23 @@
 #include "gbb_protocol.h"
 
 #include "esphome/components/json/json_util.h"
+#include "esphome/core/log.h"
 
 namespace esphome {
 namespace gbb_dongle {
 
-static void parse_line_array(JsonArray lines_array, std::vector<GbbLine> &out) {
-  out.reserve(out.size() + lines_array.size());
+static const char *const TAG = "gbb_dongle.protocol";
+
+// Returns false (and leaves `out` untouched) when the array exceeds
+// MAX_LINES_PER_ARRAY; the count is checked before any allocation.
+static bool parse_line_array(JsonArray lines_array, std::vector<GbbLine> &out) {
+  const size_t count = lines_array.size();
+  if (count > MAX_LINES_PER_ARRAY) {
+    ESP_LOGW(TAG, "Rejecting line array with %u elements (limit %u)", (unsigned) count,
+             (unsigned) MAX_LINES_PER_ARRAY);
+    return false;
+  }
+  out.reserve(out.size() + count);
   for (JsonObject line_obj : lines_array) {
     GbbLine line;
     line.line_no = line_obj["LineNo"] | 0;
@@ -27,6 +38,7 @@ static void parse_line_array(JsonArray lines_array, std::vector<GbbLine> &out) {
     }
     out.push_back(std::move(line));
   }
+  return true;
 }
 
 static void serialize_line_array(JsonArray lines, const std::vector<GbbLine> &source) {
@@ -66,7 +78,8 @@ bool parse_header(const std::string &payload, GbbHeader &out) {
       out.sub_inverter_sn = root["SubInverterSN"].as<const char *>();
     }
     if (root["Lines"].is<JsonArray>()) {
-      parse_line_array(root["Lines"].as<JsonArray>(), out.lines);
+      if (!parse_line_array(root["Lines"].as<JsonArray>(), out.lines))
+        return false;
     }
     if (root["IsInvSetup"].is<int32_t>()) {
       out.has_is_inv_setup = true;
@@ -74,7 +87,8 @@ bool parse_header(const std::string &payload, GbbHeader &out) {
     }
     if (root["LinesOnNoInvSetup"].is<JsonArray>()) {
       out.has_lines_on_no_inv_setup = true;
-      parse_line_array(root["LinesOnNoInvSetup"].as<JsonArray>(), out.lines_on_no_inv_setup);
+      if (!parse_line_array(root["LinesOnNoInvSetup"].as<JsonArray>(), out.lines_on_no_inv_setup))
+        return false;
     }
     return true;
   });
@@ -132,8 +146,8 @@ bool parse_emergency_sets(const std::string &payload, std::map<std::string, std:
       if (set_obj["SubInverterSN"].is<const char *>())
         sn = set_obj["SubInverterSN"].as<const char *>();
       std::vector<GbbLine> lines;
-      if (set_obj["Lines"].is<JsonArray>())
-        parse_line_array(set_obj["Lines"].as<JsonArray>(), lines);
+      if (set_obj["Lines"].is<JsonArray>() && !parse_line_array(set_obj["Lines"].as<JsonArray>(), lines))
+        return false;
       if (!lines.empty())
         out[sn] = std::move(lines);
     }
