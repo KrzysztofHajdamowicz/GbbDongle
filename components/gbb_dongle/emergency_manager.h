@@ -17,13 +17,16 @@ namespace gbb_dongle {
 /// the send cycle over the stored sets and the retry/backoff when the
 /// inverter does not answer (see docs/protocol.md). Storage lives in
 /// EmergencyStore; the bus is driven through the ModbusExecutor owned by
-/// GbbDongle, which arbitrates it (cloud requests first).
+/// GbbDongle, which arbitrates it (a running send cycle first, then the
+/// pending cloud request).
 class EmergencyManager {
  public:
   // EMPTY: nothing stored. ARMED: sets stored, watching the hourly InvSetup
-  // deadline. QUEUED: a send cycle is due, waiting for the executor (cloud
-  // requests first). EXECUTING: an emergency set is on the RS485 bus.
-  // BACKOFF: the inverter did not respond; waiting for the retry timer.
+  // deadline. QUEUED: a send cycle is due (or between two sets of one),
+  // waiting for the executor. EXECUTING: an emergency set is on the RS485
+  // bus. BACKOFF: the inverter did not respond; waiting for the retry timer.
+  // A cycle (QUEUED/EXECUTING) is committed: once triggered it runs over
+  // every stored set in full, the cloud's commands only follow afterwards.
   enum class State : uint8_t { EMPTY, ARMED, QUEUED, EXECUTING, BACKOFF };
 
   void set_time_source(time::RealTimeClock *t) { this->time_source_ = t; }
@@ -40,10 +43,10 @@ class EmergencyManager {
   void loop();
   /// Apply the IsInvSetup / LinesOnNoInvSetup fields of a cloud request.
   void handle_fields(GbbHeader &header);
-  /// A send cycle is due and waits for the bus.
+  /// A send cycle is due (or mid-way) and waits for the bus.
   bool wants_bus() const { return this->state_ == State::QUEUED; }
   /// Hand the next stored set to the executor; the caller made sure the
-  /// executor is idle and no cloud request is waiting.
+  /// executor is idle.
   void start_next_set();
   /// Consume the executor result of an emergency run (header.emergency).
   void handle_result(GbbHeader &&header);
@@ -73,7 +76,10 @@ class EmergencyManager {
   // cycle): stamp last_inv_setup_ts_ with the first valid wall time, else an
   // outage starting before the sync would leave the check disarmed forever.
   bool inv_setup_awaiting_time_{false};
-  bool cancel_{false};  // InvSetup arrived mid-run; drop the stale result
+  // InvSetup arrived while a send cycle was running: the cycle still
+  // completes (the inverter must get the whole set), but an undelivered
+  // remainder is not retried afterwards — the cloud is back in charge.
+  bool cloud_back_{false};
   bool walk_from_start_{false};
   std::string current_key_;
   // Revision of the set handed to the executor; a delivered result may clear

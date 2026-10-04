@@ -94,8 +94,12 @@ stored set on the RS485 bus. An `IsInvSetup` that arrives **before** the
 first clock sync (MQTT can beat NTP after a power cycle) still arms the
 check: its receive time is approximated with the sync moment, which can only
 delay the trigger, never fire it early. Results are **only logged** (they land in
-`LastLog`), never published to `fromDevice`, and normal cloud requests take
-priority on the bus.
+`LastLog`), never published to `fromDevice`. A triggered send cycle owns the
+bus until every stored set has been executed in full: a cloud request that
+arrives meanwhile waits in the single pending slot and runs afterwards. The
+cloud's commands overwrite the emergency state, they never interleave with
+it (GbbOptimizer author's intent; GbbConnect2's blocking `SendLines` gives
+the same ordering).
 
 GbbDongle deviations from the original:
 
@@ -104,10 +108,11 @@ GbbDongle deviations from the original:
   Otherwise the set is kept and retried with exponential backoff
   (`emergency_retry_initial` 60 s doubling up to `emergency_retry_max`
   15 min) until it succeeds or a fresh `IsInvSetup` arrives, which cancels
-  pending sends (the cloud is back in charge) — including an in-flight
-  batch, which is aborted at the next safe Modbus line boundary (never
-  mid-frame; the current response/timeout completes first). If the set is
-  replaced while it is being executed, a successful run does not clear the
+  the pending retry (the cloud is back in charge). An `IsInvSetup` that
+  arrives while a send cycle is running does **not** interrupt it: the sets
+  still go out in full, and only an undelivered remainder is then left
+  un-retried (the cloud's own setup supersedes it). If the set is replaced
+  while it is being executed, a successful run does not clear the
   replacement — it stays stored and goes through the normal retry. The
   original sent blindly once per hour-miss.
 - **Optional persistence**: the "Persist Emergency Commands" switch (default
