@@ -20,6 +20,22 @@ static constexpr int32_t CURR_PROTOCOL_VERSION = 2;
 // this long must be treated as corrupt, and payload budgets must stay below it.
 static constexpr size_t JSON_BUILD_TRUNCATED_SIZE = 5119;
 
+// Upper bound on the elements of one Lines / LinesOnNoInvSetup array. The
+// parser allocates one GbbLine per element before anything is validated and
+// the element count comes straight from the broker, so without a cap a large
+// array exhausts the heap and aborts the firmware (C++ exceptions are off).
+// Real cloud batches carry ~10 lines; above a few dozen the fromDevice
+// response could not fit JSON_BUILD_TRUNCATED_SIZE anyway. An array over the
+// limit makes the whole payload unparseable (ignored, like malformed JSON).
+static constexpr size_t MAX_LINES_PER_ARRAY = 50;
+
+// Upper bound on a toDevice payload, checked before it is parsed. The JSON
+// document grows with the payload in internal RAM on boards without PSRAM,
+// and an oversized one can starve WiFi/TLS of heap before ArduinoJson gives
+// up gracefully. MAX_LINES_PER_ARRAY lines with Tag and Timestamp take well
+// under half of this.
+static constexpr size_t MAX_TODEVICE_PAYLOAD = 16 * 1024;
+
 struct GbbLine {
   int32_t line_no{0};
   bool has_tag{false};

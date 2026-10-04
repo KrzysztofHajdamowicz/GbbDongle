@@ -63,7 +63,11 @@ Error semantics (mirrors GbbConnect2):
   request frame under 4 bytes).
 - Lines without a `Modbus` value are skipped (left untouched).
 - The response is still published; the response itself is the acknowledgment.
-- Cases that get **no** response: a malformed/unparseable `toDevice` payload is ignored; the
+- Cases that get **no** response: a malformed/unparseable `toDevice` payload is ignored; a
+  payload over 16 KiB, or one whose `Lines` / `LinesOnNoInvSetup` array has
+  more than 50 elements, is ignored the same way (the device logs a warning;
+  real batches carry ~10 lines and a longer response could not fit the size
+  cap below anyway); the
   request queue holds one pending request, so a newer request replaces a
   queued one that has not started yet; a response that exceeds the JSON
   size cap even without `LastLog` is dropped.
