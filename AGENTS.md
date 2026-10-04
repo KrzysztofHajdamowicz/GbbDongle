@@ -31,7 +31,7 @@ generates it internally.
 | `firmware/gbbdongle*.yaml` | Device entrypoints combining the packages above via `packages:` — per board an import target (`<config>.yaml`), the two published images (`-factory`, `-ha`) and a `-dev` variant; `gbbdongle-bench.yaml` is a bench-only overlay |
 | `static/` | GitHub Pages web installer (`index.html` + `img/` board photos), deployed by the release workflow |
 | `docs/protocol.md` | **Authoritative** cloud-protocol description — read it before touching protocol code |
-| `tools/` | `cloud_roundtrip.py` (plays the cloud against a dongle on a local broker) and `busscan/` (one-shot Go diagnostic that scans Modbus addresses through a dongle, Polish README, no CI) |
+| `tools/` | `cloud_roundtrip.py` (plays the cloud against a dongle on a local broker), `bench/` (pymodbus RTU slave standing in for the inverter on a USB-RS485 adapter, an emergency-set test request and the bench procedure README) and `busscan/` (one-shot Go diagnostic that scans Modbus addresses through a dongle, Polish README, no CI) |
 | `.github/workflows/` | `ci.yaml` (import-target validation + compile matrix), `release.yaml` (build, manifests, SBOM, attestations, Pages deploy), `dependabot-auto-merge.yml` |
 
 ### Package layering
@@ -211,8 +211,9 @@ resulting JSON.
 
 Testing without cloud/inverter: local mosquitto with TLS off +
 `tools/cloud_roundtrip.py` (publishes a captured `toDevice` request, prints
-the response; paho-mqtt comes from the `dev` uv group, installed by
-default) + a pymodbus slave simulator on a USB-RS485 adapter (see README).
+the response; paho-mqtt and pymodbus come from the `dev` uv group, installed
+by default) + `tools/bench/modbus_slave.py` on a USB-RS485 adapter standing
+in for the inverter. Procedure and scenarios: `tools/bench/README.md`.
 `tools/busscan` plays the cloud against real inverters to list the Modbus
 addresses on the bus.
 

@@ -1,0 +1,12 @@
+{
+  "OrderId": "bench-emergency",
+  "IsInvSetup": 1,
+  "SendLastLog": 1,
+  "Lines": [
+    {"LineNo": 0, "Timestamp": 1791100000, "Modbus": "0103024C00014465"}
+  ],
+  "LinesOnNoInvSetup": [
+    {"LineNo": 0, "Timestamp": 1791100000, "Modbus": "010600F80001C9FB"},
+    {"LineNo": 1, "Timestamp": 1791100000, "Modbus": "010600F9000059FB"}
+  ]
+}
