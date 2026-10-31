@@ -9,7 +9,8 @@ application. Runs on off-the-shelf ESP32 RS485 boards (see
 The dongle plugs into the inverter's RS485 Modbus port and acts as a
 stateless proxy: GbbOptimizer sends batches of raw Modbus RTU frames over
 MQTT, the dongle executes them on the bus and sends the responses back. See
-[docs/protocol.md](docs/protocol.md) for the protocol details.
+[docs/protocol.md](docs/protocol.md) for the protocol details, and
+[docs/faq.md](docs/faq.md) for buying, wiring and setup questions.
 
 ## Supported boards
 
