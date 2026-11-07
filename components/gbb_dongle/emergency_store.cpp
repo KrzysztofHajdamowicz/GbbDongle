@@ -142,6 +142,15 @@ bool EmergencyStore::load_from_nvs() {
   }
   nvs_close(handle);
   this->persisted_hash_ = fnv1_hash(blob);
+  // Same rule as set_lines(): a set without any Modbus frame can never be
+  // confirmed, so it is not restored (blobs written by older firmware).
+  for (auto it = this->sets_.begin(); it != this->sets_.end();) {
+    if (has_executable_line(it->second)) {
+      ++it;
+    } else {
+      it = this->sets_.erase(it);
+    }
+  }
   size_t total_lines = 0;
   for (const auto &entry : this->sets_) {
     this->revisions_[entry.first] = ++this->next_revision_;
