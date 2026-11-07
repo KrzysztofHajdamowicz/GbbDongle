@@ -19,7 +19,7 @@ line_ha: Home Assistant-compatible
 line_ha_desc: Exposes the ESPHome native API and offers itself for adoption in the ESPHome dashboard. After adoption you build and update the firmware yourself.
 line_default: default
 installs_version: Installs firmware
-browser_unsupported: Your browser does not support Web Serial. Open this page in Chrome or Edge on a computer.
+browser_unsupported: Your browser does not support Web Serial. Open this page on a computer in Chrome, Edge or Firefox (151 or newer).
 not_allowed: The installer needs a secure (HTTPS) connection.
 guide_title: Step-by-step guide
 guide_pick_first: Pick your device and firmware line above and the guide adapts to your choice.

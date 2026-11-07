@@ -64,7 +64,7 @@ steps:
   title: Od pudełka do działania w 4 krokach
   items:
     - title: Wgraj firmware
-      text: Przez USB, prosto z przeglądarki Chrome lub Edge. Gotowe urządzenie ma go już wgranego.
+      text: Przez USB, prosto z przeglądarki Chrome, Edge albo Firefox. Gotowe urządzenie ma go już wgranego.
     - title: Podłącz do sieci
       text: WiFi skonfigurujesz z instalatora albo przez punkt dostępowy *GbbDongle Setup*. Ethernet działa od razu.
     - title: Wpisz dane z GbbOptimizera

@@ -19,7 +19,7 @@ line_ha: Zgodny z Home Assistant
 line_ha_desc: Udostępnia natywne API ESPHome i zgłasza się do adopcji w panelu ESPHome. Po adopcji firmware budujesz i aktualizujesz sam.
 line_default: domyślny
 installs_version: Zainstaluje firmware
-browser_unsupported: Twoja przeglądarka nie obsługuje Web Serial. Otwórz tę stronę w Chrome lub Edge na komputerze.
+browser_unsupported: Twoja przeglądarka nie obsługuje Web Serial. Otwórz tę stronę na komputerze w Chrome, Edge albo Firefoksie (od wersji 151).
 not_allowed: Instalator wymaga bezpiecznego połączenia (HTTPS).
 guide_title: Instrukcja krok po kroku
 guide_pick_first: Wybierz urządzenie i wersję firmware powyżej, a instrukcja dopasuje się do Twojego wyboru.
