@@ -14,10 +14,14 @@ disableKinds = ["taxonomy", "term", "RSS"]
   label = "PL"
   contentDir = "content/pl"
   weight = 1
+  [languages.pl.params]
+    price = "399 zł brutto"
 [languages.en]
   label = "EN"
   contentDir = "content/en"
   weight = 2
+  [languages.en.params]
+    price = "399 PLN gross"
 
 # docs/faq.md is the single source of the English FAQ (GbbSupportBot reads
 # it from main too); the FAQ layout renders it from this mount.
@@ -40,6 +44,5 @@ disableKinds = ["taxonomy", "term", "RSS"]
   discord = ""
   # Target of the "Kup teraz" buttons until a shop is chosen.
   buyUrl = ""
-  price = "399 zł brutto"
   # ESP Web Tools, same major as the previous installer page.
   espWebTools = "https://unpkg.com/esp-web-tools@10.4.0/dist/web/install-button.js?module"

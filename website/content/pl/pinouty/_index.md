@@ -1,5 +1,6 @@
 ---
 title: Pinouty falowników
+translationKey: pinouts
 description: Które gniazdo i które piny RS485 w Twoim falowniku.
 menu:
   main:

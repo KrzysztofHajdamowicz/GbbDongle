@@ -24,5 +24,4 @@ not_allowed: The installer needs a secure (HTTPS) connection.
 guide_title: Step-by-step guide
 guide_pick_first: Pick your device and firmware line above and the guide adapts to your choice.
 photos_credit: Board photos courtesy of the manufacturers
-faq_en_only: ""
 footer_tagline: Bridge between your inverter (RS485) and GbbOptimizer on an off-the-shelf ESP32 board.

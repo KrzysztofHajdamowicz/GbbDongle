@@ -24,5 +24,4 @@ not_allowed: Instalator wymaga bezpiecznego połączenia (HTTPS).
 guide_title: Instrukcja krok po kroku
 guide_pick_first: Wybierz urządzenie i wersję firmware powyżej, a instrukcja dopasuje się do Twojego wyboru.
 photos_credit: Zdjęcia płytek dzięki uprzejmości producentów
-faq_en_only: Polska wersja FAQ jest w przygotowaniu. Poniżej wersja angielska.
 footer_tagline: Most między falownikiem (RS485) a GbbOptimizerem na gotowej płytce ESP32.

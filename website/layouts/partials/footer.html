@@ -5,7 +5,7 @@
       <p class="muted small">{{ i18n "footer_tagline" }}</p>
     </div>
     <nav class="footer-links">
-      {{ range .Site.Menus.main }}<a href="{{ .URL | relLangURL }}">{{ .Name }}</a>{{ end }}
+      {{ range .Site.Menus.main }}<a href="{{ with .Page }}{{ .RelPermalink }}{{ else }}{{ .URL | relLangURL }}{{ end }}">{{ .Name }}</a>{{ end }}
       <a href="{{ .Site.Params.repo }}">{{ i18n "source" }}</a>
       {{ with .Site.Params.discord }}<a href="{{ . }}">Discord</a>{{ end }}
     </nav>
