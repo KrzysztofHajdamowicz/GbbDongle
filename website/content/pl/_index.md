@@ -4,7 +4,7 @@ description: Gotowy most RS485 między falownikiem a GbbOptimizerem. Bez kompute
 hero:
   eyebrow: Dla użytkowników GbbOptimizera
   title: Falownik w GbbOptimizerze, **bez komputera** w tle
-  lead: Pomiń zawodną chmurę producenta. GbbDongle łączy GbbOptimizer bezpośrednio z portem RS485 falownika, więc sterowanie działa szybko i niezależnie od cudzych serwerów. Bez komputera, Dockera czy Raspberry Pi włączonego 24/7: wystarczy mała płytka w rozdzielnicy.
+  lead: "Pomiń zawodną chmurę producenta. GbbDongle łączy GbbOptimizer bezpośrednio z portem RS485 falownika, więc sterowanie działa szybko i niezależnie od cudzych serwerów. Bez komputera, Dockera czy Raspberry Pi włączonego 24/7: wystarczy mała płytka w rozdzielnicy."
   note: Gotowe, wgrane i przetestowane urządzenie albo zrób to sam z płytki z listy.
 how:
   title: Jak to działa
