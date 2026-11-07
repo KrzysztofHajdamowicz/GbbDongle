@@ -13,6 +13,7 @@ update:
   - platform: http_request
     id: firmware_update
     name: Firmware
+    state_topic:
     source: ${update_manifest_url}
     update_interval: 6h
     # Fires once per detected release (on the NO_UPDATE -> AVAILABLE

@@ -303,6 +303,13 @@ void GbbDongle::loop() {
       this->mqtt_->publish(this->topic_keepalive_, "", 0, 1, false);
       ESP_LOGD(TAG, "Keepalive sent");
     }
+    if (!this->retained_token_cleared_) {
+      // Firmware up to 2.0.x mirrored the Plant Token to this retained topic
+      // (see the mqtt: block in base.yaml). An empty retained publish deletes
+      // the broker's copy; brokers that never accepted it ignore this.
+      this->retained_token_cleared_ =
+          this->mqtt_->publish(this->mqtt_->get_topic_prefix() + "/text/plant_token/state", "", 0, 1, true);
+    }
   }
 
   this->emergency_.loop();
