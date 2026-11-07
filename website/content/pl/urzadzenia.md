@@ -12,7 +12,7 @@ menu:
 
 - ESP32-S3, WiFi, konfiguracja WiFi przez Bluetooth lub USB
 - izolowany port RS485, montaż na szynie DIN
-- **wymaga rozdzielnicy dwurzędowej**: antena potrzebuje miejsca obok modułu
+- **wymaga rozdzielnicy co najmniej dwurzędowej**: antena wystaje nad moduł i zajmuje miejsce w rzędzie powyżej
 {{< /product >}}
 
 {{< product image="img/waveshare-esp32-s3-rs485-can.jpg" name="Waveshare ESP32-S3-RS485-CAN" variant="antena wbudowana" >}}
