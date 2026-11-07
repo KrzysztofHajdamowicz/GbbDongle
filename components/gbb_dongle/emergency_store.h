@@ -16,8 +16,9 @@ namespace gbb_dongle {
 /// and retry logic lives in GbbDongle.
 class EmergencyStore {
  public:
-  /// Replace the set for one SubInverterSN; an empty vector clears that key
-  /// (GbbConnect2 replace semantics). Returns false when the execution-
+  /// Replace the set for one SubInverterSN; an empty vector, or one in which
+  /// no line carries a Modbus frame, clears that key (GbbConnect2 replace
+  /// semantics). Returns false when the execution-
   /// relevant content (LineNo + Modbus) is identical to what is stored — the
   /// cloud re-sends the same set hourly — in which case nothing is touched:
   /// no replacement, no revision bump, and the caller can skip sync_nvs().

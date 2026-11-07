@@ -46,7 +46,21 @@ static bool same_execution_content(const std::vector<GbbLine> &a, const std::vec
   return true;
 }
 
+static bool has_executable_line(const std::vector<GbbLine> &lines) {
+  for (const auto &line : lines) {
+    if (line.has_modbus && !line.modbus.empty())
+      return true;
+  }
+  return false;
+}
+
 bool EmergencyStore::set_lines(const std::string &sub_inverter_sn, std::vector<GbbLine> &&lines) {
+  if (!lines.empty() && !has_executable_line(lines)) {
+    // The executor skips lines without a Modbus frame, so such a set could
+    // never be confirmed as delivered and would be retried forever.
+    ESP_LOGW(TAG, "Emergency set without any Modbus frame; treating it as a clear");
+    lines.clear();
+  }
   if (lines.empty()) {
     if (this->sets_.find(sub_inverter_sn) == this->sets_.end())
       return false;
@@ -112,7 +126,14 @@ bool EmergencyStore::load_from_nvs() {
   std::string blob;
   blob.resize(length);
   err = nvs_get_blob(handle, NVS_KEY, &blob[0], &length);
-  if (err != ESP_OK || !parse_emergency_sets(blob, this->sets_)) {
+  if (err != ESP_OK) {
+    // A failed read says nothing about the stored content; keep it for the
+    // next boot instead of erasing it.
+    ESP_LOGW(TAG, "nvs_get_blob failed: %s", esp_err_to_name(err));
+    nvs_close(handle);
+    return false;
+  }
+  if (!parse_emergency_sets(blob, this->sets_)) {
     ESP_LOGW(TAG, "Stored emergency sets unreadable; erasing");
     this->sets_.clear();
     nvs_erase_sets(handle);
@@ -146,11 +167,16 @@ void EmergencyStore::sync_nvs() {
     return;
   }
   const std::string blob = build_emergency_sets(this->sets_);
-  if (blob.size() >= JSON_BUILD_TRUNCATED_SIZE) {
-    // build_json truncated the document; persisting it would store invalid
-    // JSON that load_from_nvs() erases on the next boot. Keep the previous
-    // NVS content (the RAM copy stays complete and usable).
-    ESP_LOGE(TAG, "Emergency sets exceed the JSON size cap (%u B); not persisting", blob.size());
+  if (json_build_failed(blob)) {
+    // Truncated or "{}": persisting it would store a blob that load_from_nvs()
+    // rejects or that restores no sets. The previous NVS content is no longer
+    // what RAM holds either (it may be a set that has since been replaced or
+    // delivered and cleared), so erase it rather than let a reboot resurrect
+    // it. The RAM copy stays complete and usable until the next reboot.
+    ESP_LOGE(TAG, "Emergency sets could not be serialized (%u B, cap %u B); NVS copy erased, sets kept in RAM only",
+             blob.size(), (unsigned) JSON_BUILD_TRUNCATED_SIZE);
+    nvs_erase_sets(handle);
+    this->persisted_hash_ = 0;
     nvs_close(handle);
     return;
   }

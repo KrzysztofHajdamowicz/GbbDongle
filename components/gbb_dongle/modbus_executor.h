@@ -41,8 +41,9 @@ class ModbusExecutor {
   void start_next_line_();
   void transmit_current_();
   void handle_rx_();
-  void finish_line_ok_();
+  void finish_line_ok_(size_t n);
   void fail_line_(const char *message);
+  void start_gap_();
   void finish_all_();
   uint32_t silence_gap_ms_() const;
 
@@ -58,7 +59,12 @@ class ModbusExecutor {
   size_t line_index_{0};
   std::vector<uint8_t> tx_frame_;
   std::vector<uint8_t> rx_frame_;
-  uint32_t gap_until_{0};
+  // Inter-command silence as start + length rather than an absolute deadline:
+  // millis() - gap_start_ >= gap_ms_ stays correct however long the bus sat
+  // idle, where a stale deadline compared with a signed delta reads as "in
+  // the future" once ~24.9 days have passed and parks the executor.
+  uint32_t gap_start_{0};
+  uint32_t gap_ms_{0};
   uint32_t tx_done_at_{0};
   uint32_t last_rx_byte_at_{0};
   uint32_t next_gap_ms_{0};  // required silence before the *next* command

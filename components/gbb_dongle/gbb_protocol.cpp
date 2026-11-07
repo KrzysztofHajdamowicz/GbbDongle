@@ -58,6 +58,11 @@ static void serialize_line_array(JsonArray lines, const std::vector<GbbLine> &so
 
 bool parse_header(const std::string &payload, GbbHeader &out) {
   return json::parse_json(payload, [&out](JsonObject root) -> bool {
+    // A valid JSON document whose root is not an object ([], 5, "x") arrives
+    // as an unbound JsonObject; it is not a Header, so it is ignored like
+    // malformed JSON instead of being answered with an empty response.
+    if (root.isNull())
+      return false;
     if (root["Error"].is<const char *>()) {
       out.error = root["Error"].as<const char *>();
     }
@@ -125,6 +130,24 @@ std::string build_response(const GbbHeader &header, const GbbClientIdentity &ide
   });
 }
 
+size_t cut_response_to_cap(GbbHeader &header, const GbbClientIdentity &identity, const std::string &client_info,
+                           std::string &response) {
+  size_t cut = 0;
+  for (size_t i = header.lines.size(); i-- > 0 && response.size() >= JSON_BUILD_TRUNCATED_SIZE;) {
+    GbbLine &line = header.lines[i];
+    if (!line.has_modbus)
+      continue;
+    line.has_modbus = false;
+    line.modbus.clear();
+    line.error = RESPONSE_TOO_LARGE;
+    for (size_t later = i + 1; later < header.lines.size(); later++)
+      header.lines[later].error.clear();
+    response = build_response(header, identity, client_info, nullptr);
+    cut++;
+  }
+  return cut;
+}
+
 std::string build_emergency_sets(const std::map<std::string, std::vector<GbbLine>> &sets) {
   return json::build_json([&](JsonObject root) {
     JsonArray sets_array = root["Sets"].to<JsonArray>();
@@ -138,7 +161,7 @@ std::string build_emergency_sets(const std::map<std::string, std::vector<GbbLine
 
 bool parse_emergency_sets(const std::string &payload, std::map<std::string, std::vector<GbbLine>> &out) {
   return json::parse_json(payload, [&out](JsonObject root) -> bool {
-    if (!root["Sets"].is<JsonArray>())
+    if (root.isNull() || !root["Sets"].is<JsonArray>())
       return false;
     JsonArray sets_array = root["Sets"].as<JsonArray>();
     for (JsonObject set_obj : sets_array) {
@@ -189,6 +212,13 @@ bool hex_to_bytes(const std::string &hex, std::vector<uint8_t> &out) {
     out.push_back(static_cast<uint8_t>((hi << 4) | lo));
   }
   return true;
+}
+
+bool modbus_hex_is_exception(const std::string &hex) {
+  if (hex.size() < 4)
+    return false;
+  const int hi = hex_nibble(hex[2]);
+  return hi >= 0 && (hi & 0x8) != 0;
 }
 
 uint16_t modbus_crc16(const uint8_t *data, size_t len) {
