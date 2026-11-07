@@ -8,7 +8,8 @@ the board list are in the [README](../README.md); the cloud protocol is in [prot
 ### Can I buy a ready-made GbbDongle?
 
 Yes. The author sells an assembled, flashed and tested GbbDongle for 399 PLN gross (VAT invoice
-available); ask on the GbbDongle Discord channel. It is a Waveshare ESP32-S3-RS485-CAN on a DIN rail
+available); ask on the GbbOptimizer [Discord](https://discord.gg/XEhNSqQ6Jj), channel `#gbbdongle-by-k-hajdamowicz-en`
+(English) or `#gbbdongle-od-k-hajdamowicza-pl` (Polish). It is a Waveshare ESP32-S3-RS485-CAN on a DIN rail
 with an external WiFi antenna.
 
 ### Can I build one myself?

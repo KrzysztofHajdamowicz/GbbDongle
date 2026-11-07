@@ -8,7 +8,8 @@ Polskie tłumaczenie [faq.md](faq.md). Przy zmianach aktualizuj oba pliki. Kroki
 ### Czy mogę kupić gotowy GbbDongle?
 
 Tak. Autor sprzedaje złożony, wgrany i przetestowany GbbDongle za 399 zł brutto (z fakturą VAT); zapytaj
-na kanale GbbDongle na Discordzie. To Waveshare ESP32-S3-RS485-CAN na szynę DIN z zewnętrzną anteną WiFi.
+na [Discordzie](https://discord.gg/XEhNSqQ6Jj) GbbOptimizera, na kanale
+`#gbbdongle-od-k-hajdamowicza-pl`. To Waveshare ESP32-S3-RS485-CAN na szynę DIN z zewnętrzną anteną WiFi.
 
 ### Czy mogę zbudować go sam?
 

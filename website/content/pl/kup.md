@@ -7,6 +7,6 @@ Gotowy GbbDongle to Waveshare ESP32-S3-RS485-CAN na szynę DIN z **zewnętrzną 
 
 **Cena: 399 zł brutto**, faktura VAT.
 
-Sklep internetowy jest w przygotowaniu. Do tego czasu zamówienia przyjmuję na kanale GbbDongle na Discordzie GbbOptimizera.
+Sklep internetowy jest w przygotowaniu. Do tego czasu zamówienia przyjmuję na [Discordzie GbbOptimizera](https://discord.gg/XEhNSqQ6Jj), na kanale `#gbbdongle-od-k-hajdamowicza-pl`.
 
 Wolisz zrobić to sam? Zobacz [listę obsługiwanych płytek]({{< relref "urzadzenia" >}}) i [instalator]({{< relref "instalacja" >}}).

@@ -16,12 +16,14 @@ disableKinds = ["taxonomy", "term", "RSS"]
   weight = 1
   [languages.pl.params]
     price = "399 zł brutto"
+    discordChannel = "#gbbdongle-od-k-hajdamowicza-pl"
 [languages.en]
   label = "EN"
   contentDir = "content/en"
   weight = 2
   [languages.en.params]
     price = "399 PLN gross"
+    discordChannel = "#gbbdongle-by-k-hajdamowicz-en"
 
 # docs/faq.md is the single source of the English FAQ (GbbSupportBot reads
 # it from main too); the FAQ layout renders it from this mount.
@@ -41,7 +43,7 @@ disableKinds = ["taxonomy", "term", "RSS"]
 [params]
   repo = "https://github.com/KrzysztofHajdamowicz/GbbDongle"
   # Invite link to the GbbDongle channel on the GbbOptimizer Discord.
-  discord = ""
+  discord = "https://discord.gg/XEhNSqQ6Jj"
   # Target of the "Kup teraz" buttons until a shop is chosen.
   buyUrl = ""
   # ESP Web Tools, same major as the previous installer page.

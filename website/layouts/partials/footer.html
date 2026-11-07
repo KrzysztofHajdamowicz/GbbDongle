@@ -7,7 +7,7 @@
     <nav class="footer-links">
       {{ range .Site.Menus.main }}<a href="{{ with .Page }}{{ .RelPermalink }}{{ else }}{{ .URL | relLangURL }}{{ end }}">{{ .Name }}</a>{{ end }}
       <a href="{{ .Site.Params.repo }}">{{ i18n "source" }}</a>
-      {{ with .Site.Params.discord }}<a href="{{ . }}">Discord</a>{{ end }}
+      {{ with .Site.Params.discord }}<a href="{{ . }}" title="{{ site.Params.discordChannel }}">Discord</a>{{ end }}
     </nav>
   </div>
   <div class="wrap small muted footer-credits">
