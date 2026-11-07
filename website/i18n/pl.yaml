@@ -1,0 +1,28 @@
+buy: Kup teraz
+install: Zainstaluj firmware
+nav_devices: Urządzenia
+nav_install: Instalacja
+nav_pinouts: Pinouty
+nav_faq: FAQ
+source: Kod źródłowy na GitHubie
+recommended: Polecane
+other_boards: Inne obsługiwane płytki
+other_boards_hint: Dla majsterkowiczów. Działają tak samo, ale nie mają obudowy na szynę DIN albo wymagają więcej pracy.
+step: Krok
+wiz_device: Wybierz urządzenie
+wiz_line: Wybierz wersję firmware
+wiz_flash: Wgraj firmware
+wiz_change: zmień
+line_factory: GbbDongle (Factory)
+line_factory_desc: Samodzielne urządzenie dla GbbOptimizer. Panel WWW chroniony hasłem, aktualizuje się samo. Wybierz, jeśli nie wiesz, co wybrać.
+line_ha: Zgodny z Home Assistant
+line_ha_desc: Udostępnia natywne API ESPHome i zgłasza się do adopcji w panelu ESPHome. Po adopcji firmware budujesz i aktualizujesz sam.
+line_default: domyślny
+installs_version: Zainstaluje firmware
+browser_unsupported: Twoja przeglądarka nie obsługuje Web Serial. Otwórz tę stronę w Chrome lub Edge na komputerze.
+not_allowed: Instalator wymaga bezpiecznego połączenia (HTTPS).
+guide_title: Instrukcja krok po kroku
+guide_pick_first: Wybierz urządzenie i wersję firmware powyżej, a instrukcja dopasuje się do Twojego wyboru.
+photos_credit: Zdjęcia płytek dzięki uprzejmości producentów
+faq_en_only: Polska wersja FAQ jest w przygotowaniu. Poniżej wersja angielska.
+footer_tagline: Most między falownikiem (RS485) a GbbOptimizerem na gotowej płytce ESP32.

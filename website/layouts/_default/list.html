@@ -1,0 +1,21 @@
+{{ define "main" }}
+<section class="page-head">
+  <div class="wrap narrow">
+    <h1>{{ .Title }}</h1>
+    {{ with .Description }}<p class="lead">{{ . }}</p>{{ end }}
+  </div>
+</section>
+<article class="wrap narrow prose">
+  {{ .Content }}
+  {{ with .Pages.ByWeight }}
+  <div class="link-cards">
+    {{ range . }}
+    <a class="link-card" href="{{ .RelPermalink }}">
+      <strong>{{ .Title }}</strong>
+      {{ with .Description }}<span class="muted">{{ . }}</span>{{ end }}
+    </a>
+    {{ end }}
+  </div>
+  {{ end }}
+</article>
+{{ end }}

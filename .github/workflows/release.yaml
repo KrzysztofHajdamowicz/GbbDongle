@@ -6,8 +6,7 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write        # Sigstore signing for attestations + Pages deploy
+  id-token: write        # Sigstore signing for attestations
   attestations: write    # Upload attestations to GitHub
 
 jobs:
@@ -97,137 +96,6 @@ jobs:
           merge-multiple: true
           path: site/firmware
 
-      - name: Assemble site and manifests
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          RELEASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME}"
-          cp -R static/. site/
-
-          # Board table: <config basename> <chipFamily> <manifest suffix> <display name...>
-          # Per-board manifests are required because chipFamily alone cannot
-          # distinguish the two plain-ESP32 boards (T-CAN485 and Kamami):
-          # each install button and each device's update entity points at its
-          # own manifest instead.
-          BOARDS='
-          gbbdongle              ESP32-S3 gbbdongle   Waveshare ESP32-S3-RS485-CAN
-          gbbdongle-tcan485      ESP32    tcan485     LilyGo T-CAN485
-          gbbdongle-kamami       ESP32    kamami      Kamami KAmod ESP32 ETH+PoE
-          gbbdongle-8di8do-wifi  ESP32-S3 8di8do-wifi Waveshare ESP32-S3-POE-ETH-8DI-8DO, WiFi
-          gbbdongle-8di8do-eth   ESP32-S3 8di8do-eth  Waveshare ESP32-S3-POE-ETH-8DI-8DO, Ethernet
-          '
-
-          # Each board gets four manifests: install + update for the factory
-          # line (legacy names, so devices in the field stay on it) and
-          # install + update for the HA-compatible line ("-ha" suffix).
-          while read -r config chip suffix name; do
-            [ -z "$config" ] && continue
-
-            for line in factory ha; do
-              if [ "$line" = "factory" ]; then
-                bin="$config"; msuffix="$suffix"; display="GbbDongle (${name})"
-              else
-                bin="${config}-ha"; msuffix="${suffix}-ha"; display="GbbDongle (${name}, Home Assistant)"
-              fi
-              md5=$(md5sum "site/firmware/${bin}.ota.bin" | cut -d' ' -f1)
-
-              # Per-board ESP Web Tools manifest (browser flashing over USB).
-              cat > "site/firmware/manifest-${msuffix}.json" <<EOF
-          {
-            "name": "${display}",
-            "version": "$VERSION",
-            "new_install_prompt_erase": true,
-            "builds": [
-              {
-                "chipFamily": "${chip}",
-                "parts": [{ "path": "${bin}.factory.bin", "offset": 0 }]
-              }
-            ]
-          }
-          EOF
-
-              # Per-board manifest for the esphome http_request update entity
-              # (OTA); each variant yaml points update_manifest_url at its own.
-              cat > "site/firmware/update-manifest-${msuffix}.json" <<EOF
-          {
-            "name": "${display}",
-            "version": "$VERSION",
-            "builds": [
-              {
-                "chipFamily": "${chip}",
-                "ota": {
-                  "path": "${bin}.ota.bin",
-                  "md5": "${md5}",
-                  "summary": "GbbDongle $VERSION",
-                  "release_url": "${RELEASE_URL}"
-                }
-              }
-            ]
-          }
-          EOF
-            done
-          done <<< "$BOARDS"
-
-          # ── Legacy shared manifests ──
-          # Kept for devices already in the field (they poll this URL and
-          # migrate to their per-board manifest with their next OTA) and for
-          # old bookmarks. Deliberately NOT extended with the Kamami board
-          # (its chipFamily ESP32 would collide with the T-CAN485 entry) nor
-          # the 8DI8DO variants (ESP32-S3 would collide with the Waveshare
-          # RS485-CAN entry).
-          MD5_S3=$(md5sum site/firmware/gbbdongle.ota.bin | cut -d' ' -f1)
-          MD5_TCAN485=$(md5sum site/firmware/gbbdongle-tcan485.ota.bin | cut -d' ' -f1)
-          cat > site/firmware/manifest.json <<EOF
-          {
-            "name": "GbbDongle",
-            "version": "$VERSION",
-            "new_install_prompt_erase": true,
-            "builds": [
-              {
-                "chipFamily": "ESP32-S3",
-                "parts": [{ "path": "gbbdongle.factory.bin", "offset": 0 }]
-              },
-              {
-                "chipFamily": "ESP32",
-                "parts": [{ "path": "gbbdongle-tcan485.factory.bin", "offset": 0 }]
-              }
-            ]
-          }
-          EOF
-
-          cat > site/firmware/update-manifest.json <<EOF
-          {
-            "name": "GbbDongle",
-            "version": "$VERSION",
-            "builds": [
-              {
-                "chipFamily": "ESP32-S3",
-                "ota": {
-                  "path": "gbbdongle.ota.bin",
-                  "md5": "$MD5_S3",
-                  "summary": "GbbDongle $VERSION",
-                  "release_url": "${RELEASE_URL}"
-                }
-              },
-              {
-                "chipFamily": "ESP32",
-                "ota": {
-                  "path": "gbbdongle-tcan485.ota.bin",
-                  "md5": "$MD5_TCAN485",
-                  "summary": "GbbDongle $VERSION",
-                  "release_url": "${RELEASE_URL}"
-                }
-              }
-            ]
-          }
-          EOF
-
-          jq . site/firmware/manifest*.json site/firmware/update-manifest*.json > /dev/null
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: site
-
       # ── SBOM: build toolchain ──
       # Scans pyproject.toml / uv.lock (esphome + the whole Python toolchain
       # the firmware is built with). The C components baked into the binary
@@ -287,12 +155,14 @@ jobs:
             site/firmware/*.bin
             SBOM-Toolchain-*.cyclonedx.json
 
-  deploy-pages:
+  # Publishes the site with this release's binaries and manifests (the
+  # update entities of devices in the field poll them).
+  pages:
     needs: assemble
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v5
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/pages.yaml
+    with:
+      tag: ${{ github.ref_name }}

@@ -1,0 +1,45 @@
+# GbbDongle product site. Build: `hugo --source website` (the Pages
+# workflow passes --baseURL). Firmware binaries and ESP Web Tools / OTA
+# manifests are not part of this tree: the Pages workflow drops them into
+# the published site under firmware/, next to the pages.
+
+baseURL = "https://krzysztofhajdamowicz.github.io/GbbDongle/"
+title = "GbbDongle"
+defaultContentLanguage = "pl"
+defaultContentLanguageInSubdir = false
+enableRobotsTXT = true
+disableKinds = ["taxonomy", "term", "RSS"]
+
+[languages.pl]
+  label = "PL"
+  contentDir = "content/pl"
+  weight = 1
+[languages.en]
+  label = "EN"
+  contentDir = "content/en"
+  weight = 2
+
+# docs/faq.md is the single source of the English FAQ (GbbSupportBot reads
+# it from main too); the FAQ layout renders it from this mount.
+[module]
+  [[module.mounts]]
+    source = "assets"
+    target = "assets"
+  [[module.mounts]]
+    source = "../docs"
+    target = "assets/repo-docs"
+
+[markup.goldmark.renderer]
+  unsafe = true
+[markup.goldmark.parser.attribute]
+  block = true
+
+[params]
+  repo = "https://github.com/KrzysztofHajdamowicz/GbbDongle"
+  # Invite link to the GbbDongle channel on the GbbOptimizer Discord.
+  discord = ""
+  # Target of the "Kup teraz" buttons until a shop is chosen.
+  buyUrl = ""
+  price = "399 zł brutto"
+  # ESP Web Tools, same major as the previous installer page.
+  espWebTools = "https://unpkg.com/esp-web-tools@10.4.0/dist/web/install-button.js?module"

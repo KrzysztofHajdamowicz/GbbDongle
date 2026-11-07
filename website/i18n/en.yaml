@@ -1,0 +1,28 @@
+buy: Buy now
+install: Install firmware
+nav_devices: Devices
+nav_install: Install
+nav_pinouts: Pinouts
+nav_faq: FAQ
+source: Source code on GitHub
+recommended: Recommended
+other_boards: Other supported boards
+other_boards_hint: For tinkerers. They work the same, but have no DIN-rail enclosure or need more work.
+step: Step
+wiz_device: Pick your device
+wiz_line: Pick the firmware line
+wiz_flash: Flash the firmware
+wiz_change: change
+line_factory: GbbDongle (Factory)
+line_factory_desc: Standalone device for GbbOptimizer. Password-protected web panel, updates itself. Pick this if unsure.
+line_ha: Home Assistant-compatible
+line_ha_desc: Exposes the ESPHome native API and offers itself for adoption in the ESPHome dashboard. After adoption you build and update the firmware yourself.
+line_default: default
+installs_version: Installs firmware
+browser_unsupported: Your browser does not support Web Serial. Open this page in Chrome or Edge on a computer.
+not_allowed: The installer needs a secure (HTTPS) connection.
+guide_title: Step-by-step guide
+guide_pick_first: Pick your device and firmware line above and the guide adapts to your choice.
+photos_credit: Board photos courtesy of the manufacturers
+faq_en_only: ""
+footer_tagline: Bridge between your inverter (RS485) and GbbOptimizer on an off-the-shelf ESP32 board.

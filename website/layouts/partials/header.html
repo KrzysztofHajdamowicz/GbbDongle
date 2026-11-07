@@ -1,0 +1,22 @@
+{{ $home := .Site.Home }}
+<header class="site-header">
+  <div class="wrap header-row">
+    <a class="brand" href="{{ $home.RelPermalink }}">{{ partial "logo.svg.html" . }}<span>GbbDongle</span></a>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="Menu">
+    <label for="nav-toggle" class="nav-burger" aria-hidden="true"><span></span></label>
+    <nav class="nav">
+      {{ range .Site.Menus.main }}
+        <a href="{{ .URL | relLangURL }}"{{ if or ($.IsMenuCurrent "main" .) ($.HasMenuCurrent "main" .) (eq (.URL | relLangURL) $.RelPermalink) }} aria-current="page"{{ end }}>{{ .Name }}</a>
+      {{ end }}
+      <span class="lang">
+        {{ range hugo.Sites }}
+          {{ $lang := .Language.Lang }}
+          {{ $target := .Home.RelPermalink }}
+          {{ range $.AllTranslations }}{{ if eq .Language.Lang $lang }}{{ $target = .RelPermalink }}{{ end }}{{ end }}
+          {{ if eq $lang $.Site.Language.Lang }}<span class="lang-current">{{ .Language.Label }}</span>{{ else }}<a href="{{ $target }}" hreflang="{{ $lang }}">{{ .Language.Label }}</a>{{ end }}
+        {{ end }}
+      </span>
+      {{ partial "buy-button.html" (dict "page" . "class" "btn btn-primary btn-sm") }}
+    </nav>
+  </div>
+</header>

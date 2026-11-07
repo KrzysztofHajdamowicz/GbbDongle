@@ -1,0 +1,8 @@
+{{/* One numbered install-guide step; same filters as the `only` shortcode.
+     Hidden steps drop out of the CSS counter, so numbering stays gapless. */}}
+<section class="step"{{ with .Get "net" }} data-net="{{ . }}"{{ end }}{{ with .Get "device" }} data-device="{{ . }}"{{ end }}{{ with .Get "line" }} data-line="{{ . }}"{{ end }}>
+  <h3 class="step-title">{{ .Get "title" }}</h3>
+  <div class="step-body">
+{{ .Inner | .Page.RenderString (dict "display" "block") }}
+  </div>
+</section>

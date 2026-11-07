@@ -1,0 +1,22 @@
+{{ define "main" }}
+<section class="page-head">
+  <div class="wrap narrow">
+    <h1>{{ .Title }}</h1>
+    {{ with .Description }}<p class="lead">{{ . }}</p>{{ end }}
+  </div>
+</section>
+<article class="wrap narrow prose faq">
+  {{ if .Content }}
+    {{ .Content }}
+  {{ else }}
+    {{/* No translation yet: render docs/faq.md (English, also read by the support bot). */}}
+    {{ with i18n "faq_en_only" }}<p class="hint">{{ . }}</p>{{ end }}
+    {{ with resources.Get "repo-docs/faq.md" }}
+      {{ $md := .Content | replaceRE `(?s)\A# [^\n]*\n+.*?\n\n` "" }}
+      {{ $.RenderString (dict "display" "block") $md }}
+    {{ end }}
+  {{ end }}
+</article>
+{{ $js := resources.Get "js/faq.js" | minify | fingerprint }}
+<script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
+{{ end }}

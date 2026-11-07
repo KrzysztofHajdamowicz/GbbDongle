@@ -1,0 +1,4 @@
+{{ $p := .page }}
+{{ $href := $p.Site.Params.buyUrl }}
+{{ if not $href }}{{ with $p.Site.GetPage "/kup" }}{{ $href = .RelPermalink }}{{ end }}{{ end }}
+<a class="{{ .class }}" href="{{ $href }}">{{ i18n "buy" }}</a>
