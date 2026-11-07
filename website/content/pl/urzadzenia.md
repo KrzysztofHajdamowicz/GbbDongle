@@ -24,7 +24,7 @@ menu:
 {{< /product >}}
 
 {{< product image="img/waveshare-esp32-s3-poe-eth-8di-8do.jpg" name="Waveshare ESP32-S3-POE-ETH-8DI-8DO" variant="Ethernet / PoE" >}}
-**Gdy WiFi przy falowniku nie działa** (klasyka: metalowy garaż albo kotłownia). Jeden kabel Ethernet daje sieć i zasilanie (PoE 802.3af). Można też zasilić z USB albo z zacisków 7–36 V.
+**Gdy WiFi przy falowniku nie działa** (na przykład w metalowym garażu lub kotłowni). Jeden kabel Ethernet daje sieć i zasilanie (PoE 802.3af). Można też zasilić z USB albo z zacisków 7–36 V.
 
 - ESP32-S3, Ethernet (W5500) z PoE; alternatywnie WiFi z anteną SMA
 - izolowany port RS485, montaż na szynie DIN
