@@ -80,12 +80,12 @@ void EmergencyManager::handle_fields(GbbHeader &header) {
     // GbbConnect2 matches SubInverterSN with .NET Trim() semantics.
     const std::string key = header.has_sub_inverter_sn ? str_trim_copy(header.sub_inverter_sn) : "";
     const char *target = key.empty() ? "master" : key.c_str();
-    const size_t count = header.lines_on_no_inv_setup.size();
     const bool changed = this->store_.set_lines(key, std::move(header.lines_on_no_inv_setup));
     if (changed) {
       this->store_.sync_nvs();
-      if (count > 0) {
-        ESP_LOGI(TAG, "Stored emergency command set for %s (%u line(s))", target, count);
+      const auto stored = this->store_.sets().find(key);
+      if (stored != this->store_.sets().end()) {
+        ESP_LOGI(TAG, "Stored emergency command set for %s (%u line(s))", target, stored->second.size());
       } else {
         ESP_LOGI(TAG, "Cleared emergency command set for %s", target);
       }
@@ -180,15 +180,28 @@ void EmergencyManager::handle_result(GbbHeader &&header) {
   const std::string key = this->current_key_;
   const char *target = key.empty() ? "master" : key.c_str();
 
-  // "Delivered" = the inverter answered at least one line (the executor
-  // overwrites Modbus with the response frame and clears it on failure).
-  bool delivered = false;
+  // "Delivered" = the inverter accepted every line of the set. The executor
+  // overwrites Modbus with the reply frame, stops at the first failing line
+  // (Error set, Modbus cleared from there on) and leaves lines that carried
+  // no frame untouched. A Modbus exception reply is an answer, but a
+  // rejection: the inverter did not apply that command.
+  bool answered = false;
+  bool rejected = false;
   for (const auto &line : header.lines) {
-    if (!line.error.empty())
+    if (!line.error.empty()) {
       ESP_LOGE(TAG, "Emergency %s: LineNo=%" PRId32 ": %s", target, line.line_no, line.error.c_str());
-    if (line.error.empty() && line.has_modbus && !line.modbus.empty())
-      delivered = true;
+      rejected = true;
+    } else if (line.has_modbus && !line.modbus.empty()) {
+      if (modbus_hex_is_exception(line.modbus)) {
+        ESP_LOGE(TAG, "Emergency %s: LineNo=%" PRId32 ": Modbus exception reply %s", target, line.line_no,
+                 line.modbus.c_str());
+        rejected = true;
+      } else {
+        answered = true;
+      }
+    }
   }
+  const bool delivered = answered && !rejected;
   if (delivered) {
     this->delivered_++;
     if (this->store_.revision(key) == this->current_revision_) {
@@ -201,8 +214,10 @@ void EmergencyManager::handle_result(GbbHeader &&header) {
       ESP_LOGI(TAG, "Emergency command set for %s delivered, but a newer revision arrived mid-run; keeping it",
                target);
     }
+  } else if (answered) {
+    ESP_LOGW(TAG, "Emergency command set for %s was only partly applied by the inverter", target);
   } else {
-    ESP_LOGW(TAG, "Emergency command set for %s got no response from the inverter", target);
+    ESP_LOGW(TAG, "Emergency command set for %s was not applied by the inverter", target);
   }
 
   const auto &sets = this->store_.sets();

@@ -113,7 +113,7 @@ state has no OTA password).
 
 | Entity | Meaning |
 |---|---|
-| MQTT Server / MQTT Port | e.g. `gbboptimizer1-mqtt.gbbsoft.pl` : `8883` |
+| MQTT Server / MQTT Port | e.g. `gbboptimizer-mqtt.gbbsoft.pl` : `8883` |
 | Plant Id / Plant Token | from GbbOptimizer |
 | Cloud Connection | master enable switch |
 | TLS / TLS Skip CN Check | TLS is on by default (Certum Trusted Root CA, Certum Trusted Network CA and ISRG Root X1 compiled in) |

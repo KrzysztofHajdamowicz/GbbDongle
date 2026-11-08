@@ -70,12 +70,24 @@ uart:
 # The broker/credentials below are placeholders: GbbDongle applies the
 # runtime-configured values (entities below, persisted in NVS) before calling
 # enable(). enable_on_boot must stay false.
+#
+# This client is the GbbOptimizer cloud link and carries only the
+# {PlantId}/ModbusInMqtt and {PlantId}/keepalive topics the gbb_dongle
+# component publishes/subscribes itself. ESPHome would otherwise mirror every
+# entity to <device_name>/<domain>/<id>/state (retained, Plant Token
+# included) and obey <device_name>/<domain>/<id>/command, and every dongle
+# shares the device name. So every named entity sets an empty `state_topic:`,
+# which makes it internal to MQTT (no state topic, no command subscription);
+# tools/check_mqtt_exposure.py enforces that in CI. discover_ip: false drops
+# the esphome/discover + esphome/ping subscriptions and the device-info
+# publish (MAC, IP, version).
 mqtt:
   id: gbb_mqtt
   broker: 127.0.0.1
   port: 8883
   enable_on_boot: false
   discovery: false
+  discover_ip: false
   reboot_timeout: 0s
   birth_message:
   will_message:
@@ -210,6 +222,7 @@ text:
   - platform: template
     id: cfg_mqtt_host
     name: MQTT Server
+    state_topic:
     icon: mdi:server-network
     entity_category: config
     mode: text
@@ -221,6 +234,7 @@ text:
   - platform: template
     id: cfg_plant_id
     name: Plant Id
+    state_topic:
     icon: mdi:solar-power
     entity_category: config
     mode: text
@@ -232,6 +246,7 @@ text:
   - platform: template
     id: cfg_plant_token
     name: Plant Token
+    state_topic:
     icon: mdi:key
     entity_category: config
     mode: password
@@ -245,6 +260,7 @@ number:
   - platform: template
     id: cfg_mqtt_port
     name: MQTT Port
+    state_topic:
     icon: mdi:numeric
     entity_category: config
     optimistic: true
@@ -259,6 +275,7 @@ select:
   - platform: template
     id: cfg_baud_rate
     name: RS485 Baud Rate
+    state_topic:
     icon: mdi:swap-horizontal
     entity_category: config
     optimistic: true
@@ -275,6 +292,7 @@ select:
   - platform: template
     id: cfg_parity
     name: RS485 Parity
+    state_topic:
     icon: mdi:swap-horizontal
     entity_category: config
     optimistic: true
@@ -289,6 +307,7 @@ switch:
   - platform: template
     id: cfg_cloud_enabled
     name: Cloud Connection
+    state_topic:
     icon: mdi:cloud-upload
     entity_category: config
     optimistic: true
@@ -296,6 +315,7 @@ switch:
   - platform: template
     id: cfg_tls_enabled
     name: TLS
+    state_topic:
     icon: mdi:lock
     entity_category: config
     optimistic: true
@@ -303,6 +323,7 @@ switch:
   - platform: template
     id: cfg_tls_skip_cn_check
     name: TLS Skip CN Check
+    state_topic:
     icon: mdi:lock-alert
     entity_category: config
     optimistic: true
@@ -312,6 +333,7 @@ switch:
   - platform: template
     id: cfg_persist_emergency
     name: Persist Emergency Commands
+    state_topic:
     icon: mdi:content-save-alert
     entity_category: config
     optimistic: true
@@ -320,21 +342,25 @@ switch:
 button:
   - platform: restart
     name: Apply Settings (Restart)
+    state_topic:
     icon: mdi:restart
   # Clears everything persisted in NVS: device settings, the provisioned API
   # encryption key (HA-compatible line) and the admin password (factory line).
   - platform: factory_reset
     name: Factory Reset
+    state_topic:
     icon: mdi:restore-alert
     entity_category: diagnostic
 
 binary_sensor:
   - platform: template
     name: Cloud Connected
+    state_topic:
     device_class: connectivity
     lambda: return id(gbb_mqtt).is_connected();
   - platform: template
     name: Restart Required
+    state_topic:
     icon: mdi:restart-alert
     entity_category: diagnostic
     lambda: return id(gbb).is_settings_dirty();
@@ -342,6 +368,7 @@ binary_sensor:
 sensor:
   - platform: template
     name: Requests Handled
+    state_topic:
     icon: mdi:counter
     entity_category: diagnostic
     state_class: total_increasing
@@ -350,6 +377,7 @@ sensor:
     lambda: return id(gbb).get_requests_handled();
   - platform: template
     name: Modbus Errors
+    state_topic:
     icon: mdi:alert-circle
     entity_category: diagnostic
     state_class: total_increasing
@@ -358,6 +386,7 @@ sensor:
     lambda: return id(gbb).get_modbus_errors();
   - platform: template
     name: Emergency Sets Stored
+    state_topic:
     icon: mdi:lifebuoy
     entity_category: diagnostic
     accuracy_decimals: 0
@@ -367,12 +396,17 @@ sensor:
 text_sensor:
   - platform: template
     name: Firmware Version
+    state_topic:
     entity_category: diagnostic
-    update_interval: never
+    # A template text sensor only publishes from update(); with `never` the
+    # state stays empty in the web UI. The value is constant, so a slow poll
+    # just republishes it for clients that connect later.
+    update_interval: 60s
     lambda: return {"${version}"};
   - platform: uptime
     id: uptime_text
     name: Uptime
+    state_topic:
     # Sub-30s interval keeps seconds in the formatted value; the format below
     # matches the ClientInfo convention ("3d 23h 48min 56s").
     update_interval: 10s

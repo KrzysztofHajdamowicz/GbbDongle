@@ -70,7 +70,26 @@ def _resolve_version(value: str) -> str:
     except (subprocess.CalledProcessError, OSError):
         return "dev"
 
-CONFIG_SCHEMA = (
+
+def _time_at_least(minimum: str):
+    # Zero is accepted by positive_time_period_milliseconds but breaks the
+    # executor (response_timeout 0 fails every line, gap 0 drops the
+    # inter-frame silence the inverter needs, retry 0 means no backoff).
+    return cv.All(
+        cv.positive_time_period_milliseconds,
+        cv.Range(min=cv.positive_time_period_milliseconds(minimum)),
+    )
+
+
+def _validate_retry_bounds(config):
+    if config[CONF_EMERGENCY_RETRY_MAX] < config[CONF_EMERGENCY_RETRY_INITIAL]:
+        raise cv.Invalid(
+            f"{CONF_EMERGENCY_RETRY_MAX} must not be shorter than {CONF_EMERGENCY_RETRY_INITIAL}"
+        )
+    return config
+
+
+CONFIG_SCHEMA = cv.All(
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(GbbDongle),
@@ -95,15 +114,11 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_WIFI_SIGNAL_PERCENT_ID): cv.use_id(sensor.Sensor),
             cv.Optional(CONF_IP_ADDRESS_ID): cv.use_id(text_sensor.TextSensor),
             cv.Optional(CONF_UPTIME_TEXT_ID): cv.use_id(text_sensor.TextSensor),
-            cv.Optional(
-                CONF_RESPONSE_TIMEOUT, default="1000ms"
-            ): cv.positive_time_period_milliseconds,
-            cv.Optional(
-                CONF_READ_GAP, default="100ms"
-            ): cv.positive_time_period_milliseconds,
-            cv.Optional(
-                CONF_WRITE_GAP, default="3000ms"
-            ): cv.positive_time_period_milliseconds,
+            cv.Optional(CONF_RESPONSE_TIMEOUT, default="1000ms"): _time_at_least(
+                "100ms"
+            ),
+            cv.Optional(CONF_READ_GAP, default="100ms"): _time_at_least("10ms"),
+            cv.Optional(CONF_WRITE_GAP, default="3000ms"): _time_at_least("10ms"),
             cv.Optional(CONF_LOG_BUFFER_SIZE, default=65536): cv.positive_int,
             cv.Required(CONF_TIME_ID): cv.use_id(time_.RealTimeClock),
             cv.Optional(CONF_EMERGENCY_PERSIST_ID): cv.use_id(switch.Switch),
@@ -112,14 +127,15 @@ CONFIG_SCHEMA = (
             ),
             cv.Optional(
                 CONF_EMERGENCY_RETRY_INITIAL, default="60s"
-            ): cv.positive_time_period_milliseconds,
+            ): _time_at_least("10s"),
             cv.Optional(
                 CONF_EMERGENCY_RETRY_MAX, default="15min"
-            ): cv.positive_time_period_milliseconds,
+            ): _time_at_least("10s"),
         }
     )
     .extend(cv.COMPONENT_SCHEMA)
-    .extend(uart.UART_DEVICE_SCHEMA)
+    .extend(uart.UART_DEVICE_SCHEMA),
+    _validate_retry_bounds,
 )
 
 

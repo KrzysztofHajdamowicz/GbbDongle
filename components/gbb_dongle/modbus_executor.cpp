@@ -17,10 +17,10 @@ static const size_t MAX_FRAME_SIZE = 300;
 // evaluated even below the runtime log level, so this must not allocate on
 // every frame; the executor only ever runs on the single main-loop task, and
 // no log statement formats two frames at once.
-static const char *frame_to_log_hex(const std::vector<uint8_t> &frame) {
+static const char *frame_to_log_hex(const uint8_t *frame, size_t len) {
   static const char HEX[] = "0123456789ABCDEF";
   static char buf[MAX_FRAME_SIZE * 3 + 1];
-  const size_t n = frame.size() < MAX_FRAME_SIZE ? frame.size() : MAX_FRAME_SIZE;
+  const size_t n = len < MAX_FRAME_SIZE ? len : MAX_FRAME_SIZE;
   char *p = buf;
   for (size_t i = 0; i < n; i++) {
     if (i != 0)
@@ -30,6 +30,10 @@ static const char *frame_to_log_hex(const std::vector<uint8_t> &frame) {
   }
   *p = '\0';
   return buf;
+}
+
+static const char *frame_to_log_hex(const std::vector<uint8_t> &frame) {
+  return frame_to_log_hex(frame.data(), frame.size());
 }
 
 void ModbusExecutor::start(GbbHeader &&header) {
@@ -54,10 +58,7 @@ void ModbusExecutor::loop() {
     case State::DONE:
       break;
     case State::GAP:
-      // Signed difference, not >=: gap_until_ may sit across the ~49.7-day
-      // millis() rollover, where the absolute compare either skips the gap
-      // or parks the executor until the next wrap.
-      if ((int32_t) (millis() - this->gap_until_) >= 0)
+      if (millis() - this->gap_start_ >= this->gap_ms_)
         this->transmit_current_();
       break;
     case State::TRANSMIT:
@@ -88,7 +89,7 @@ void ModbusExecutor::start_next_line_() {
     this->fail_line_("Invalid Modbus hex string");
     return;
   }
-  this->state_ = State::GAP;  // gap_until_ still holds the deadline from the previous command
+  this->state_ = State::GAP;  // gap_start_/gap_ms_ still hold the silence owed to the previous command
 }
 
 void ModbusExecutor::transmit_current_() {
@@ -151,13 +152,12 @@ void ModbusExecutor::handle_rx_() {
       expected = 8;
     }
     if (expected > 0 && this->rx_frame_.size() >= expected) {
-      this->rx_frame_.resize(expected);
-      this->finish_line_ok_();
+      this->finish_line_ok_(expected);
       return;
     }
     // Unknown function code: fall back to end-of-frame silence detection.
     if (expected == 0 && now - this->last_rx_byte_at_ >= this->silence_gap_ms_()) {
-      this->finish_line_ok_();
+      this->finish_line_ok_(this->rx_frame_.size());
       return;
     }
   }
@@ -178,30 +178,59 @@ void ModbusExecutor::handle_rx_() {
   }
 }
 
-void ModbusExecutor::finish_line_ok_() {
-  if (this->rx_frame_.size() < 4) {
+void ModbusExecutor::finish_line_ok_(size_t n) {
+  // Bytes past the first n belong to whatever followed this frame; they only
+  // matter when this frame turns out not to be the reply (see below).
+  if (n < 4) {
+    this->rx_frame_.resize(n);
     ESP_LOGW(TAG, "Line %" PRId32 ": inverter reply too short to be valid (%u byte(s)): %s",
              this->header_.lines[this->line_index_].line_no, this->rx_frame_.size(),
              frame_to_log_hex(this->rx_frame_));
     this->fail_line_("Response too short");
     return;
   }
-  const size_t n = this->rx_frame_.size();
   const uint16_t crc = modbus_crc16(this->rx_frame_.data(), n - 2);
   const uint16_t got = static_cast<uint16_t>(this->rx_frame_[n - 2]) | (static_cast<uint16_t>(this->rx_frame_[n - 1]) << 8);
   if (crc != got) {
+    this->rx_frame_.resize(n);
     ESP_LOGW(TAG, "Line %" PRId32 " <- inverter: %s (bad checksum: calculated %04X, frame says %04X)",
              this->header_.lines[this->line_index_].line_no, frame_to_log_hex(this->rx_frame_), crc, got);
     this->fail_line_("Invalid CRC in response");
     return;
   }
 
+  // Only length and CRC tie a frame to the request so far; a reply from
+  // another slave or for another function (a late answer to an earlier
+  // request, cross-talk) would be handed to the cloud as this line's result.
+  // Drop it and keep listening (bytes already received after it are kept):
+  // the right reply can still arrive before response_timeout, otherwise the
+  // line times out as usual.
+  const uint8_t function = this->rx_frame_[1] & 0x7F;
+  if (this->rx_frame_[0] != this->tx_frame_[0] || function != this->tx_frame_[1]) {
+    ESP_LOGW(TAG,
+             "Line %" PRId32 " <- inverter: %s (reply for slave %u function %u, request was slave %u function %u; "
+             "ignored)",
+             this->header_.lines[this->line_index_].line_no, frame_to_log_hex(this->rx_frame_.data(), n),
+             this->rx_frame_[0], function, this->tx_frame_[0], this->tx_frame_[1]);
+    this->rx_frame_.erase(this->rx_frame_.begin(), this->rx_frame_.begin() + n);
+    return;
+  }
+  this->rx_frame_.resize(n);
+
   GbbLine &line = this->header_.lines[this->line_index_];
   line.modbus = bytes_to_hex(this->rx_frame_.data(), n);
-  ESP_LOGD(TAG, "Line %" PRId32 " <- inverter: %s (OK, %u byte(s))", line.line_no,
-           frame_to_log_hex(this->rx_frame_), n);
+  if (this->rx_frame_[1] & 0x80) {
+    // Passed to the cloud unchanged (GbbConnect2 does the same), but counted:
+    // the inverter answered and rejected the request.
+    this->error_count_++;
+    ESP_LOGW(TAG, "Line %" PRId32 " <- inverter: %s (Modbus exception %u)", line.line_no,
+             frame_to_log_hex(this->rx_frame_), this->rx_frame_[2]);
+  } else {
+    ESP_LOGD(TAG, "Line %" PRId32 " <- inverter: %s (OK, %u byte(s))", line.line_no,
+             frame_to_log_hex(this->rx_frame_), n);
+  }
 
-  this->gap_until_ = millis() + this->next_gap_ms_;
+  this->start_gap_();
   this->line_index_++;
   this->start_next_line_();
 }
@@ -216,8 +245,13 @@ void ModbusExecutor::fail_line_(const char *message) {
     this->header_.lines[i].has_modbus = false;
     this->header_.lines[i].modbus.clear();
   }
-  this->gap_until_ = millis() + this->next_gap_ms_;
+  this->start_gap_();
   this->finish_all_();
+}
+
+void ModbusExecutor::start_gap_() {
+  this->gap_start_ = millis();
+  this->gap_ms_ = this->next_gap_ms_;
 }
 
 void ModbusExecutor::finish_all_() {
