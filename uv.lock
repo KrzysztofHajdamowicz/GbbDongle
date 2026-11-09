@@ -499,7 +499,7 @@ serial = [
 
 [[package]]
 name = "esphome"
-version = "2026.10.0"
+version = "2026.10.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aioesphomeapi" },
@@ -536,9 +536,9 @@ dependencies = [
     { name = "voluptuous" },
     { name = "zeroconf" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ee/a4/4ad1af31028378bff8edfb742f85c9ddb20971113d930679bbe0837ea8ec/esphome-2026.10.0.tar.gz", hash = "sha256:a583830d20cb64f059a5d06a25df3099679cbb2bbc798a969da959cf5027a1aa", size = 5431813, upload-time = "2026-10-21T11:43:38.929Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3a/77/b273177895dda046106b5db323d11a566ad50bc2e59cf836228a17a87694/esphome-2026.10.1.tar.gz", hash = "sha256:c970e3790c0d8d09c077fa620a7114e104da5722d59ac06a02b9ac465e4a6c96", size = 5384626, upload-time = "2026-10-27T18:34:03.777Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/79/2a/9bd078dae1b58fa24fd2964c1ee05d326ceb20487b08327271b00389221e/esphome-2026.10.0-py3-none-any.whl", hash = "sha256:4f6d8c851602d17fb83e8f91870d7299dd718c8a6a6e9f53f50bde098ccbbea3", size = 7391313, upload-time = "2026-10-21T11:43:36.129Z" },
+    { url = "https://files.pythonhosted.org/packages/8f/48/ebba75526414d618c17720a44189be5b05b43d3c2511bdfcef3620eaf0ac/esphome-2026.10.1-py3-none-any.whl", hash = "sha256:8bb771478f9557f131d7de40046ac419695e8797043ced9d41675aef1094b6c6", size = 7395907, upload-time = "2026-10-27T18:34:00.786Z" },
 ]
 
 [[package]]
@@ -605,7 +605,7 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "esphome", specifier = "==2026.10.0" }]
+requires-dist = [{ name = "esphome", specifier = "==2026.10.1" }]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1169,7 +1169,7 @@ wheels = [
 
 [[package]]
 name = "pytest"
-version = "9.1.1"
+version = "9.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "iniconfig" },
@@ -1177,9 +1177,9 @@ dependencies = [
     { name = "pluggy" },
     { name = "pygments" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e4/47/b9efed96c114afcfa3c9d3fe98a76a1d14c74a9e266d397cf6eb64be5e01/pytest-9.1.1.tar.gz", hash = "sha256:1088fbde8f2b49d95a549a195707afa7a76a3ce9bcadc26b6d71f0ffda5fe313", size = 1636369, upload-time = "2026-06-19T10:58:32.857Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/79/42/bb4641652e58dedeac2ec51abc1f8cae4fee4ec63899a0999016229a0f2a/pytest-9.2.0.tar.gz", hash = "sha256:97c4f3b1f3c7414aa36465e09b8220f1d03627993bd51b1282e193753c80557b", size = 1797555, upload-time = "2026-10-27T21:30:20.728Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/24/25/1de2678b631f5a49215c6c96fff41ba892b0a34df68d6d80292b1b48aa7f/pytest-9.1.1-py3-none-any.whl", hash = "sha256:37a86b45efb9a47a61a36449063e8e18d0cab3161329fc099eb21783169c4f0c", size = 386536, upload-time = "2026-06-19T10:58:31.347Z" },
+    { url = "https://files.pythonhosted.org/packages/51/39/1f5d8c8877a0fa327db959c19341d4be61660de1ab6b7391f9eb805bcd67/pytest-9.2.0-py3-none-any.whl", hash = "sha256:07acdcf88ec174f907dc01af70bf52d49b014bbab03faeeade31c96b18c2e588", size = 411776, upload-time = "2026-10-27T21:30:19.131Z" },
 ]
 
 [[package]]
