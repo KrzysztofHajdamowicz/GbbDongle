@@ -1,0 +1,10 @@
+{{- /* Links in docs/faq.md are relative to docs/ in the repo: point .md
+       targets at GitHub, keep anchors and absolute URLs as they are. */ -}}
+{{- $u := urls.Parse .Destination -}}
+{{- $href := .Destination -}}
+{{- if and (not $u.IsAbs) $u.Path (strings.HasSuffix $u.Path ".md") -}}
+  {{- $path := path.Clean (path.Join "docs" $u.Path) -}}
+  {{- $href = printf "%s/blob/main/%s%s" site.Params.repo $path (cond (ne $u.Fragment "") (printf "#%s" $u.Fragment) "") -}}
+{{- end -}}
+<a href="{{ $href | safeURL }}"{{ with .Title }} title="{{ . }}"{{ end }}{{ if $u.IsAbs }} rel="noopener"{{ end }}>{{ .Text | safeHTML }}</a>
+{{- /**/ -}}

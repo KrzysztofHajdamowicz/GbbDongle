@@ -1,0 +1,101 @@
+{{ define "bodyclass" }}home{{ end }}
+{{ define "main" }}
+{{ $p := .Params }}
+{{ $lang := .Site.Language.Lang }}
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      {{ with $p.hero.eyebrow }}<p class="eyebrow">{{ . }}</p>{{ end }}
+      <h1>{{ $p.hero.title | markdownify }}</h1>
+      <p class="lead">{{ $p.hero.lead | markdownify }}</p>
+      <div class="cta-row">
+        {{ partial "buy-button.html" (dict "page" . "class" "btn btn-primary") }}
+        {{ with .Site.GetPage "/instalacja" }}<a class="btn btn-ghost" href="{{ .RelPermalink }}">{{ i18n "install" }}</a>{{ end }}
+      </div>
+      {{ with $p.hero.note }}<p class="hero-note">{{ . | markdownify }}</p>{{ end }}
+    </div>
+    <div class="hero-visual">
+      <img src="{{ "img/waveshare-esp32-s3-rs485-can.jpg" | relURL }}" alt="GbbDongle — Waveshare ESP32-S3-RS485-CAN" width="600" height="600">
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2 class="section-title">{{ $p.how.title }}</h2>
+    <div class="flow" role="img" aria-label="{{ $p.how.aria }}">
+      {{ range $i, $n := $p.how.nodes }}
+        {{ if $i }}<div class="flow-link"><span>{{ index $p.how.links (sub $i 1) }}</span></div>{{ end }}
+        <div class="flow-node{{ if $n.accent }} flow-node-accent{{ end }}">
+          <strong>{{ $n.title }}</strong><span>{{ $n.text }}</span>
+        </div>
+      {{ end }}
+    </div>
+    <p class="section-lead">{{ $p.how.text | markdownify }}</p>
+  </div>
+</section>
+
+<section class="section section-tint">
+  <div class="wrap">
+    <h2 class="section-title">{{ $p.features.title }}</h2>
+    <div class="features">
+      {{ range $p.features.items }}
+      <div class="feature">
+        <div class="feature-icon" aria-hidden="true">{{ .icon }}</div>
+        <h3>{{ .title }}</h3>
+        <p>{{ .text | markdownify }}</p>
+      </div>
+      {{ end }}
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2 class="section-title">{{ $p.devices.title }}</h2>
+    <p class="section-lead">{{ $p.devices.lead | markdownify }}</p>
+    <div class="cards cards-3">
+      {{ range $p.devices.items }}
+      <div class="card">
+        <div class="card-img"><img src="{{ .image | relURL }}" alt="{{ .name }}" loading="lazy"></div>
+        <div class="card-body">
+          <div class="pills">
+            {{ with .pill }}<span class="pill pill-blue">{{ . }}</span>{{ end }}
+            {{ with .variant }}<span class="pill">{{ . }}</span>{{ end }}
+          </div>
+          <h3>{{ .name }}</h3>
+          <p class="muted">{{ .text | markdownify }}</p>
+        </div>
+      </div>
+      {{ end }}
+    </div>
+    <div class="cta-row center">
+      {{ with .Site.GetPage "/urzadzenia" }}<a class="btn btn-ghost" href="{{ .RelPermalink }}">{{ $p.devices.more }}</a>{{ end }}
+    </div>
+  </div>
+</section>
+
+<section class="section section-tint">
+  <div class="wrap">
+    <h2 class="section-title">{{ $p.steps.title }}</h2>
+    <ol class="steps-row">
+      {{ range $p.steps.items }}
+      <li><h3>{{ .title }}</h3><p>{{ .text | markdownify }}</p></li>
+      {{ end }}
+    </ol>
+  </div>
+</section>
+
+<section class="section cta-band">
+  <div class="wrap cta-band-inner">
+    <div>
+      <h2>{{ $p.cta.title }}</h2>
+      <p>{{ $p.cta.text | markdownify }}</p>
+    </div>
+    <div class="cta-row">
+      {{ partial "buy-button.html" (dict "page" . "class" "btn btn-white") }}
+      {{ with .Site.GetPage "/instalacja" }}<a class="btn btn-outline-white" href="{{ .RelPermalink }}">{{ i18n "install" }}</a>{{ end }}
+    </div>
+  </div>
+</section>
+{{ end }}

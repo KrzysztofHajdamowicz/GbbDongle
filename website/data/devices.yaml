@@ -1,0 +1,67 @@
+# Boards offered by the web installer, in display order. `manifest` is the
+# per-board manifest suffix from release.yaml's BOARDS table: the installer
+# loads firmware/manifest-<manifest>.json (Factory) or
+# firmware/manifest-<manifest>-ha.json (Home Assistant-compatible).
+# `net` selects the network steps of the install guide (wifi | eth);
+# `group: other` puts the board under "other supported boards".
+
+- id: waveshare-rs485-can
+  manifest: gbbdongle
+  hostname: gbbdongle
+  net: wifi
+  image: img/waveshare-esp32-s3-rs485-can.jpg
+  name: Waveshare ESP32-S3-RS485-CAN
+  recommended: true
+  pl:
+    tagline: WiFi, montaż na szynie DIN. Antena wbudowana lub zewnętrzna, firmware ten sam.
+  en:
+    tagline: WiFi, DIN rail mount. Internal or external antenna, same firmware.
+
+- id: 8di8do-eth
+  manifest: 8di8do-eth
+  hostname: gbbdongle-8di8do-eth
+  net: eth
+  image: img/waveshare-esp32-s3-poe-eth-8di-8do.jpg
+  name: Waveshare ESP32-S3-POE-ETH-8DI-8DO
+  badge: Ethernet / PoE
+  pl:
+    tagline: Kabel Ethernet z zasilaniem PoE. Dla miejsc, gdzie WiFi nie dociera.
+  en:
+    tagline: Ethernet cable with PoE power. For places WiFi does not reach.
+
+- id: 8di8do-wifi
+  manifest: 8di8do-wifi
+  hostname: gbbdongle-8di8do-wifi
+  net: wifi
+  image: img/waveshare-esp32-s3-poe-eth-8di-8do.jpg
+  name: Waveshare ESP32-S3-POE-ETH-8DI-8DO
+  badge: WiFi
+  pl:
+    tagline: Ta sama płytka przez WiFi. Wymaga podłączonej anteny SMA.
+  en:
+    tagline: The same board over WiFi. Needs the SMA antenna attached.
+
+- id: tcan485
+  manifest: tcan485
+  hostname: gbbdongle-tcan485
+  net: wifi
+  group: other
+  image: img/lilygo-t-can485.jpg
+  name: LilyGo T-CAN485
+  pl:
+    tagline: Goła płytka bez obudowy, WiFi.
+  en:
+    tagline: Bare board without enclosure, WiFi.
+
+- id: kamami
+  manifest: kamami
+  hostname: gbbdongle-kamami
+  net: eth
+  group: other
+  image: img/kamami-esp32-eth-poe.jpg
+  name: Kamami KAmod ESP32 ETH+PoE
+  badge: Ethernet / PoE
+  pl:
+    tagline: Z nakładką KAmodRPi UART RS485 ISO. Wgrywaj bez nakładki.
+  en:
+    tagline: With the KAmodRPi UART RS485 ISO HAT. Flash with the HAT removed.

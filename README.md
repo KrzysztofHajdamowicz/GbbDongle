@@ -84,8 +84,9 @@ Every board ships in two firmware flavours, selectable in the web installer:
   want them. Until adoption it self-updates like the Factory Image; the
   adopted configuration does not.
 
-1. Open the **[web installer](https://gbbdongle.hajdamowicz.info/)**
-   in Chrome/Edge, pick your board and flavour, connect it over USB and
+1. Open the **[web installer](https://gbbdongle.hajdamowicz.info/en/install/)**
+   in a browser with Web Serial (Chrome, Edge, Opera or Firefox 151+ on a
+   computer), pick your board and flavour, connect it over USB and
    click Install.
 2. Get the device online:
    - WiFi boards (Waveshare boards — WiFi variant, LilyGo): In web installer choose an option to configure Wi-Fi or join the

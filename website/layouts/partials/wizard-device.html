@@ -1,0 +1,10 @@
+{{ $d := .d }}{{ $t := index $d .lang }}
+<button type="button" class="wz-device" data-device="{{ $d.id }}">
+  <img src="{{ $d.image | relURL }}" alt="" loading="lazy">
+  <span class="wz-device-name">{{ $d.name }}</span>
+  <span class="pills">
+    {{ if $d.recommended }}<span class="pill pill-blue">{{ i18n "recommended" }}</span>{{ end }}
+    {{ with $d.badge }}<span class="pill">{{ . }}</span>{{ end }}
+  </span>
+  <span class="wz-device-text">{{ $t.tagline }}</span>
+</button>

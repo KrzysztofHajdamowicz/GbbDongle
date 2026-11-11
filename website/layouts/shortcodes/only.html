@@ -1,0 +1,6 @@
+{{/* Install-guide fragment shown only for matching wizard choices.
+     Attributes (all optional, space-separated values): net="wifi|eth",
+     device="<data/devices.yaml id>", line="factory|ha". */}}
+<div class="only"{{ with .Get "net" }} data-net="{{ . }}"{{ end }}{{ with .Get "device" }} data-device="{{ . }}"{{ end }}{{ with .Get "line" }} data-line="{{ . }}"{{ end }}>
+{{ .Inner | .Page.RenderString (dict "display" "block") }}
+</div>

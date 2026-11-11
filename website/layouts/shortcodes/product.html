@@ -1,0 +1,17 @@
+{{/* Product card with a photo; the inner Markdown is the description. */}}
+<div class="product">
+  <div class="product-img"><img src="{{ .Get "image" | relURL }}" alt="{{ .Get "name" }}" loading="lazy"></div>
+  <div class="product-body">
+    <div class="pills">
+      {{ with .Get "pill" }}<span class="pill pill-blue">{{ . }}</span>{{ end }}
+      {{ with .Get "variant" }}<span class="pill">{{ . }}</span>{{ end }}
+    </div>
+    <h2>{{ .Get "name" }}</h2>
+    {{ .Inner | .Page.RenderString (dict "display" "block") }}
+    {{/* buy="true": in stock, with the price; buy="order": made to order, no price. */}}
+    {{ with .Get "buy" }}<div class="cta-row">
+      {{ if eq . "order" }}{{ partial "buy-button.html" (dict "page" $.Page "class" "btn btn-ghost" "label" "made_to_order") }}{{ with $.Get "note" }}<span class="muted">{{ . }}</span>{{ end }}
+      {{ else }}{{ partial "buy-button.html" (dict "page" $.Page "class" "btn btn-primary") }}<span class="muted">{{ $.Page.Site.Params.price }}</span>{{ end }}
+    </div>{{ end }}
+  </div>
+</div>

@@ -17,3 +17,9 @@ tools/busscan/dist/
 
 # macOS
 .DS_Store
+
+# Hugo
+website/.hugo_build.lock
+website/public/
+website/resources/_gen/
+website/static/firmware/

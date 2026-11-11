@@ -1,0 +1,71 @@
+{{/* Firmware install wizard: device → firmware line → ESP Web Tools button.
+     Boards come from data/devices.yaml; manifests are published by the
+     Pages workflow under firmware/. */}}
+{{ $lang := .Page.Site.Language.Lang }}
+{{ $devices := hugo.Data.devices }}
+{{ $cfg := dict "firmwareBase" ("firmware/" | relURL) "releaseBase" (printf "%s/releases/tag/v" site.Params.repo) "devices" $devices }}
+<div class="wizard" id="wizard" data-config="{{ $cfg | jsonify }}">
+
+  <section class="wz-step" data-wz="device">
+    <header class="wz-head">
+      <span class="wz-num">1</span>
+      <h2>{{ i18n "wiz_device" }}</h2>
+      <span class="wz-summary" data-wz-summary="device"></span>
+      <button type="button" class="wz-change" data-wz-reset="device">{{ i18n "wiz_change" }}</button>
+    </header>
+    <div class="wz-body">
+      <div class="wz-devices">
+        {{ range where $devices "group" "ne" "other" }}{{ partial "wizard-device.html" (dict "d" . "lang" $lang) }}{{ end }}
+      </div>
+      <details class="wz-other">
+        <summary>{{ i18n "other_boards" }}</summary>
+        <p class="muted small">{{ i18n "other_boards_hint" }}</p>
+        <div class="wz-devices">
+          {{ range where $devices "group" "other" }}{{ partial "wizard-device.html" (dict "d" . "lang" $lang) }}{{ end }}
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section class="wz-step" data-wz="line" aria-disabled="true">
+    <header class="wz-head">
+      <span class="wz-num">2</span>
+      <h2>{{ i18n "wiz_line" }}</h2>
+      <span class="wz-summary" data-wz-summary="line"></span>
+      <button type="button" class="wz-change" data-wz-reset="line">{{ i18n "wiz_change" }}</button>
+    </header>
+    <div class="wz-body">
+      <div class="wz-lines">
+        <button type="button" class="wz-option" data-line="factory">
+          <span class="wz-option-title">{{ i18n "line_factory" }} <span class="pill pill-blue">{{ i18n "line_default" }}</span></span>
+          <span class="wz-option-text">{{ i18n "line_factory_desc" }}</span>
+        </button>
+        <button type="button" class="wz-option" data-line="ha">
+          <span class="wz-option-title">{{ i18n "line_ha" }}</span>
+          <span class="wz-option-text">{{ i18n "line_ha_desc" }}</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section class="wz-step" data-wz="flash" aria-disabled="true">
+    <header class="wz-head">
+      <span class="wz-num">3</span>
+      <h2>{{ i18n "wiz_flash" }}</h2>
+    </header>
+    <div class="wz-body">
+      <div class="wz-flash">
+        <img class="wz-flash-img" src="" alt="" width="96" height="96">
+        <div>
+          <p class="wz-flash-name"><strong data-fill="name"></strong> · <span data-fill="line"></span></p>
+          <esp-web-install-button>
+            <button slot="activate" class="btn btn-primary">{{ i18n "install" }}</button>
+            <span slot="unsupported" class="wz-warn">{{ i18n "browser_unsupported" }}</span>
+            <span slot="not-allowed" class="wz-warn">{{ i18n "not_allowed" }}</span>
+          </esp-web-install-button>
+          <p class="wz-version muted small" hidden>{{ i18n "installs_version" }} <a href="#"></a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
