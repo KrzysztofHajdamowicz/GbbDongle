@@ -6,11 +6,16 @@
   <title>{{ if .IsHome }}{{ .Site.Title }} · {{ .Params.hero.title | plainify }}{{ else }}{{ .Title }} · {{ .Site.Title }}{{ end }}</title>
   {{ with .Description }}<meta name="description" content="{{ . }}">{{ end }}
   <meta name="theme-color" content="#1557c0">
+  <meta name="color-scheme" content="light dark">
+  {{/* Runs before the stylesheet so a stored light/dark choice paints on the first frame. */}}
+  <script>try{var t=localStorage.getItem("theme");if(t==="dark"||t==="light")document.documentElement.dataset.theme=t}catch(e){}</script>
   <link rel="icon" href="{{ "favicon.svg" | relURL }}" type="image/svg+xml">
   {{ range .AllTranslations }}<link rel="alternate" hreflang="{{ .Language.Lang }}" href="{{ .Permalink }}">
   {{ end }}
   {{ $css := resources.Get "css/main.css" | minify | fingerprint }}
   <link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}">
+  {{ $theme := resources.Get "js/theme.js" | minify | fingerprint }}
+  <script src="{{ $theme.RelPermalink }}" integrity="{{ $theme.Data.Integrity }}" defer></script>
   {{ block "head" . }}{{ end }}
 </head>
 <body class="{{ block "bodyclass" . }}page{{ end }}">
