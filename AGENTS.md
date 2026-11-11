@@ -218,8 +218,10 @@ it also uploads the OTA images as artifacts for testers. When touching
 `tools/site/assemble-manifests.sh`, dry-run it locally: create dummy
 `<dir>/*.{factory,ota}.bin` files for every board and line, run
 `tools/site/assemble-manifests.sh <dir> 9.9.9 <release url>` and `jq .` the
-resulting JSON. Site preview: `hugo server --source website` (installer
-buttons need the manifests, so they only work on the deployed site).
+resulting JSON. Site preview: `hugo server --source website`; run
+`tools/site/fetch-firmware.sh [tag]` first (needs a logged-in `gh`) to put a
+release's binaries and manifests into the gitignored `website/static/firmware/`
+so the install wizard can flash from localhost.
 
 Testing without cloud/inverter: local mosquitto with TLS off +
 `tools/cloud_roundtrip.py` (publishes a captured `toDevice` request, prints
