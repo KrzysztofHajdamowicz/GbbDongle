@@ -243,16 +243,27 @@ void GbbDongle::publish_response_(GbbHeader &&header) {
     last_log_ptr = &last_log;
   }
   const GbbClientIdentity identity{this->version_, this->environment_, CLIENT_NAME, this->client_environment_};
-  std::string response = build_response(header, identity, this->build_client_info_(), last_log_ptr);
+  const std::string client_info = this->build_client_info_();
+  std::string response = build_response(header, identity, client_info, last_log_ptr);
   if (response.size() >= JSON_BUILD_TRUNCATED_SIZE && last_log_ptr != nullptr) {
-    // build_json truncated the document (invalid JSON). The log is the only
-    // sizeable payload, so drop it and answer with a valid response instead;
-    // the dropped lines stay lost (the ring's read cursor already advanced).
+    // build_json truncated the document (invalid JSON). The log is the
+    // largest optional payload, so drop it first; the dropped lines stay lost
+    // (the ring's read cursor already advanced).
     ESP_LOGE(TAG, "Response with LastLog exceeded the JSON size cap; sending it without the log");
-    response = build_response(header, identity, this->build_client_info_(), nullptr);
+    response = build_response(header, identity, client_info, nullptr);
   }
   if (response.size() >= JSON_BUILD_TRUNCATED_SIZE) {
-    ESP_LOGE(TAG, "Response exceeds the JSON size cap even without LastLog; dropping it");
+    // Still over the cap: the reply frames themselves do not fit. Answer the
+    // way a failing line is answered instead of staying silent, so the cloud
+    // sees which lines ran rather than a timeout.
+    const size_t cut = cut_response_to_cap(header, identity, client_info, response);
+    ESP_LOGE(TAG, "Response exceeded the JSON size cap; %u line result(s) replaced by '%s'", cut,
+             RESPONSE_TOO_LARGE);
+  }
+  if (json_build_failed(response)) {
+    // Truncated even with no line results (oversized Tag/OrderId echoes), or
+    // "{}" when ArduinoJson could not allocate the document at all.
+    ESP_LOGE(TAG, "Could not build a valid fromDevice response (%u B); dropping it", response.size());
     return;
   }
   // Summary rather than the whole JSON: with SendLastLog the response also
@@ -302,6 +313,13 @@ void GbbDongle::loop() {
       this->last_keepalive_ = now;
       this->mqtt_->publish(this->topic_keepalive_, "", 0, 1, false);
       ESP_LOGD(TAG, "Keepalive sent");
+    }
+    if (!this->retained_token_cleared_) {
+      // Firmware up to 2.0.x mirrored the Plant Token to this retained topic
+      // (see the mqtt: block in base.yaml). An empty retained publish deletes
+      // the broker's copy; brokers that never accepted it ignore this.
+      this->retained_token_cleared_ =
+          this->mqtt_->publish(this->mqtt_->get_topic_prefix() + "/text/plant_token/state", "", 0, 1, true);
     }
   }
 

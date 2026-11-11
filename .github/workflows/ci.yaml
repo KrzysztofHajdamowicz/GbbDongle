@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: astral-sh/setup-uv@v10.3.2
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
 
@@ -52,7 +52,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: astral-sh/setup-uv@v10.3.2
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
 
@@ -73,6 +73,11 @@ jobs:
 
       - name: Validate configuration
         run: uv run esphome -s external_components_source ../components config firmware/${{ matrix.config }}.yaml
+
+      # The mqtt: client is the cloud link; no entity may publish or accept
+      # commands on it (see the mqtt: block in firmware/common/base.yaml).
+      - name: Check no entity is exposed over MQTT
+        run: uv run python tools/check_mqtt_exposure.py firmware/${{ matrix.config }}.yaml
 
       - name: Compile firmware
         run: uv run esphome -s external_components_source ../components compile firmware/${{ matrix.config }}.yaml

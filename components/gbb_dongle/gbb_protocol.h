@@ -89,6 +89,18 @@ struct GbbClientIdentity {
 std::string build_response(const GbbHeader &header, const GbbClientIdentity &identity, const std::string &client_info,
                            const std::string *last_log);
 
+/// Line Error for results cut by cut_response_to_cap().
+static constexpr const char *RESPONSE_TOO_LARGE = "Response too large";
+
+/// Shrink a response built without LastLog under the build_json() cap the
+/// way GbbConnect2 reports a failing line: walking back from the last line
+/// that carries a frame, that line gets Error = RESPONSE_TOO_LARGE and loses
+/// its Modbus (later lines already have none, and only the first failing
+/// line keeps an Error), until the rebuilt `response` fits or no line with a
+/// frame is left. Returns the number of lines cut.
+size_t cut_response_to_cap(GbbHeader &header, const GbbClientIdentity &identity, const std::string &client_info,
+                           std::string &response);
+
 /// Serialize / parse the emergency ("last will") sets for NVS persistence:
 /// {"Sets":[{"SubInverterSN":"","Lines":[...]}]}. Key "" = master.
 /// parse_emergency_sets returns false on malformed JSON.
@@ -102,6 +114,17 @@ bool hex_to_bytes(const std::string &hex, std::vector<uint8_t> &out);
 
 /// Modbus CRC-16 (poly 0xA001, init 0xFFFF), as in GbbConnect2 ModBus.GetCRC.
 uint16_t modbus_crc16(const uint8_t *data, size_t len);
+
+/// True when an uppercase-hex RTU reply is a Modbus exception (function code
+/// with bit 7 set), i.e. the slave answered but rejected the request.
+bool modbus_hex_is_exception(const std::string &hex);
+
+/// build_json() yields "{}" when ArduinoJson cannot allocate the document,
+/// and a document truncated to JSON_BUILD_TRUNCATED_SIZE when it outgrows
+/// the cap; neither is a usable serialization of a non-empty object.
+inline bool json_build_failed(const std::string &json) {
+  return json.size() <= 2 || json.size() >= JSON_BUILD_TRUNCATED_SIZE;
+}
 
 }  // namespace gbb_dongle
 }  // namespace esphome

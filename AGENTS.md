@@ -117,7 +117,11 @@ Files:
   text/number/switch entities persisted in NVS) into the MQTT client at
   setup, then calls `enable()` once the network is up. **Cloud settings
   changes require a restart** (esp-mqtt config is built once); RS485
-  baud/parity changes apply live. Publishes a keepalive every 60 s.
+  baud/parity changes apply live. Publishes a keepalive every 60 s. The
+  `mqtt:` client is the cloud link only: every named entity carries an empty
+  `state_topic:` so ESPHome never mirrors it to the broker (Plant Token!) or
+  obeys command topics for it — add one to every new entity;
+  `tools/check_mqtt_exposure.py` fails CI otherwise.
 - `gbb_protocol.{h,cpp}` — JSON parse/build of the `Header` payload
   (PascalCase keys, ArduinoJson).
 - `emergency_store.{h,cpp}` — the emergency ("last will") command sets
@@ -139,11 +143,12 @@ Files:
   incremental `LastLog` protocol feature.
 - `__init__.py` — config schema. Key knobs: `flow_control_pin` (manual RS485
   direction; omit for auto-direction transceivers), `response_timeout`
-  (1000 ms), `read_gap` (100 ms), `write_gap` (3000 ms), `log_buffer_size`,
+  (1000 ms, min 100 ms), `read_gap` (100 ms) and `write_gap` (3000 ms, both
+  min 10 ms), `log_buffer_size`,
   `time_id` (SNTP clock for the emergency check), `emergency_persist_id`,
   `emergency_minute_threshold` (10) + `emergency_retry_initial`/`_max`
-  (60 s / 15 min; `gbbdongle-bench.yaml` lowers the threshold to bench-test
-  the trigger without waiting an hour),
+  (60 s / 15 min, min 10 s, max ≥ initial; `gbbdongle-bench.yaml` lowers
+  the threshold to bench-test the trigger without waiting an hour),
   `certificate_authority`, and the `*_id` wiring of the config entities
   declared in `base.yaml`. `version:` defaults to `auto` → resolved from
   `git describe`; release builds stamp it via `esphome -s version X.Y.Z`.

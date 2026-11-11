@@ -46,4 +46,5 @@ text_sensor:
     ip_address:
       id: ip_address_text
       name: IP Address
+      state_topic:
       entity_category: diagnostic

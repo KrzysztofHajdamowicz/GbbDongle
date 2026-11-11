@@ -24,6 +24,13 @@ Topics:
 | `{PlantId}/ModbusInMqtt/fromDevice` | device → cloud | 2 (publish) |
 | `{PlantId}/keepalive` | device → cloud, empty payload, every 60 s | 1 |
 
+These are the only topics the device uses. ESPHome's own MQTT features are
+switched off on this connection: no entity state/command topics, no
+discovery, no `esphome/discover` / `esphome/ping`, no birth/will/log topics.
+Once per boot, after connecting, the device publishes an empty retained
+message to `<device_name>/text/plant_token/state` to delete the Plant Token
+that firmware up to 2.0.x left there.
+
 ## Payload
 
 JSON `Header` object, PascalCase keys, null fields omitted (an optional
@@ -61,16 +68,27 @@ Error semantics (mirrors GbbConnect2):
   `Response timeout`, `Invalid CRC in response`, `Response too short` (reply
   under 4 bytes) and `Invalid Modbus hex string` (unparseable hex or a
   request frame under 4 bytes).
+- A reply with a valid CRC but another slave address or function code than
+  the request (a late answer to an earlier request, bus cross-talk) is not
+  this line's result: it is logged and ignored, and the device keeps
+  listening until `response_timeout`. A Modbus exception reply (function
+  code | 0x80) matches and is returned unchanged, like GbbConnect2 does.
+- A response that would not fit the JSON size cap (below), even without
+  `LastLog`, is answered like a failing line instead of being dropped:
+  walking back from the last line, results are removed and the first removed
+  line gets `Error: Response too large`, until the document fits.
 - Lines without a `Modbus` value are skipped (left untouched).
 - The response is still published; the response itself is the acknowledgment.
-- Cases that get **no** response: a malformed/unparseable `toDevice` payload is ignored; a
+- Cases that get **no** response: a malformed/unparseable `toDevice` payload,
+  or valid JSON whose root is not an object (`[]`, `5`), is ignored; a
   payload over 16 KiB, or one whose `Lines` / `LinesOnNoInvSetup` array has
   more than 50 elements, is ignored the same way (the device logs a warning;
   real batches carry ~10 lines and a longer response could not fit the size
   cap below anyway); the
   request queue holds one pending request, so a newer request replaces a
-  queued one that has not started yet; a response that exceeds the JSON
-  size cap even without `LastLog` is dropped.
+  queued one that has not started yet; a response that still exceeds the
+  JSON size cap with every line result removed (oversized `Tag`/`OrderId`
+  echoes) is dropped.
 
 Timing: a line fails with `Response timeout` after 1000 ms without a
 complete reply (`response_timeout`). Between commands the device waits
@@ -87,7 +105,7 @@ fields:
 | Field | Meaning |
 |---|---|
 | `IsInvSetup` | int; non-zero marks a message carrying inverter setup data. GbbOptimizer sends one during the first 10 minutes of every hour. |
-| `LinesOnNoInvSetup` | `Line[]`; emergency Modbus commands to run if the cloud goes silent. Stored (replacing the previous set) keyed by `SubInverterSN` (trimmed like .NET `Trim()`; absent/empty = master); an **empty array clears** the stored set for that key. A set counts as unchanged when every line's `LineNo` and `Modbus` match — `Tag`/`Timestamp` are ignored, so the hourly re-send with fresh timestamps is not a change. |
+| `LinesOnNoInvSetup` | `Line[]`; emergency Modbus commands to run if the cloud goes silent. Stored (replacing the previous set) keyed by `SubInverterSN` (trimmed like .NET `Trim()`; absent/empty = master); an **empty array clears** the stored set for that key, and so does an array in which no line carries a `Modbus` frame (such a set could never be executed). A set counts as unchanged when every line's `LineNo` and `Modbus` match — `Tag`/`Timestamp` are ignored, so the hourly re-send with fresh timestamps is not a change. |
 
 Trigger (mirrors GbbConnect2): past minute 10 of the hour
 (`emergency_minute_threshold`; minutes are taken from the SNTP clock's
@@ -108,8 +126,9 @@ the same ordering).
 GbbDongle deviations from the original:
 
 - **Delivery confirmation + retry**: a set only counts as delivered (and is
-  then cleared — "send once") when the inverter answered at least one line.
-  Otherwise the set is kept and retried with exponential backoff
+  then cleared — "send once") when the inverter accepted every line that
+  carries a frame: no line failed (timeout, CRC, …) and none was answered
+  with a Modbus exception. Otherwise the set is kept and retried with exponential backoff
   (`emergency_retry_initial` 60 s doubling up to `emergency_retry_max`
   15 min) until it succeeds or a fresh `IsInvSetup` arrives, which cancels
   the pending retry (the cloud is back in charge). An `IsInvSetup` that
@@ -123,8 +142,12 @@ GbbDongle deviations from the original:
   off) keeps the sets in NVS across reboots (written only when the content
   actually changes, to limit flash wear). Turning the switch off erases the
   NVS copy. Sets whose JSON would reach the 5120 B `build_json()` cap are
-  not persisted (the previous NVS copy stays, a warning is logged; the RAM
-  copy is complete and still used). After a reboot restores sets, the
+  not persisted: the NVS copy is erased (it no longer matches what is
+  stored, and restoring it after a reboot could re-send a replaced or
+  already delivered set), an error is logged, and the RAM copy stays
+  complete and in use until the next reboot. A failed NVS read at boot
+  keeps the stored blob for the next boot; only an unparseable one is
+  erased. After a reboot restores sets, the
   hourly deadline counts from the first clock sync. The original kept the
   set in RAM only.
 - `LinesOnNoInvSetup` is not echoed back in responses (GbbConnect2 echoes it

@@ -14,6 +14,7 @@ improv_serial:
 sensor:
   - platform: wifi_signal # Reports the WiFi signal strength/RSSI in dB
     name: "WiFi Signal dB"
+    state_topic:
     id: wifi_signal_db
     update_interval: 60s
     entity_category: "diagnostic"
@@ -22,6 +23,7 @@ sensor:
     id: wifi_signal_percent
     source_id: wifi_signal_db
     name: "WiFi Signal Percent"
+    state_topic:
     filters:
       - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
     unit_of_measurement: "Signal %"
@@ -33,6 +35,7 @@ text_sensor:
     ip_address:
       id: ip_address_text
       name: IP Address
+      state_topic:
       entity_category: diagnostic
 
 # Feed the WiFi diagnostics into the ClientInfo field of fromDevice responses.
