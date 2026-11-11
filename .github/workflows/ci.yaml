@@ -26,7 +26,15 @@ jobs:
     outputs:
       firmware: ${{ steps.filter.outputs.firmware }}
       website: ${{ steps.filter.outputs.website }}
+      preview: ${{ steps.preview.outputs.enabled }}
     steps:
+      # Secrets cannot gate a job directly; fork and Dependabot PRs get none,
+      # so they skip the Cloudflare preview and keep the artifact.
+      - id: preview
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: echo "enabled=${CF_TOKEN:+true}" >> "$GITHUB_OUTPUT"
+
       # Pull requests are diffed through the API; pushes need the history.
       - uses: actions/checkout@v7
         if: github.event_name != 'pull_request'
@@ -177,6 +185,69 @@ jobs:
           path: site/
           if-no-files-found: error
           retention-days: 7
+
+  # Per-PR preview on Cloudflare Pages: project gbbdongle-preview, branch
+  # alias pr-<number>, linked from the PR as the site-preview deployment.
+  # Production stays on GitHub Pages (pages.yaml); nothing here touches it.
+  # Not part of "CI result", so missing secrets or a Cloudflare outage never
+  # block a merge. Needs repository secrets CLOUDFLARE_API_TOKEN (Account >
+  # Cloudflare Pages > Edit) and CLOUDFLARE_ACCOUNT_ID; the project is created
+  # on first use.
+  preview:
+    needs: [changes, website]
+    if: github.event_name == 'pull_request' && needs.changes.outputs.preview == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: site-preview
+      url: ${{ steps.deploy.outputs.pages-deployment-alias-url }}
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PROJECT: gbbdongle-preview
+      BRANCH: pr-${{ github.event.pull_request.number }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # The pages.dev subdomain gets a random suffix when the project name is
+      # taken, so read it from the API instead of assuming it.
+      - name: Resolve preview URL
+        id: project
+        run: |
+          API="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects"
+          AUTH="Authorization: Bearer ${CLOUDFLARE_API_TOKEN}"
+          RESP=$(curl -sS -H "$AUTH" "${API}/${PROJECT}")
+          if [ "$(jq -r .success <<<"$RESP")" != true ]; then
+            RESP=$(curl -sS -X POST -H "$AUTH" -H "Content-Type: application/json" \
+              --data "{\"name\":\"${PROJECT}\",\"production_branch\":\"main\"}" "$API")
+          fi
+          if [ "$(jq -r .success <<<"$RESP")" != true ]; then
+            jq .errors <<<"$RESP" >&2
+            exit 1
+          fi
+          echo "base_url=https://${BRANCH}.$(jq -r .result.subdomain <<<"$RESP")" >> "$GITHUB_OUTPUT"
+
+      - uses: ./.github/actions/build-site
+        with:
+          base-url: ${{ steps.project.outputs.base_url }}
+
+      - name: Deploy preview
+        id: deploy
+        uses: cloudflare/wrangler-action@v4.1.3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4.153.0"
+          command: >-
+            pages deploy site
+            --project-name=${{ env.PROJECT }}
+            --branch=${{ env.BRANCH }}
+            --commit-hash=${{ github.event.pull_request.head.sha }}
+
+      - name: Summary
+        env:
+          URL: ${{ steps.deploy.outputs.pages-deployment-alias-url }}
+        run: |
+          echo "Site preview: $URL" >> "$GITHUB_STEP_SUMMARY"
 
   # The one check to require in branch protection. A job skipped by the
   # path filter counts as passed; a failed or cancelled one fails this.
