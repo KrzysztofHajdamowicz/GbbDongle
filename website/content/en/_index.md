@@ -3,8 +3,8 @@ title: GbbDongle
 description: A ready-made RS485 bridge between your inverter and GbbOptimizer. No computer, no Docker, 0.5 W.
 hero:
   eyebrow: For GbbOptimizer users
-  title: Your inverter in GbbOptimizer, **no computer** required
-  lead: "Skip the inverter maker's unreliable cloud. GbbDongle connects GbbOptimizer straight to your inverter's RS485 port, so control is fast and independent of anyone else's servers. No computer, Docker or Raspberry Pi running 24/7: just a small board in your distribution board."
+  title: Your inverter connected to GbbOptimizer, **no computer** required
+  lead: "Skip the inverter maker's unreliable cloud! GbbDongle connects GbbOptimizer straight to your inverter's RS485 port, so control is fast and independent of anyone else's servers. No computer, Docker or Raspberry Pi running 24/7: just a small board in your distribution board."
   note: Buy it assembled, flashed and tested, or build your own with one of the supported boards.
 how:
   title: How it works
@@ -25,7 +25,7 @@ features:
   items:
     - icon: "⚡"
       title: Energy efficient
-      text: No server, Raspberry Pi or PC running 24/7. The dongle works on its own, mounted in your distribution board.
+      text: No server, Raspberry Pi or PC running 24/7. The dongle works on its own, powered over a USB cable.
     - icon: "🔄"
       title: Updates itself
       text: Set it up once and the device keeps itself up to date.
@@ -60,10 +60,10 @@ devices:
       variant: Ethernet / PoE
       text: Network and power over one cable. Where WiFi does not reach.
 steps:
-  title: From box to running in 4 steps
+  title: From box to running in 3 steps
   items:
-    - title: Flash the firmware
-      text: Over USB, straight from Chrome, Edge or Firefox. The ready-made device comes flashed.
+    # - title: Flash the firmware
+    #   text: Over USB, straight from Chrome, Edge or Firefox. The ready-made device comes flashed.
     - title: Connect to the network
       text: Set up WiFi from the installer or through the *GbbDongle Setup* access point. Ethernet works right away.
     - title: Enter your GbbOptimizer details

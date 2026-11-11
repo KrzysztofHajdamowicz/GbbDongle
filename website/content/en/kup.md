@@ -4,7 +4,8 @@ slug: buy
 description: Assembled, flashed and tested GbbDongle for 399 PLN gross, with a VAT invoice.
 ---
 
-The ready-made GbbDongle is a Waveshare ESP32-S3-RS485-CAN for a DIN rail with an **external WiFi antenna**, flashed and tested with an inverter.
+The ready-made GbbDongle is a Waveshare ESP32-S3-RS485-CAN for a DIN rail, flashed and tested with an inverter.  
+It comes with an **external** or a **built-in** antenna.
 
 **Price: 399 PLN gross**, VAT invoice.
 

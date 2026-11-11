@@ -3,7 +3,8 @@ title: Kup GbbDongle
 description: Złożony, wgrany i przetestowany GbbDongle za 399 zł brutto, z fakturą VAT.
 ---
 
-Gotowy GbbDongle to Waveshare ESP32-S3-RS485-CAN na szynę DIN z **zewnętrzną anteną WiFi**, z wgranym firmware i sprawdzony z falownikiem.
+Gotowy GbbDongle to Waveshare ESP32-S3-RS485-CAN na szynę DIN z wgranym firmware i sprawdzony z falownikiem.  
+Dostępne są warianty z **zewnętrzną** lub **wbudowaną** anteną
 
 **Cena: 399 zł brutto**, faktura VAT.
 

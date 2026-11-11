@@ -3,8 +3,8 @@ title: GbbDongle
 description: Gotowy most RS485 między falownikiem a GbbOptimizerem. Bez komputera, bez Dockera, 0,5 W.
 hero:
   eyebrow: Dla użytkowników GbbOptimizera
-  title: Falownik w GbbOptimizerze, **bez komputera** w tle
-  lead: "Pomiń zawodną chmurę producenta. GbbDongle łączy GbbOptimizer bezpośrednio z portem RS485 falownika, więc sterowanie działa szybko i niezależnie od cudzych serwerów. Bez komputera, Dockera czy Raspberry Pi włączonego 24/7: wystarczy mała płytka w rozdzielnicy."
+  title: Falownik podłączony do GbbOptimizera, **bez komputera** w tle
+  lead: "Pomiń zawodną chmurę producenta! GbbDongle łączy GbbOptimizer bezpośrednio z portem RS485 falownika, więc sterowanie działa szybko i niezależnie od cudzych serwerów. Bez komputera, Dockera czy Raspberry Pi włączonego 24/7: wystarczy mała płytka w rozdzielnicy."
   note: Gotowe, wgrane i przetestowane urządzenie albo zrób to sam używając jednego z wspieranych modułów.
 how:
   title: Jak to działa
@@ -25,7 +25,7 @@ features:
   items:
     - icon: "⚡"
       title: Energooszczędność
-      text: Nie potrzebujesz serwera, Raspberry Pi czy PC włączonego 24/7. Dongle pracuje sam, wpięty w rozdzielnicę.
+      text: Nie potrzebujesz serwera, Raspberry Pi czy PC włączonego 24/7. Dongle pracuje sam, zasilany przewodem USB.
     - icon: "🔄"
       title: Aktualizuje się sam
       text: Wystarczy jedynie wstępna konfiguracja i urządzenie będzie się aktualizować automatycznie.
@@ -60,10 +60,10 @@ devices:
       variant: Ethernet / PoE
       text: Sieć i zasilanie jednym kablem. Tam, gdzie WiFi nie dociera.
 steps:
-  title: Od pudełka do działania w 4 krokach
+  title: Od pudełka do działania w 3 krokach
   items:
-    - title: Wgraj firmware
-      text: Przez USB, prosto z przeglądarki Chrome, Edge albo Firefox. Gotowe urządzenie ma go już wgranego.
+    # - title: Wgraj firmware
+    #   text: Przez USB, prosto z przeglądarki Chrome, Edge albo Firefox. Gotowe urządzenie ma go już wgranego.
     - title: Podłącz do sieci
       text: WiFi skonfigurujesz z instalatora albo przez punkt dostępowy *GbbDongle Setup*. Ethernet działa od razu.
     - title: Wpisz dane z GbbOptimizera

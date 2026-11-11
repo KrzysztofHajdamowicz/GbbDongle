@@ -134,12 +134,11 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -.01em; color: var(--blue-950); }
 .card-body h3 { margin: 10px 0 6px; font-size: 1.05rem; }
 .card-body p { margin: 0; font-size: .95rem; }
 
-.steps-row { list-style: none; counter-reset: s; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; padding: 0; margin: 36px 0 0; }
+.steps-row { list-style: none; counter-reset: s; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; padding: 0; margin: 36px 0 0; }
 .steps-row li { counter-increment: s; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; }
 .steps-row li::before { content: counter(s); display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--blue-700); color: #fff; font-weight: 700; }
 .steps-row h3 { margin: 14px 0 6px; font-size: 1.05rem; }
 .steps-row p { margin: 0; color: var(--muted); font-size: .95rem; }
-@media (max-width: 900px) { .steps-row { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 560px) { .steps-row { grid-template-columns: 1fr; } }
 
 .cta-band { background: linear-gradient(120deg, var(--blue-900), var(--blue-700)); color: #fff; }
