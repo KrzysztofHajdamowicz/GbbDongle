@@ -13,7 +13,8 @@
   wires have a white base under their colour patches.
 
   Units are millimetres of the source drawing. Contact centres: pin 1 at y = 5.993,
-  one pin every 3.296 down to pin 8.
+  one pin every 3.296 down to pin 8. The cable fills x = 0 to 23.639, where the
+  plug body starts.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 92.877 35.056" width="92.877mm" height="35.056mm">
 <g transform="translate(-39.048,-17.409)">

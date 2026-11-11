@@ -10,7 +10,9 @@ Output goes to website/static/img/pinouts/. Run from the repo root:
 
     python3 tools/pinouts/gen_svg.py
 
-Standard library only; the SVGs are plain text so diffs stay reviewable.
+Standard library only; the SVGs are plain text so diffs stay reviewable. The
+plug itself is not drawn here: it is the artwork in rj45-t568b-plug.svg next to
+this file, placed in the site orientation.
 """
 
 from __future__ import annotations
@@ -21,8 +23,10 @@ from xml.sax.saxutils import escape
 
 OUT = Path(__file__).resolve().parents[2] / "website" / "static" / "img" / "pinouts"
 
-# Plug artwork for the convention drawing; see the header of that file for its
-# source. Contact centres in the artwork's own units: pin 1, then one per pitch.
+# Plug artwork shared by every RJ45 drawing; see the header of that file for its
+# source. The measures below are in the artwork's own units: the contact centres
+# (pin 1, then one per pitch) and how far the plug body starts from the edge the
+# cable leaves through.
 PLUG_ART = Path(__file__).with_name("rj45-t568b-plug.svg")
 PLUG_ART_CREDIT = (
     'based on "RJ-45 TIA-568B Right.svg" by Miha Ulanov, Wikimedia Commons, public domain, '
@@ -30,6 +34,7 @@ PLUG_ART_CREDIT = (
 )
 PLUG_PIN1_Y = 5.993
 PLUG_PIN_PITCH = 3.296
+PLUG_CABLE = 23.639
 
 # Signal roles -> label chip colours (light background, white-blue site).
 ROLE = {
@@ -40,28 +45,21 @@ ROLE = {
     "nc": ("#f3f4f6", "#9ca3af"),  # not connected / reserved
 }
 
-# T568B wire colours, pin 1..8: (base colour, striped with white?)
-T568B = {
-    1: ("#f97316", True),
-    2: ("#f97316", False),
-    3: ("#16a34a", True),
-    4: ("#2563eb", False),
-    5: ("#2563eb", True),
-    6: ("#16a34a", False),
-    7: ("#92400e", True),
-    8: ("#92400e", False),
-}
-
 FONT = "font-family=\"Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif\""
 
 
-def _chip(x: float, y: float, text: str, role: str, anchor_right: bool = True) -> str:
+def _chip_w(text: str) -> float:
+    """Width of a label chip: an estimate with slack, since the font is the reader's."""
+    return max(56, 8.2 * len(text) + 20)
+
+
+def _chip(x: float, y: float, text: str, role: str, anchor_right: bool = True, h: float = 22) -> str:
     fill, fg = ROLE[role]
-    w = max(56, 8.2 * len(text) + 20)
+    w = _chip_w(text)
     x0 = x - w if anchor_right else x
     weight = "700" if role in ("A", "B", "GND") else "500"
     return (
-        f'<rect x="{x0:.1f}" y="{y - 11:.1f}" width="{w:.1f}" height="22" rx="11" fill="{fill}"'
+        f'<rect x="{x0:.1f}" y="{y - h / 2:.1f}" width="{w:.1f}" height="{h:g}" rx="{h / 2:g}" fill="{fill}"'
         + (' stroke="#d1d5db"' if role in ("other", "nc") else "")
         + "/>"
         f'<text x="{x0 + w / 2:.1f}" y="{y + 4.5:.1f}" text-anchor="middle" font-size="13" '
@@ -69,56 +67,64 @@ def _chip(x: float, y: float, text: str, role: str, anchor_right: bool = True) -
     )
 
 
+def _plug_art() -> tuple[str, float, float]:
+    """The plug artwork (one <g>) and its width and height in its own units."""
+    src = PLUG_ART.read_text(encoding="utf-8")
+    w, h = (float(v) for v in re.search(r'viewBox="0 0 ([\d.]+) ([\d.]+)"', src).groups())
+    return src[src.index("<g") : src.rindex("</g>") + len("</g>")], w, h
+
+
+def _place_plug(ax: float, ay: float, s: float) -> tuple[str, dict[int, float], float, float]:
+    """The plug in the site convention, top-left corner at (ax, ay), s px per unit of
+    the artwork. Returns the SVG fragment, the y of every contact centre and the
+    placed width and height."""
+    art, art_w, art_h = _plug_art()
+    # The artwork has the cable on the left and pin 1 at the top. A half turn puts
+    # the pins on the left and pin 1 at the bottom while still showing the contact
+    # side; a mirror image would show the latch side instead.
+    turn = f"translate({ax + s * art_w:.2f},{ay + s * art_h:.2f}) scale({-s})"
+    pin_y = {n: ay + s * (art_h - (PLUG_PIN1_Y + (n - 1) * PLUG_PIN_PITCH)) for n in range(1, 9)}
+    return f'<g transform="{turn}">\n{art}\n</g>', pin_y, s * art_w, s * art_h
+
+
 def plug_svg(pins: dict[int, tuple[str, str]], title: str) -> str:
-    """RJ45 plug in the site convention. pins: {1..8: (label, role)}."""
-    W, H = 640, 300
-    tip_x, body_r = 236, 452  # plug body spans tip_x..body_r
-    top, bot = 46, 254
-    pitch = 22
-    # pin 8 at the top, pin 1 at the bottom
-    ys = {n: bot - 24 - (n - 1) * pitch for n in range(1, 9)}
+    """RJ45 plug in the site convention with the signal on every pin.
+    pins: {1..8: (label, role)}."""
+    s = 6.6  # px per unit of the artwork
+    chip_h = 19  # just under the pin pitch at this scale, so neighbouring chips stay apart
+    label_w = max(_chip_w(label) for label, _ in pins.values())
+    col = 10 + label_w + 8 + 10  # centre of the pin-number column
+    ax, ay = col + 18, 14
+    plug, pin_y, plug_w, plug_h = _place_plug(ax, ay, s)
+    # The drawing stops a short way into the cable, which fades into the page.
+    fade = s * 5
+    W = round(ax + plug_w - s * (PLUG_CABLE - 7))
+    H = round(plug_h + 2 * ay)
 
     out = [
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" '
         f'role="img" aria-labelledby="t">',
-        f"<title id=\"t\">{escape(title)}</title>",
+        f'<title id="t">{escape(title)}</title>',
+        f"<!-- Plug artwork: {PLUG_ART_CREDIT} -->",
+        '<defs><linearGradient id="fade"><stop offset="0" stop-color="#ffffff" stop-opacity="0"/>'
+        '<stop offset="1" stop-color="#ffffff"/></linearGradient></defs>',
         f'<rect width="{W}" height="{H}" fill="#ffffff"/>',
-        # cable
-        f'<rect x="{body_r + 40}" y="122" width="{W - body_r - 40}" height="56" fill="#cbd5e1"/>',
-        f'<rect x="{body_r}" y="112" width="44" height="76" rx="8" fill="#94a3b8"/>',
-        # plug body (clear plastic)
-        f'<rect x="{tip_x}" y="{top}" width="{body_r - tip_x}" height="{bot - top}" rx="10" '
-        f'fill="#eff6ff" stroke="#60a5fa" stroke-width="2"/>',
-        # hidden latch at the back: dashed outline
-        f'<path d="M{tip_x + 70},{(top + bot) / 2 - 26} L{body_r - 20},{(top + bot) / 2 - 18} '
-        f'L{body_r - 20},{(top + bot) / 2 + 18} L{tip_x + 70},{(top + bot) / 2 + 26} Z" '
-        f'fill="none" stroke="#93c5fd" stroke-width="1.6" stroke-dasharray="6 4"/>',
+        plug,
+        f'<rect x="{W - fade:.1f}" y="0" width="{fade:.1f}" height="{H}" fill="url(#fade)"/>',
     ]
-    # wires from contacts to the cable
-    for n in range(1, 9):
-        y = ys[n]
-        cy = 150 + (n - 4.5) * 5
-        colour, striped = T568B[n]
-        d = f"M{tip_x + 64},{y} C{tip_x + 150},{y} {body_r - 70},{cy} {body_r + 2},{cy}"
-        out.append(f'<path d="{d}" fill="none" stroke="{colour}" stroke-width="4"/>')
-        if striped:
-            out.append(
-                f'<path d="{d}" fill="none" stroke="#ffffff" stroke-width="4" stroke-dasharray="5 5"/>'
-            )
-    # gold contacts at the tip
-    for n in range(1, 9):
-        y = ys[n]
-        used = pins[n][1] in ("A", "B", "GND")
-        out.append(
-            f'<rect x="{tip_x + 6}" y="{y - 6}" width="58" height="12" rx="2" '
-            f'fill="{"#eab308" if used else "#fde68a"}" stroke="#a16207" stroke-width="1"/>'
-        )
-        out.append(
-            f'<text x="{tip_x - 14}" y="{y + 4.5}" text-anchor="middle" font-size="14" '
-            f'font-weight="700" fill="#1e3a8a" {FONT}>{n}</text>'
-        )
+    for n in range(8, 0, -1):
+        y = pin_y[n]
         label, role = pins[n]
-        out.append(_chip(tip_x - 30, y, label, role))
+        if role in ("A", "B", "GND"):
+            out.append(f'<circle cx="{col:.1f}" cy="{y:.1f}" r="10" fill="{ROLE[role][0]}"/>')
+            num_fill, num_weight = "#ffffff", "800"
+        else:
+            num_fill, num_weight = ROLE[role][1], "600"
+        out.append(
+            f'<text x="{col:.1f}" y="{y + 4.7:.1f}" text-anchor="middle" font-size="13" '
+            f'font-weight="{num_weight}" fill="{num_fill}" {FONT}>{n}</text>'
+        )
+        out.append(_chip(col - 18, y, label, role, h=chip_h))
     out.append("</svg>")
     return "\n".join(out) + "\n"
 
@@ -223,13 +229,6 @@ def terminal_svg(cells: list[tuple[str, str]], title: str) -> str:
     return "\n".join(out) + "\n"
 
 
-def _plug_art() -> tuple[str, float, float]:
-    """The plug artwork (one <g>) and its width and height in its own units."""
-    src = PLUG_ART.read_text(encoding="utf-8")
-    w, h = (float(v) for v in re.search(r'viewBox="0 0 ([\d.]+) ([\d.]+)"', src).groups())
-    return src[src.index("<g") : src.rindex("</g>") + len("</g>")], w, h
-
-
 def _arrow(x: float, y: float, to_right: bool) -> str:
     d = 9 if to_right else -9
     return f'<path d="M{x},{y - 6} L{x + d},{y} L{x},{y + 6} Z" fill="#1d4ed8"/>'
@@ -257,15 +256,9 @@ def conv_legend(lang: str) -> str:
             "wires": "Wire colours follow T568B.",
         },
     }[lang]
-    art, art_w, art_h = _plug_art()
     W, H = 700, 372
-    s = 5.6  # px per unit of the artwork
     ax, ay = 146, 70  # top-left corner of the placed artwork
-    # The artwork has the cable on the left and pin 1 at the top. A half turn puts
-    # the pins on the left and pin 1 at the bottom while still showing the contact
-    # side; a mirror image would show the latch side instead.
-    turn = f"translate({ax + s * art_w:.2f},{ay + s * art_h:.2f}) scale({-s})"
-    pin_y = {n: ay + s * (art_h - (PLUG_PIN1_Y + (n - 1) * PLUG_PIN_PITCH)) for n in range(1, 9)}
+    plug, pin_y, plug_w, plug_h = _place_plug(ax, ay, 5.6)
     col = ax - 16  # centre of the pin-number column
 
     out = [
@@ -275,9 +268,7 @@ def conv_legend(lang: str) -> str:
         f"<!-- Plug artwork: {PLUG_ART_CREDIT} -->",
         f'<rect width="{W}" height="{H}" fill="#ffffff"/>',
         f'<text x="{W / 2}" y="38" text-anchor="middle" font-size="21" font-weight="800" fill="#1e3a8a" {FONT}>{escape(t["title"])}</text>',
-        f'<g transform="{turn}">',
-        art,
-        "</g>",
+        plug,
         f'<text x="{col}" y="{pin_y[8] - 20:.1f}" text-anchor="middle" font-size="12" fill="#6b7280" {FONT}>pin</text>',
     ]
     for n in range(1, 9):
@@ -297,8 +288,8 @@ def conv_legend(lang: str) -> str:
                 f'<text x="{col}" y="{y + 5:.1f}" text-anchor="middle" font-size="14" font-weight="600" '
                 f'fill="#374151" {FONT}>{n}</text>'
             )
-    below = ay + s * art_h + 28
-    right = ax + s * art_w
+    below = ay + plug_h + 28
+    right = ax + plug_w
     out += [
         _arrow(ax + 9, below - 5, to_right=False),
         f'<text x="{ax + 18}" y="{below}" font-size="14" font-weight="600" fill="#1d4ed8" {FONT}>{escape(t["pins"])}</text>',
