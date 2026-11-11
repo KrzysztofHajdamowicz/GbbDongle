@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 300" width="640" height="300" role="img" aria-labelledby="t">
+<title id="t">Solis S6-EH3P three-phase hybrid, RS485 port</title>
+<rect width="640" height="300" fill="#ffffff"/>
+<rect x="492" y="122" width="148" height="56" fill="#cbd5e1"/>
+<rect x="452" y="112" width="44" height="76" rx="8" fill="#94a3b8"/>
+<rect x="236" y="46" width="216" height="208" rx="10" fill="#eff6ff" stroke="#60a5fa" stroke-width="2"/>
+<path d="M306,124.0 L432,132.0 L432,168.0 L306,176.0 Z" fill="none" stroke="#93c5fd" stroke-width="1.6" stroke-dasharray="6 4"/>
+<path d="M300,230 C386,230 382,132.5 454,132.5" fill="none" stroke="#f97316" stroke-width="4"/>
+<path d="M300,230 C386,230 382,132.5 454,132.5" fill="none" stroke="#ffffff" stroke-width="4" stroke-dasharray="5 5"/>
+<path d="M300,208 C386,208 382,137.5 454,137.5" fill="none" stroke="#f97316" stroke-width="4"/>
+<path d="M300,186 C386,186 382,142.5 454,142.5" fill="none" stroke="#16a34a" stroke-width="4"/>
+<path d="M300,186 C386,186 382,142.5 454,142.5" fill="none" stroke="#ffffff" stroke-width="4" stroke-dasharray="5 5"/>
+<path d="M300,164 C386,164 382,147.5 454,147.5" fill="none" stroke="#2563eb" stroke-width="4"/>
+<path d="M300,142 C386,142 382,152.5 454,152.5" fill="none" stroke="#2563eb" stroke-width="4"/>
+<path d="M300,142 C386,142 382,152.5 454,152.5" fill="none" stroke="#ffffff" stroke-width="4" stroke-dasharray="5 5"/>
+<path d="M300,120 C386,120 382,157.5 454,157.5" fill="none" stroke="#16a34a" stroke-width="4"/>
+<path d="M300,98 C386,98 382,162.5 454,162.5" fill="none" stroke="#92400e" stroke-width="4"/>
+<path d="M300,98 C386,98 382,162.5 454,162.5" fill="none" stroke="#ffffff" stroke-width="4" stroke-dasharray="5 5"/>
+<path d="M300,76 C386,76 382,167.5 454,167.5" fill="none" stroke="#92400e" stroke-width="4"/>
+<rect x="242" y="224" width="58" height="12" rx="2" fill="#eab308" stroke="#a16207" stroke-width="1"/>
+<text x="222" y="234.5" text-anchor="middle" font-size="14" font-weight="700" fill="#1e3a8a" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">1</text>
+<rect x="128.6" y="219.0" width="77.4" height="22" rx="11" fill="#1d4ed8"/><text x="167.3" y="234.5" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">RS485 A</text>
+<rect x="242" y="202" width="58" height="12" rx="2" fill="#eab308" stroke="#a16207" stroke-width="1"/>
+<text x="222" y="212.5" text-anchor="middle" font-size="14" font-weight="700" fill="#1e3a8a" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">2</text>
+<rect x="128.6" y="197.0" width="77.4" height="22" rx="11" fill="#c2410c"/><text x="167.3" y="212.5" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">RS485 B</text>
+<rect x="242" y="180" width="58" height="12" rx="2" fill="#fde68a" stroke="#a16207" stroke-width="1"/>
+<text x="222" y="190.5" text-anchor="middle" font-size="14" font-weight="700" fill="#1e3a8a" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">3</text>
+<rect x="150.0" y="175.0" width="56.0" height="22" rx="11" fill="#f3f4f6" stroke="#d1d5db"/><text x="178.0" y="190.5" text-anchor="middle" font-size="13" font-weight="500" fill="#9ca3af" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">NC</text>
+<rect x="242" y="158" width="58" height="12" rx="2" fill="#fde68a" stroke="#a16207" stroke-width="1"/>
+<text x="222" y="168.5" text-anchor="middle" font-size="14" font-weight="700" fill="#1e3a8a" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">4</text>
+<rect x="150.0" y="153.0" width="56.0" height="22" rx="11" fill="#f3f4f6" stroke="#d1d5db"/><text x="178.0" y="168.5" text-anchor="middle" font-size="13" font-weight="500" fill="#9ca3af" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">NC</text>
+<rect x="242" y="136" width="58" height="12" rx="2" fill="#fde68a" stroke="#a16207" stroke-width="1"/>
+<text x="222" y="146.5" text-anchor="middle" font-size="14" font-weight="700" fill="#1e3a8a" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">5</text>
+<rect x="150.0" y="131.0" width="56.0" height="22" rx="11" fill="#f3f4f6" stroke="#d1d5db"/><text x="178.0" y="146.5" text-anchor="middle" font-size="13" font-weight="500" fill="#9ca3af" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">NC</text>
+<rect x="242" y="114" width="58" height="12" rx="2" fill="#fde68a" stroke="#a16207" stroke-width="1"/>
+<text x="222" y="124.5" text-anchor="middle" font-size="14" font-weight="700" fill="#1e3a8a" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">6</text>
+<rect x="150.0" y="109.0" width="56.0" height="22" rx="11" fill="#f3f4f6" stroke="#d1d5db"/><text x="178.0" y="124.5" text-anchor="middle" font-size="13" font-weight="500" fill="#9ca3af" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">NC</text>
+<rect x="242" y="92" width="58" height="12" rx="2" fill="#fde68a" stroke="#a16207" stroke-width="1"/>
+<text x="222" y="102.5" text-anchor="middle" font-size="14" font-weight="700" fill="#1e3a8a" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">7</text>
+<rect x="150.0" y="87.0" width="56.0" height="22" rx="11" fill="#f3f4f6" stroke="#d1d5db"/><text x="178.0" y="102.5" text-anchor="middle" font-size="13" font-weight="500" fill="#9ca3af" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">NC</text>
+<rect x="242" y="70" width="58" height="12" rx="2" fill="#fde68a" stroke="#a16207" stroke-width="1"/>
+<text x="222" y="80.5" text-anchor="middle" font-size="14" font-weight="700" fill="#1e3a8a" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">8</text>
+<rect x="150.0" y="65.0" width="56.0" height="22" rx="11" fill="#f3f4f6" stroke="#d1d5db"/><text x="178.0" y="80.5" text-anchor="middle" font-size="13" font-weight="500" fill="#9ca3af" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">NC</text>
+</svg>

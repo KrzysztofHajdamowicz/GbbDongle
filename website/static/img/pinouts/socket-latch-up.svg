@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 240" width="260" height="240" role="img" aria-labelledby="t"><title id="t">RJ45 socket, front view, latch slot at the top</title>
+<rect width="260" height="240" fill="#ffffff"/>
+<rect x="30" y="40" width="200" height="160" rx="6" fill="#1f2937"/>
+<rect x="44" y="54" width="172" height="132" rx="3" fill="#0b1220"/>
+<rect x="96.0" y="54" width="68" height="34" fill="#475569"/>
+<rect x="64" y="138" width="6" height="40" fill="#eab308"/>
+<text x="67" y="226" text-anchor="middle" font-size="13" font-weight="500" fill="#374151" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">8</text>
+<rect x="83" y="138" width="6" height="40" fill="#eab308"/>
+<text x="86" y="226" text-anchor="middle" font-size="13" font-weight="500" fill="#374151" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">7</text>
+<rect x="102" y="138" width="6" height="40" fill="#eab308"/>
+<text x="105" y="226" text-anchor="middle" font-size="13" font-weight="500" fill="#374151" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">6</text>
+<rect x="121" y="138" width="6" height="40" fill="#eab308"/>
+<text x="124" y="226" text-anchor="middle" font-size="13" font-weight="500" fill="#374151" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">5</text>
+<rect x="140" y="138" width="6" height="40" fill="#eab308"/>
+<text x="143" y="226" text-anchor="middle" font-size="13" font-weight="500" fill="#374151" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">4</text>
+<rect x="159" y="138" width="6" height="40" fill="#eab308"/>
+<text x="162" y="226" text-anchor="middle" font-size="13" font-weight="500" fill="#374151" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">3</text>
+<rect x="178" y="138" width="6" height="40" fill="#eab308"/>
+<text x="181" y="226" text-anchor="middle" font-size="13" font-weight="500" fill="#374151" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">2</text>
+<rect x="197" y="138" width="6" height="40" fill="#1d4ed8"/>
+<text x="200" y="226" text-anchor="middle" font-size="13" font-weight="800" fill="#1d4ed8" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">1</text>
+</svg>
