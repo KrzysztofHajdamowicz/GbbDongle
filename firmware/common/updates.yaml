@@ -1,6 +1,11 @@
 # Self-update package for the published firmware lines (factory and
 # HA-compatible): pulls new releases from the update manifest on GitHub
-# Pages. Deliberately NOT part of the import targets (firmware/<config>.yaml)
+# Pages, served at gbbdongle.hajdamowicz.info. Images up to v2.1.0 poll the
+# krzysztofhajdamowicz.github.io/GbbDongle URLs instead and reach the same
+# files through GitHub's 301 to the custom domain (http_request follows
+# redirects and resolves the relative OTA path against that original URL),
+# so the custom domain has to stay configured on this repo's Pages site.
+# Deliberately NOT part of the import targets (firmware/<config>.yaml)
 # — an adopted device is compiled by the user's ESPHome dashboard and must
 # not overwrite that build with images from our releases.
 

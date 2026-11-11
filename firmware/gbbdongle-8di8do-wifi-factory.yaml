@@ -5,7 +5,7 @@
 
 substitutions:
   admin_password: admin
-  update_manifest_url: https://krzysztofhajdamowicz.github.io/GbbDongle/firmware/update-manifest-8di8do-wifi.json
+  update_manifest_url: https://gbbdongle.hajdamowicz.info/firmware/update-manifest-8di8do-wifi.json
 
 packages:
   device: !include gbbdongle-8di8do-wifi.yaml

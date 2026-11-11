@@ -14,7 +14,7 @@ with an external WiFi antenna.
 ### Can I build one myself?
 
 Yes, everything is public. Buy one of the [supported boards](../README.md#supported-boards), flash it
-from the [web installer](https://krzysztofhajdamowicz.github.io/GbbDongle/) over USB in Chrome or Edge,
+from the [web installer](https://gbbdongle.hajdamowicz.info/) over USB in Chrome or Edge,
 and make the inverter cable from an Ethernet cable with one plug cut off (see
 [Wiring](#wiring-deye)). The installer page lists each board by its exact name: copy it into your
 shop's search box.
