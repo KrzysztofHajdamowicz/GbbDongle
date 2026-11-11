@@ -14,7 +14,7 @@ na [Discordzie](https://discord.gg/XEhNSqQ6Jj) GbbOptimizera, na kanale
 ### Czy mogę zbudować go sam?
 
 Tak, wszystko jest publiczne. Kup jedną z [obsługiwanych płytek](../README.md#supported-boards), wgraj
-firmware z [instalatora](https://krzysztofhajdamowicz.github.io/GbbDongle/instalacja/) przez USB w
+firmware z [instalatora](https://gbbdongle.hajdamowicz.info/instalacja/) przez USB w
 przeglądarce z Web Serial (Chrome, Edge, Opera albo Firefox 151+ na komputerze) i zrób kabel do falownika z
 kabla Ethernet z jedną uciętą wtyczką (zobacz [Okablowanie](#okablowanie-deye)). Instalator podaje
 dokładną nazwę każdej płytki: skopiuj ją do wyszukiwarki sklepu.

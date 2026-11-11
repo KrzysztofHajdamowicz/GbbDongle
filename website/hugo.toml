@@ -3,7 +3,7 @@
 # manifests are not part of this tree: the Pages workflow drops them into
 # the published site under firmware/, next to the pages.
 
-baseURL = "https://krzysztofhajdamowicz.github.io/GbbDongle/"
+baseURL = "https://gbbdongle.hajdamowicz.info/"
 title = "GbbDongle"
 defaultContentLanguage = "pl"
 defaultContentLanguageInSubdir = false
