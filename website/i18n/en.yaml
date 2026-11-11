@@ -26,3 +26,5 @@ guide_pick_first: Pick your device and firmware line above and the guide adapts 
 photos_credit: Board photos courtesy of the manufacturers
 footer_tagline: Bridge between your inverter (RS485) and GbbOptimizer on an off-the-shelf ESP32 board.
 made_to_order: Made to order
+theme_dark: Switch to dark mode
+theme_light: Switch to light mode

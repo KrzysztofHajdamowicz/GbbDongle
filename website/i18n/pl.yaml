@@ -26,3 +26,5 @@ guide_pick_first: Wybierz urządzenie i wersję firmware powyżej, a instrukcja 
 photos_credit: Zdjęcia płytek dzięki uprzejmości producentów
 footer_tagline: Most między falownikiem (RS485) a GbbOptimizerem na gotowej płytce ESP32.
 made_to_order: Na zamówienie
+theme_dark: Włącz tryb ciemny
+theme_light: Włącz tryb jasny
