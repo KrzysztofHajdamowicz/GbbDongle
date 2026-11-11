@@ -8,6 +8,10 @@
     </div>
     <h2>{{ .Get "name" }}</h2>
     {{ .Inner | .Page.RenderString (dict "display" "block") }}
-    {{ if eq (.Get "buy") "true" }}<div class="cta-row">{{ partial "buy-button.html" (dict "page" .Page "class" "btn btn-primary") }}<span class="muted">{{ .Page.Site.Params.price }}</span></div>{{ end }}
+    {{/* buy="true": in stock, with the price; buy="order": made to order, no price. */}}
+    {{ with .Get "buy" }}<div class="cta-row">
+      {{ if eq . "order" }}{{ partial "buy-button.html" (dict "page" $.Page "class" "btn btn-ghost" "label" "made_to_order") }}
+      {{ else }}{{ partial "buy-button.html" (dict "page" $.Page "class" "btn btn-primary") }}<span class="muted">{{ $.Page.Site.Params.price }}</span>{{ end }}
+    </div>{{ end }}
   </div>
 </div>

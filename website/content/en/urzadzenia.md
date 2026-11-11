@@ -24,7 +24,7 @@ menu:
 - fits a single-row distribution board
 {{< /product >}}
 
-{{< product image="img/waveshare-esp32-s3-poe-eth-8di-8do.jpg" name="Waveshare ESP32-S3-POE-ETH-8DI-8DO" variant="Ethernet / PoE" >}}
+{{< product image="img/waveshare-esp32-s3-poe-eth-8di-8do.jpg" name="Waveshare ESP32-S3-POE-ETH-8DI-8DO" variant="Ethernet / PoE" buy="order" >}}
 **When WiFi at the inverter does not work** (for example in a metal garage or a boiler room). One Ethernet cable carries network and power (PoE 802.3af). It can also be powered from USB or the 7–36 V terminals.
 
 - ESP32-S3, Ethernet (W5500) with PoE; WiFi with the SMA antenna as an alternative

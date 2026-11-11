@@ -23,7 +23,7 @@ menu:
 - pasuje do rozdzielnicy jednorzędowej
 {{< /product >}}
 
-{{< product image="img/waveshare-esp32-s3-poe-eth-8di-8do.jpg" name="Waveshare ESP32-S3-POE-ETH-8DI-8DO" variant="Ethernet / PoE" >}}
+{{< product image="img/waveshare-esp32-s3-poe-eth-8di-8do.jpg" name="Waveshare ESP32-S3-POE-ETH-8DI-8DO" variant="Ethernet / PoE" buy="order" >}}
 **Gdy WiFi przy falowniku nie działa** (na przykład w metalowym garażu lub kotłowni). Jeden kabel Ethernet daje sieć i zasilanie (PoE 802.3af). Można też zasilić z USB albo z zacisków 7–36 V.
 
 - ESP32-S3, Ethernet (W5500) z PoE; alternatywnie WiFi z anteną SMA
