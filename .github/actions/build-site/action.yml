@@ -1,0 +1,69 @@
+name: Build site
+description: >
+  Builds the Hugo site (website/) and drops a release's firmware binaries
+  plus the ESP Web Tools / OTA manifests generated from them under
+  firmware/. Shared by pages.yaml (deploy) and ci.yaml (pull request check
+  and preview artifact), so a PR builds exactly what a deploy publishes.
+  Needs the repository checked out.
+
+inputs:
+  hugo-version:
+    description: Hugo extended release to install
+    default: "0.168.0"
+  base-url:
+    description: Site base URL without trailing slash (empty = baseURL from website/hugo.toml)
+    default: ""
+  tag:
+    description: Release tag whose firmware to publish (empty = latest release)
+    default: ""
+  destination:
+    description: Output directory, relative to the workspace
+    default: site
+  token:
+    description: Token for downloading the release assets
+    default: ${{ github.token }}
+
+outputs:
+  tag:
+    description: Release tag whose firmware was published
+    value: ${{ steps.firmware.outputs.tag }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install Hugo
+      shell: bash
+      env:
+        HUGO_VERSION: ${{ inputs.hugo-version }}
+      run: |
+        curl -sSLo "${RUNNER_TEMP}/hugo.deb" \
+          "https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.deb"
+        sudo dpkg -i "${RUNNER_TEMP}/hugo.deb"
+
+    - name: Build site
+      shell: bash
+      env:
+        BASE_URL: ${{ inputs.base-url }}
+        DEST: ${{ inputs.destination }}
+      run: |
+        hugo --source website --gc --minify \
+          ${BASE_URL:+--baseURL "${BASE_URL}/"} \
+          --destination "${GITHUB_WORKSPACE}/${DEST}"
+
+    - name: Add release firmware and manifests
+      id: firmware
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        TAG: ${{ inputs.tag }}
+        DEST: ${{ inputs.destination }}
+      run: |
+        if [ -z "$TAG" ]; then
+          TAG=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName -q .tagName)
+        fi
+        mkdir -p "${DEST}/firmware"
+        gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.bin' --dir "${DEST}/firmware"
+        tools/site/assemble-manifests.sh "${DEST}/firmware" "${TAG#v}" \
+          "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}"
+        echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+        echo "Published firmware: $TAG" >> "$GITHUB_STEP_SUMMARY"

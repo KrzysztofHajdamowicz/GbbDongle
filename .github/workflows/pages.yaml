@@ -8,21 +8,18 @@ name: Pages
 #
 # - push to main touching the site: rebuild with the latest release
 # - release.yaml calls it with the freshly published tag
-# - pull requests: build only, no deploy
+#
+# Pull requests build the same site in ci.yaml (job "website", via the
+# shared .github/actions/build-site action) and never deploy.
 
 on:
   push:
     branches: [main]
     paths:
       - "website/**"
-      - "docs/faq.md"
+      - "docs/faq*.md"
       - "tools/site/**"
-      - ".github/workflows/pages.yaml"
-  pull_request:
-    paths:
-      - "website/**"
-      - "docs/faq.md"
-      - "tools/site/**"
+      - ".github/actions/build-site/**"
       - ".github/workflows/pages.yaml"
   workflow_dispatch:
     inputs:
@@ -43,11 +40,8 @@ permissions:
 
 # One deployment at a time; a queued run still deploys after the current one.
 concurrency:
-  group: pages-${{ github.event_name == 'pull_request' && github.ref || 'deploy' }}
+  group: pages-deploy
   cancel-in-progress: false
-
-env:
-  HUGO_VERSION: 0.168.0
 
 jobs:
   build:
@@ -55,46 +49,21 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install Hugo
-        run: |
-          curl -sSLo "${RUNNER_TEMP}/hugo.deb" \
-            "https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.deb"
-          sudo dpkg -i "${RUNNER_TEMP}/hugo.deb"
-
       - id: pages
-        if: github.event_name != 'pull_request'
         uses: actions/configure-pages@v6
 
-      - name: Build site
-        env:
-          # Pages' own base URL (custom domain once configured); PR builds
-          # fall back to the baseURL in website/hugo.toml.
-          BASE_URL: ${{ steps.pages.outputs.base_url }}
-        run: |
-          hugo --source website --gc --minify \
-            ${BASE_URL:+--baseURL "${BASE_URL}/"} \
-            --destination "${GITHUB_WORKSPACE}/site"
-
-      - name: Add release firmware and manifests
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ inputs.tag }}
-        run: |
-          if [ -z "$TAG" ]; then
-            TAG=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName -q .tagName)
-          fi
-          mkdir -p site/firmware
-          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.bin' --dir site/firmware
-          tools/site/assemble-manifests.sh site/firmware "${TAG#v}" \
-            "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}"
-          echo "Published firmware: $TAG" >> "$GITHUB_STEP_SUMMARY"
+      # Pages' own base URL (the custom domain); the release's binaries and
+      # manifests land under firmware/ at the same paths every deploy.
+      - uses: ./.github/actions/build-site
+        with:
+          base-url: ${{ steps.pages.outputs.base_url }}
+          tag: ${{ inputs.tag }}
 
       - uses: actions/upload-pages-artifact@v5
         with:
           path: site
 
   deploy:
-    if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
     environment:

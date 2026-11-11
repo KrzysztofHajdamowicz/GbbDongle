@@ -9,11 +9,58 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  pull-requests: read   # dorny/paths-filter lists a PR's files via the API
+
+# Which jobs run depends on the files a change touches (job "changes"):
+#   firmware: import-target validation + the compile matrix
+#   website:  Hugo build of the product site (same action pages.yaml deploys
+#             with), uploaded as an artifact for preview
+# Skipped jobs never block a merge: branch protection requires only the
+# "CI result" job, which always runs and fails only if a job that ran failed.
+
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      firmware: ${{ steps.filter.outputs.firmware }}
+      website: ${{ steps.filter.outputs.website }}
+    steps:
+      # Pull requests are diffed through the API; pushes need the history.
+      - uses: actions/checkout@v7
+        if: github.event_name != 'pull_request'
+
+      - uses: dorny/paths-filter@v4.0.3
+        id: filter
+        with:
+          filters: |
+            firmware:
+              - "components/**"
+              - "firmware/**"
+              - "tests/**"
+              - "tools/**"
+              # esphome and its toolchain are pinned here (Dependabot bumps)
+              - "pyproject.toml"
+              - "uv.lock"
+              - ".python-version"
+              - ".github/workflows/ci.yaml"
+              - ".github/workflows/release.yaml"
+            website:
+              - "website/**"
+              # FAQ pages render docs/faq.md (EN) and docs/faq.pl.md (PL)
+              - "docs/faq*.md"
+              - "tools/site/**"
+              - ".github/actions/build-site/**"
+              - ".github/workflows/ci.yaml"
+              - ".github/workflows/pages.yaml"
+
   # The import targets (firmware/<config>.yaml) are what the ESPHome
   # dashboard pulls in during adoption — validate them standalone even
   # though the variant builds below include them as packages.
   validate-import-targets:
+    needs: changes
+    if: needs.changes.outputs.firmware == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -32,6 +79,8 @@ jobs:
           done
 
   build:
+    needs: changes
+    if: needs.changes.outputs.firmware == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -107,3 +156,44 @@ jobs:
           path: dist/
           if-no-files-found: error
           retention-days: 30
+
+  # Builds what pages.yaml would deploy (site + latest release's firmware
+  # and manifests) but never deploys; the artifact is a static preview:
+  # unzip it and serve the directory, e.g. `python3 -m http.server`.
+  website:
+    needs: changes
+    if: needs.changes.outputs.website == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/build-site
+
+      - name: Upload site preview
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: site-preview
+          path: site/
+          if-no-files-found: error
+          retention-days: 7
+
+  # The one check to require in branch protection. A job skipped by the
+  # path filter counts as passed; a failed or cancelled one fails this.
+  ci-result:
+    name: CI result
+    if: always()
+    needs: [changes, validate-import-targets, build, website]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check job results
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Job results: $RESULTS"
+          for r in $RESULTS; do
+            case "$r" in
+              success|skipped) ;;
+              *) exit 1 ;;
+            esac
+          done
