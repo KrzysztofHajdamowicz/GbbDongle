@@ -221,6 +221,10 @@ as artifacts for testers. Changes to `website/`, `docs/faq*.md`,
 `tools/site/` or the site build build the site exactly as `pages.yaml` would
 (latest release's firmware and manifests included) and, on pull requests,
 upload it as the `site-preview` artifact (unzip, `python3 -m http.server`).
+With the `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` secrets set, the
+`preview` job also deploys each PR to the Cloudflare Pages project
+`gbbdongle-preview` (branch alias `pr-<number>`, linked as the PR's
+`site-preview` deployment); production stays on GitHub Pages.
 Branch protection requires only the `CI result` job, which passes when every
 job either succeeded or was skipped by the filter. When adding a top-level
 directory, add it to the matching filter. When touching
