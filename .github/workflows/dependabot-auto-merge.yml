@@ -3,6 +3,8 @@ name: Dependabot auto-merge
 # Turns green CI into an approval for low-risk dependency bumps: once the CI
 # "build" job compiles the firmware on the new versions, minor/patch Dependabot
 # PRs merge themselves into main. Major bumps are left for manual review.
+# uv.lock, ci.yaml and release.yaml are in ci.yaml's firmware path filter, so
+# toolchain bumps and action bumps in those workflows run the compile.
 #
 # This only affects the main branch. It does NOT ship anything to devices:
 # firmware is published to GitHub Pages / the OTA manifest solely by the
@@ -10,9 +12,10 @@ name: Dependabot auto-merge
 #
 # Prerequisites (one-time, in the GitHub UI):
 #   1. Settings -> General -> Pull Requests -> enable "Allow auto-merge".
-#   2. Branch protection (or a ruleset) on `main` requiring the CI "build"
-#      status check to pass. Without a required check, --auto would merge
-#      immediately instead of waiting for the compile.
+#   2. Branch protection (or a ruleset) on `main` requiring the CI
+#      "CI result" status check to pass (it aggregates the path-filtered
+#      jobs). Without a required check, --auto would merge immediately
+#      instead of waiting for the compile.
 
 on: pull_request
 

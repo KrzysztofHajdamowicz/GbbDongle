@@ -33,7 +33,7 @@ generates it internally.
 | `tools/site/assemble-manifests.sh` | Writes all ESP Web Tools + OTA manifests next to a release's binaries (used by `pages.yaml`) |
 | `docs/protocol.md` | **Authoritative** cloud-protocol description — read it before touching protocol code |
 | `tools/` | `cloud_roundtrip.py` (plays the cloud against a dongle on a local broker), `bench/` (pymodbus RTU slave standing in for the inverter on a USB-RS485 adapter, an emergency-set test request and the bench procedure README) and `busscan/` (one-shot Go diagnostic that scans Modbus addresses through a dongle, Polish README, no CI) |
-| `.github/workflows/` | `ci.yaml` (import-target validation + compile matrix), `release.yaml` (build, SBOM, attestations, GitHub release, then calls `pages.yaml`), `pages.yaml` (Hugo site + the release's binaries and manifests → GitHub Pages; also on site changes on `main`, build-only on PRs), `dependabot-auto-merge.yml` |
+| `.github/workflows/` | `ci.yaml` (path-filtered: import-target validation + compile matrix for firmware changes, Hugo site build for site changes; `CI result` is the single required check), `release.yaml` (build, SBOM, attestations, GitHub release, then calls `pages.yaml`), `pages.yaml` (Hugo site + the release's binaries and manifests → GitHub Pages; also on site changes on `main`), `dependabot-auto-merge.yml`; `.github/actions/build-site` is the site build shared by `pages.yaml` and `ci.yaml` |
 
 ### Package layering
 
@@ -212,9 +212,18 @@ Configs: `gbbdongle`, `gbbdongle-tcan485`, `gbbdongle-kamami`,
 `gbbdongle-8di8do-wifi`, `gbbdongle-8di8do-eth` (each + `-factory`, `-ha`,
 `-dev`). WiFi dev variants need `firmware/secrets.yaml` (copy from the
 repo-root `secrets.yaml.example`); the Ethernet dev variants (Kamami,
-8di8do-eth) do not. CI validates the five import targets standalone and
-compiles all ten published images (5 boards × factory/ha); on pull requests
-it also uploads the OTA images as artifacts for testers. When touching
+8di8do-eth) do not. CI picks its jobs by the paths a change touches (filters
+in the `changes` job of `ci.yaml`). Changes to `components/`, `firmware/`,
+`tests/`, `tools/`, the uv lock/pyproject or `ci.yaml`/`release.yaml`
+validate the five import targets standalone and compile all ten published
+images (5 boards × factory/ha); on pull requests the OTA images are uploaded
+as artifacts for testers. Changes to `website/`, `docs/faq*.md`,
+`tools/site/` or the site build build the site exactly as `pages.yaml` would
+(latest release's firmware and manifests included) and, on pull requests,
+upload it as the `site-preview` artifact (unzip, `python3 -m http.server`).
+Branch protection requires only the `CI result` job, which passes when every
+job either succeeded or was skipped by the filter. When adding a top-level
+directory, add it to the matching filter. When touching
 `tools/site/assemble-manifests.sh`, dry-run it locally: create dummy
 `<dir>/*.{factory,ota}.bin` files for every board and line, run
 `tools/site/assemble-manifests.sh <dir> 9.9.9 <release url>` and `jq .` the
