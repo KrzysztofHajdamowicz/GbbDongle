@@ -15,7 +15,7 @@ menu:
 - **wymaga rozdzielnicy co najmniej dwurzędowej**: antena wystaje nad moduł i zajmuje miejsce w rzędzie powyżej
 {{< /product >}}
 
-{{< product image="img/waveshare-esp32-s3-rs485-can.jpg" name="Waveshare ESP32-S3-RS485-CAN" variant="antena wbudowana" >}}
+{{< product image="img/waveshare-esp32-s3-rs485-can.jpg" name="Waveshare ESP32-S3-RS485-CAN" variant="antena wbudowana" buy="true" >}}
 **Ta sama płytka, mieści się w każdej rozdzielnicy.** Taką wersję zwykle znajdziesz w polskich sklepach (np. na Allegro). Antena wbudowana jest słabsza: jeśli obecny logger falownika już ma kłopoty z WiFi, ta wersja tego nie naprawi.
 
 - ESP32-S3, WiFi, konfiguracja WiFi przez Bluetooth lub USB
@@ -23,7 +23,7 @@ menu:
 - pasuje do rozdzielnicy jednorzędowej
 {{< /product >}}
 
-{{< product image="img/waveshare-esp32-s3-poe-eth-8di-8do.jpg" name="Waveshare ESP32-S3-POE-ETH-8DI-8DO" variant="Ethernet / PoE" buy="order" >}}
+{{< product image="img/waveshare-esp32-s3-poe-eth-8di-8do.jpg" name="Waveshare ESP32-S3-POE-ETH-8DI-8DO" variant="Ethernet / PoE" buy="order" note="dostawa ok. 5 dni roboczych" >}}
 **Gdy WiFi przy falowniku nie działa** (na przykład w metalowym garażu lub kotłowni). Jeden kabel Ethernet daje sieć i zasilanie (PoE 802.3af). Można też zasilić z USB albo z zacisków 7–36 V.
 
 - ESP32-S3, Ethernet (W5500) z PoE; alternatywnie WiFi z anteną SMA
@@ -37,9 +37,9 @@ menu:
 |---|---|---|---|
 | Łączność | WiFi | WiFi | Ethernet + PoE lub WiFi |
 | Zasięg WiFi | dobry | słabszy | (Ethernet) |
-| Rozdzielnica | dwurzędowa | jednorzędowa | 8 modułów |
+| Rozdzielnica | Dwa rzędy x 2 moduły szerokości | 2 moduły szerokości | 8 modułów szerokości |
 | Zasilanie | 7–36 V lub USB-C | 7–36 V lub USB-C | PoE, 7–36 V lub USB-C |
-| Firmware | ten sam | ten sam | wersja Ethernet albo WiFi |
+| Firmware | ten sam | ten sam | 2 wersje: Ethernet albo WiFi |
 
 ## Inne obsługiwane płytki
 

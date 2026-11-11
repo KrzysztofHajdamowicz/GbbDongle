@@ -17,7 +17,7 @@ menu:
 <div id="guide" class="guide" hidden>
 
 {{< step title="Przygotuj komputer i kabel" >}}
-- Komputer z przeglądarką obsługującą Web Serial: **Chrome**, **Edge**, **Opera** albo **Firefox** od wersji 151. Safari tego nie potrafi; instalację najlepiej robić z komputera, nie z telefonu.
+- Komputer z przeglądarką obsługującą Web Serial: **Chrome**, **Edge**, **Opera** albo **Firefox** od wersji 151. Safari tego nie potrafi; instalację należy wykonać z komputera, nie z telefonu.
 - Kabel **USB-C z transmisją danych**. Kabel tylko do ładowania nie pokaże portu.
 - Do wgrania wystarczy zasilanie z USB, także w płytkach z Ethernetem.
 {{< only device="kamami" >}}

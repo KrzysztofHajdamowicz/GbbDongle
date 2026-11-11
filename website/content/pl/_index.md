@@ -5,7 +5,7 @@ hero:
   eyebrow: Dla użytkowników GbbOptimizera
   title: Falownik w GbbOptimizerze, **bez komputera** w tle
   lead: "Pomiń zawodną chmurę producenta. GbbDongle łączy GbbOptimizer bezpośrednio z portem RS485 falownika, więc sterowanie działa szybko i niezależnie od cudzych serwerów. Bez komputera, Dockera czy Raspberry Pi włączonego 24/7: wystarczy mała płytka w rozdzielnicy."
-  note: Gotowe, wgrane i przetestowane urządzenie albo zrób to sam z płytki z listy.
+  note: Gotowe, wgrane i przetestowane urządzenie albo zrób to sam używając jednego z wspieranych modułów.
 how:
   title: Jak to działa
   aria: Falownik połączony przez RS485 z GbbDongle, który łączy się przez internet z GbbOptimizerem
@@ -16,7 +16,6 @@ how:
       text: ESP32 na szynie DIN
       accent: true
     - title: GbbOptimizer
-      text: chmura, MQTT po TLS
   links:
     - kabel RJ45
     - WiFi lub Ethernet
@@ -25,23 +24,23 @@ features:
   title: Dlaczego GbbDongle
   items:
     - icon: "⚡"
-      title: 0,5 W i zero komputera
-      text: Nie potrzebujesz serwera, Raspberry Pi ani włączonego 24/7 PC. Dongle pracuje sam, wpięty w rozdzielnicę.
+      title: Energooszczędność
+      text: Nie potrzebujesz serwera, Raspberry Pi czy PC włączonego 24/7. Dongle pracuje sam, wpięty w rozdzielnicę.
     - icon: "🔄"
       title: Aktualizuje się sam
-      text: Co 6 godzin sprawdza nowe wydanie i instaluje je z losowym opóźnieniem, żeby cała flota nie restartowała się naraz.
+      text: Wystarczy jedynie wstępna konfiguracja i urządzenie będzie się aktualizować automatycznie.
     - icon: "🛟"
       title: Polecenia awaryjne
-      text: Gdy internet padnie, dongle sam wykona na falowniku zestaw poleceń awaryjnych przygotowany przez GbbOptimizer.
+      text: Co godzinę wysyłany jest zestaw poleceń zapasowych, dzięki czemu Twój falownik będzie realizował bezpieczny program w razie niedostępności chmury.
     - icon: "🔓"
-      title: Otwarte źródła
-      text: Firmware oparty o ESPHome, kod na GitHubie, podpisane wydania z SBOM. Możesz też zbudować własny.
+      title: Otwarte i audytowalne źródła
+      text: Oprogramowanie zawiera najnowsze wytyczne z zakresu cyberbezpieczeństwa.
     - icon: "🏠"
       title: Home Assistant, jeśli chcesz
-      text: Druga wersja firmware zgłasza się do adopcji w ESPHome. Domyślna wersja działa bez Home Assistanta.
+      text: Nie odwracamy się od zapaleńców. Twój GbbDongle może działać w Home Assistant.
     - icon: "🔌"
       title: WiFi albo Ethernet z PoE
-      text: Słabe WiFi przy falowniku? Wersja z Ethernetem dostaje zasilanie tym samym kablem.
+      text: Słabe WiFi przy falowniku? W ofercie jest również wersja Ethernet. Dane lub Dane+Zasilanie płynące jednym kablem.
 devices:
   title: Wybierz urządzenie
   lead: Wszystkie modele dostają ten sam firmware. Różnią się łącznością i tym, ile miejsca zajmują w rozdzielnicy.

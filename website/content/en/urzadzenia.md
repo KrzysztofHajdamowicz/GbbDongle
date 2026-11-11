@@ -16,7 +16,7 @@ menu:
 - **needs a distribution board with at least two rows**: the antenna sticks out above the module and takes room in the row above
 {{< /product >}}
 
-{{< product image="img/waveshare-esp32-s3-rs485-can.jpg" name="Waveshare ESP32-S3-RS485-CAN" variant="internal antenna" >}}
+{{< product image="img/waveshare-esp32-s3-rs485-can.jpg" name="Waveshare ESP32-S3-RS485-CAN" variant="internal antenna" buy="true" >}}
 **The same board, fits any distribution board.** This is the version Polish shops usually sell (e.g. on Allegro). The internal antenna is weaker: if your current inverter logger already struggles with WiFi, this version will not fix that.
 
 - ESP32-S3, WiFi, WiFi setup over Bluetooth or USB
@@ -24,7 +24,7 @@ menu:
 - fits a single-row distribution board
 {{< /product >}}
 
-{{< product image="img/waveshare-esp32-s3-poe-eth-8di-8do.jpg" name="Waveshare ESP32-S3-POE-ETH-8DI-8DO" variant="Ethernet / PoE" buy="order" >}}
+{{< product image="img/waveshare-esp32-s3-poe-eth-8di-8do.jpg" name="Waveshare ESP32-S3-POE-ETH-8DI-8DO" variant="Ethernet / PoE" buy="order" note="delivery in about 5 working days" >}}
 **When WiFi at the inverter does not work** (for example in a metal garage or a boiler room). One Ethernet cable carries network and power (PoE 802.3af). It can also be powered from USB or the 7–36 V terminals.
 
 - ESP32-S3, Ethernet (W5500) with PoE; WiFi with the SMA antenna as an alternative
@@ -38,9 +38,9 @@ menu:
 |---|---|---|---|
 | Connectivity | WiFi | WiFi | Ethernet + PoE or WiFi |
 | WiFi range | good | weaker | (Ethernet) |
-| Distribution board | two rows | single row | 8 modules |
+| Distribution board | two rows × 2 modules wide | 2 modules wide | 8 modules wide |
 | Power | 7–36 V or USB-C | 7–36 V or USB-C | PoE, 7–36 V or USB-C |
-| Firmware | the same | the same | Ethernet or WiFi variant |
+| Firmware | the same | the same | 2 variants: Ethernet or WiFi |
 
 ## Other supported boards
 

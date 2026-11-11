@@ -5,7 +5,7 @@ hero:
   eyebrow: For GbbOptimizer users
   title: Your inverter in GbbOptimizer, **no computer** required
   lead: "Skip the inverter maker's unreliable cloud. GbbDongle connects GbbOptimizer straight to your inverter's RS485 port, so control is fast and independent of anyone else's servers. No computer, Docker or Raspberry Pi running 24/7: just a small board in your distribution board."
-  note: Buy it assembled, flashed and tested, or build your own from a supported board.
+  note: Buy it assembled, flashed and tested, or build your own with one of the supported boards.
 how:
   title: How it works
   aria: Inverter connected over RS485 to GbbDongle, which connects over the internet to GbbOptimizer
@@ -16,7 +16,6 @@ how:
       text: ESP32 on a DIN rail
       accent: true
     - title: GbbOptimizer
-      text: cloud, MQTT over TLS
   links:
     - RJ45 cable
     - WiFi or Ethernet
@@ -25,23 +24,23 @@ features:
   title: Why GbbDongle
   items:
     - icon: "⚡"
-      title: 0.5 W and no computer
+      title: Energy efficient
       text: No server, Raspberry Pi or PC running 24/7. The dongle works on its own, mounted in your distribution board.
     - icon: "🔄"
       title: Updates itself
-      text: Checks for a new release every 6 hours and installs it after a random delay, so the fleet never restarts at once.
+      text: Set it up once and the device keeps itself up to date.
     - icon: "🛟"
       title: Emergency commands
-      text: If the internet goes down, the dongle runs the emergency command set prepared by GbbOptimizer on the inverter by itself.
+      text: A backup command set arrives every hour, so your inverter runs a safe programme whenever the cloud is unreachable.
     - icon: "🔓"
-      title: Open source
-      text: ESPHome-based firmware, code on GitHub, signed releases with an SBOM. You can build your own too.
+      title: Open and auditable source
+      text: The firmware follows current cybersecurity guidelines.
     - icon: "🏠"
       title: Home Assistant if you want it
-      text: A second firmware line offers itself for adoption in ESPHome. The default firmware works without Home Assistant.
+      text: We do not turn our backs on tinkerers. Your GbbDongle can run in Home Assistant.
     - icon: "🔌"
       title: WiFi or Ethernet with PoE
-      text: Weak WiFi at the inverter? The Ethernet version is powered over the same cable.
+      text: "Weak WiFi at the inverter? There is an Ethernet version too: data, or data plus power, over one cable."
 devices:
   title: Pick your device
   lead: Every model runs the same firmware. They differ in connectivity and in how much room they take in the distribution board.

@@ -18,7 +18,7 @@ menu:
 <div id="guide" class="guide" hidden>
 
 {{< step title="Get a computer and a cable ready" >}}
-- A computer with a browser that supports Web Serial: **Chrome**, **Edge**, **Opera** or **Firefox** 151 or newer. Safari cannot do it; flash from a computer rather than a phone.
+- A computer with a browser that supports Web Serial: **Chrome**, **Edge**, **Opera** or **Firefox** 151 or newer. Safari cannot do it; the installation has to be done from a computer, not a phone.
 - A **USB-C cable that carries data**. A charge-only cable will not show a port.
 - USB power is enough for flashing, on the Ethernet boards too.
 {{< only device="kamami" >}}
