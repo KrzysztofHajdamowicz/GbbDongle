@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  RJ45 (8P8C) plug wired to T568B, seen from the contact side (latch at the back).
+  Orientation as in the source drawing: cable to the left, contacts to the right,
+  pin 1 at the top. tools/pinouts/gen_svg.py gives it a half turn for the site
+  convention (pins on the left, cable to the right, pin 1 at the bottom).
+
+  Based on "RJ-45 TIA-568B Right.svg" by Miha Ulanov, Wikimedia Commons, public domain:
+  https://commons.wikimedia.org/wiki/File:RJ-45_TIA-568B_Right.svg
+  Differences from the source: no text labels or editor metadata, the contact
+  rectangles hidden under identical ones are gone, the view box is cropped to the
+  artwork, the cable jacket is grey, the plug body has a light tint and the striped
+  wires have a white base under their colour patches.
+
+  Units are millimetres of the source drawing. Contact centres: pin 1 at y = 5.993,
+  one pin every 3.296 down to pin 8.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 92.877 35.056" width="92.877mm" height="35.056mm">
+<g transform="translate(-39.048,-17.409)">
+  <rect fill="#eff6ff" x="62.687" y="17.634" width="65.823" height="34.606"/>
+  <path fill="#ffffff" d="m 90.121356,35.203371 c 4.711178,0.281265 24.363284,0.18751 24.363284,0.18751 v 2.353461 c 0,0 -16.540448,-0.02344 -24.462727,-0.304703"/>
+  <path fill="#ffffff" d="m 90.144795,40.908784 c 7.687892,1.101618 24.339845,1.091573 24.339845,1.091573 v 2.35346 c 0,0 -18.567966,-0.208703 -24.345534,-1.466593"/>
+  <path fill="#ffffff" d="m 89.790311,31.884511 c 7.055047,-0.585968 24.690309,-0.715439 24.690309,-0.715439 v -2.353461 c 0,0 -16.11855,0.04019 -24.626797,0.696464"/>
+  <path fill="#ffffff" d="m 90.269689,26.321176 c 8.137692,-1.921975 24.210931,-1.743951 24.210931,-1.743951 v -2.353461 c 0,0 -17.079537,-0.257826 -24.415849,2.086044"/>
+  <path fill="none" stroke="#1f2937" stroke-width="0.449792" d="m 128.5098,44.284822 h 3.19001 v -18.69509 h -3.19001"/>
+  <g transform="rotate(180,86.865,34.937)">
+    <rect fill="#1878c3" x="68.079" y="32.130" width="3.915" height="2.353"/>
+    <path fill="#1878c3" d="m 76.863785,32.273726 3.915406,0.07656 v 2.222008 l -3.915406,-0.08863 z"/>
+    <rect fill="#1878c3" x="59.245" y="32.130" width="3.915" height="2.353"/>
+  </g>
+  <g transform="rotate(180,86.865,34.937)">
+    <path fill="#802e19" d="m 68.078185,25.641642 3.914414,0.121947 0.0025,2.220216 -3.915407,-0.109607 z"/>
+    <path fill="#802e19" d="m 76.863785,26.190978 3.915406,0.359517 v 2.092623 l -3.915406,-0.293435 z"/>
+    <rect fill="#802e19" x="59.245" y="25.520" width="3.915" height="2.353"/>
+  </g>
+  <g>
+    <rect fill="#ffe653" transform="scale(-1)" x="-125.675" y="-37.513" width="11.194" height="1.856"/>
+    <rect fill="#ffe653" transform="scale(-1)" x="-125.675" y="-40.809" width="11.194" height="1.856"/>
+    <rect fill="#ffe653" transform="scale(-1)" x="-125.675" y="-44.105" width="11.194" height="1.856"/>
+    <rect fill="#ffe653" transform="scale(-1)" x="-125.675" y="-47.401" width="11.194" height="1.856"/>
+    <rect fill="#ffe653" transform="scale(-1)" x="-125.675" y="-24.329" width="11.194" height="1.856"/>
+    <rect fill="#ffe653" transform="scale(-1)" x="-125.675" y="-27.625" width="11.194" height="1.856"/>
+    <rect fill="#ffe653" transform="scale(-1)" x="-125.675" y="-30.921" width="11.194" height="1.856"/>
+    <rect fill="#ffe653" transform="scale(-1)" x="-125.675" y="-34.217" width="11.194" height="1.856"/>
+  </g>
+  <g transform="rotate(180,86.865,34.937)">
+    <path fill="#64b82f" d="m 68.083761,41.058942 3.915407,-0.08951 v -2.326967 l -3.915407,0.06301 z"/>
+    <path fill="#64b82f" d="m 76.867804,40.847652 3.915406,-0.158688 10e-7,-2.28404 -3.915407,0.138486 z"/>
+    <rect fill="#64b82f" transform="scale(1,-1)" x="59.249" y="-41.058" width="3.915" height="2.353"/>
+  </g>
+  <g transform="rotate(180,86.865,34.937)">
+    <path fill="#f27a1f" d="m 68.083761,47.512968 3.915407,-0.207864 v -2.506231 l -3.915407,0.210861 z"/>
+    <path fill="#f27a1f" d="m 76.867805,46.866438 3.915405,-0.590803 v -2.261868 l -3.915406,0.422099 z"/>
+    <rect fill="#f27a1f" transform="scale(1,-1)" x="59.249" y="-47.650" width="3.915" height="2.353"/>
+  </g>
+  <path fill="none" stroke="#1f2937" stroke-width="0.370417" d="m 90.121356,35.203371 c 4.711178,0.281265 24.363284,0.18751 24.363284,0.18751 v 2.353461 c 0,0 -16.540448,-0.02344 -24.462727,-0.304703"/>
+  <path fill="#64b82f" stroke="#1f2937" stroke-width="0.370417" d="m 89.79433,37.988994 c 7.055047,0.585968 24.69031,0.715439 24.69031,0.715439 v 2.353461 c 0,0 -16.118551,-0.04019 -24.626798,-0.696464"/>
+  <path fill="none" stroke="#1f2937" stroke-width="0.370417" d="m 90.144795,40.908784 c 7.687892,1.101618 24.339845,1.091573 24.339845,1.091573 v 2.35346 c 0,0 -18.567966,-0.208703 -24.345534,-1.466593"/>
+  <path fill="#802e19" stroke="#1f2937" stroke-width="0.370417" d="m 90.273708,43.552329 c 8.137692,1.921975 24.210932,1.743951 24.210932,1.743951 v 2.353461 c 0,0 -17.079538,0.257826 -24.41585,-2.086044"/>
+  <path fill="#1878c3" stroke="#1f2937" stroke-width="0.370417" d="m 90.117337,34.670135 c 4.711178,-0.281265 24.363283,-0.18751 24.363283,-0.18751 v -2.353461 c 0,0 -16.540447,0.02344 -24.462726,0.304703"/>
+  <path fill="none" stroke="#1f2937" stroke-width="0.370417" d="m 89.790311,31.884511 c 7.055047,-0.585968 24.690309,-0.715439 24.690309,-0.715439 v -2.353461 c 0,0 -16.11855,0.04019 -24.626797,0.696464"/>
+  <path fill="#f27a1f" stroke="#1f2937" stroke-width="0.370417" d="m 90.140776,28.964721 c 7.687892,-1.101618 24.339844,-1.091573 24.339844,-1.091573 v -2.35346 c 0,0 -18.567965,0.208703 -24.345533,1.466593"/>
+  <path fill="none" stroke="#1f2937" stroke-width="0.370417" d="m 90.269689,26.321176 c 8.137692,-1.921975 24.210931,-1.743951 24.210931,-1.743951 v -2.353461 c 0,0 -17.079537,-0.257826 -24.415849,2.086044"/>
+  <path fill="#cbd5e1" stroke="#1f2937" stroke-width="0.449792" stroke-linejoin="bevel" d="M 40.445234,26.517856 H 76.64211 l 15.579241,-3.513615 c -0.789679,5.595617 -0.819724,8.040738 0,11.933036 0.730071,3.466599 1.171935,5.417078 0,11.933035 L 76.64211,43.356697 H 40.445234 c 2.98326,-4.242859 1.72366,-5.767635 0.0332,-8.717747 -1.69052,-2.950111 -1.42534,-5.038393 -0.0332,-8.121094 z"/>
+  <path fill="#94a3b8" stroke="#1f2937" stroke-width="0.449792" stroke-linejoin="bevel" d="m 40.601254,34.819099 c -1.99856,3.196553 -1.48191,6.117843 -0.15602,8.537598 2.3429,-3.484822 2.43346,-4.661524 0.15602,-8.537598 z"/>
+  <path fill="none" stroke="#1f2937" stroke-width="0.449792" d="M 87.879052,52.240179 V 17.634375"/>
+  <rect fill="none" stroke="#1f2937" stroke-width="0.449792" transform="scale(-1)" x="-80.056" y="-48.428" width="9.679" height="26.981"/>
+  <rect fill="none" stroke="#1f2937" stroke-width="0.449792" transform="scale(-1)" x="-76.807" y="-46.837" width="5.104" height="23.799"/>
+  <path fill="none" stroke="#1f2937" stroke-width="0.449792" d="m 128.5098,47.401137 h -14.02918 v -1.85625 h 14.02918 v -1.439675 h -14.02918 v -1.85625 h 14.02918 v -1.439674 h -14.02918 v -1.85625 h 14.02918 v -1.439674 h -14.02918 v -1.85625 H 128.5098 V 34.217441 H 114.48062 V 32.36119 h 14.02918 v -1.439678 h -14.02918 v -1.85625 H 128.5098 V 27.625593 H 114.48062 V 25.769342 H 128.5098 V 24.329669 H 114.48062 V 22.473418 H 128.5098 V 17.634375 H 62.687094 V 52.240179 H 128.5098 Z"/>
+</g>
+</svg>

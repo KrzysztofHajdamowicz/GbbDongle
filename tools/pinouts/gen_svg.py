@@ -15,10 +15,21 @@ Standard library only; the SVGs are plain text so diffs stay reviewable.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from xml.sax.saxutils import escape
 
 OUT = Path(__file__).resolve().parents[2] / "website" / "static" / "img" / "pinouts"
+
+# Plug artwork for the convention drawing; see the header of that file for its
+# source. Contact centres in the artwork's own units: pin 1, then one per pitch.
+PLUG_ART = Path(__file__).with_name("rj45-t568b-plug.svg")
+PLUG_ART_CREDIT = (
+    'based on "RJ-45 TIA-568B Right.svg" by Miha Ulanov, Wikimedia Commons, public domain, '
+    "https://commons.wikimedia.org/wiki/File:RJ-45_TIA-568B_Right.svg"
+)
+PLUG_PIN1_Y = 5.993
+PLUG_PIN_PITCH = 3.296
 
 # Signal roles -> label chip colours (light background, white-blue site).
 ROLE = {
@@ -212,28 +223,92 @@ def terminal_svg(cells: list[tuple[str, str]], title: str) -> str:
     return "\n".join(out) + "\n"
 
 
+def _plug_art() -> tuple[str, float, float]:
+    """The plug artwork (one <g>) and its width and height in its own units."""
+    src = PLUG_ART.read_text(encoding="utf-8")
+    w, h = (float(v) for v in re.search(r'viewBox="0 0 ([\d.]+) ([\d.]+)"', src).groups())
+    return src[src.index("<g") : src.rindex("</g>") + len("</g>")], w, h
+
+
+def _arrow(x: float, y: float, to_right: bool) -> str:
+    d = 9 if to_right else -9
+    return f'<path d="M{x},{y - 6} L{x + d},{y} L{x},{y + 6} Z" fill="#1d4ed8"/>'
+
+
 def conv_legend(lang: str) -> str:
-    """Small explainer: how to hold the plug to match every diagram on the site."""
+    """How to hold the plug to match every diagram on the site."""
     t = {
-        "pl": ("Tak trzymaj wtyczkę", "piny (styki) do siebie", "zatrzask z tyłu (linia przerywana)", "piny po lewej", "kabel w prawo", "pin 1 na dole, pin 8 na górze"),
-        "en": ("Hold the plug like this", "contacts facing you", "latch at the back (dashed outline)", "pins on the left", "cable to the right", "pin 1 at the bottom, pin 8 at the top"),
+        "pl": {
+            "title": "Tak trzymaj wtyczkę RJ45",
+            "top": "na górze",
+            "bottom": "na dole",
+            "pins": "piny po lewej",
+            "cable": "kabel w prawo",
+            "view": "Złote styki skierowane do Ciebie, zatrzask z tyłu (niewidoczny).",
+            "wires": "Kolory przewodów według T568B.",
+        },
+        "en": {
+            "title": "Hold the RJ45 plug like this",
+            "top": "at the top",
+            "bottom": "at the bottom",
+            "pins": "pins on the left",
+            "cable": "cable to the right",
+            "view": "Gold contacts facing you, latch at the back (out of sight).",
+            "wires": "Wire colours follow T568B.",
+        },
     }[lang]
-    pins = {n: (str(n), "other") for n in range(1, 9)}
-    base = plug_svg(pins, t[0]).split("\n")
-    # drop closing tag, append annotations
-    body = [l for l in base if l and l != "</svg>"]
-    body = [l.replace('viewBox="0 0 640 300" width="640" height="300"', 'viewBox="0 0 640 360" width="640" height="360"') for l in body]
-    body = [l.replace('<rect width="640" height="300" fill="#ffffff"/>', '<rect width="640" height="360" fill="#ffffff"/>') for l in body]
-    ann = [
-        f'<text x="320" y="24" text-anchor="middle" font-size="17" font-weight="800" fill="#1e3a8a" {FONT}>{escape(t[0])}</text>',
-        f'<text x="236" y="296" font-size="13" fill="#374151" {FONT}>◀ {escape(t[3])}</text>',
-        f'<text x="630" y="296" text-anchor="end" font-size="13" fill="#374151" {FONT}>{escape(t[4])} ▶</text>',
-        f'<text x="344" y="272" text-anchor="middle" font-size="12" fill="#3b82f6" {FONT}>{escape(t[2])}</text>',
-        f'<text x="320" y="322" text-anchor="middle" font-size="13" fill="#374151" {FONT}>{escape(t[1])} · {escape(t[5])}</text>',
-        f'<text x="320" y="346" text-anchor="middle" font-size="12" fill="#6b7280" {FONT}>T568B</text>',
+    art, art_w, art_h = _plug_art()
+    W, H = 700, 372
+    s = 5.6  # px per unit of the artwork
+    ax, ay = 146, 70  # top-left corner of the placed artwork
+    # The artwork has the cable on the left and pin 1 at the top. A half turn puts
+    # the pins on the left and pin 1 at the bottom while still showing the contact
+    # side; a mirror image would show the latch side instead.
+    turn = f"translate({ax + s * art_w:.2f},{ay + s * art_h:.2f}) scale({-s})"
+    pin_y = {n: ay + s * (art_h - (PLUG_PIN1_Y + (n - 1) * PLUG_PIN_PITCH)) for n in range(1, 9)}
+    col = ax - 16  # centre of the pin-number column
+
+    out = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" '
+        f'role="img" aria-labelledby="t">',
+        f'<title id="t">{escape(t["title"])}</title>',
+        f"<!-- Plug artwork: {PLUG_ART_CREDIT} -->",
+        f'<rect width="{W}" height="{H}" fill="#ffffff"/>',
+        f'<text x="{W / 2}" y="38" text-anchor="middle" font-size="21" font-weight="800" fill="#1e3a8a" {FONT}>{escape(t["title"])}</text>',
+        f'<g transform="{turn}">',
+        art,
+        "</g>",
+        f'<text x="{col}" y="{pin_y[8] - 20:.1f}" text-anchor="middle" font-size="12" fill="#6b7280" {FONT}>pin</text>',
+    ]
+    for n in range(1, 9):
+        y = pin_y[n]
+        if n in (1, 8):
+            out.append(f'<circle cx="{col}" cy="{y:.1f}" r="11" fill="#1d4ed8"/>')
+            out.append(
+                f'<text x="{col}" y="{y + 5.5:.1f}" text-anchor="middle" font-size="15" font-weight="800" '
+                f'fill="#ffffff" {FONT}>{n}</text>'
+            )
+            out.append(
+                f'<text x="{col - 20}" y="{y + 5:.1f}" text-anchor="end" font-size="14" font-weight="600" '
+                f'fill="#1d4ed8" {FONT}>{escape(t["top" if n == 8 else "bottom"])}</text>'
+            )
+        else:
+            out.append(
+                f'<text x="{col}" y="{y + 5:.1f}" text-anchor="middle" font-size="14" font-weight="600" '
+                f'fill="#374151" {FONT}>{n}</text>'
+            )
+    below = ay + s * art_h + 28
+    right = ax + s * art_w
+    out += [
+        _arrow(ax + 9, below - 5, to_right=False),
+        f'<text x="{ax + 18}" y="{below}" font-size="14" font-weight="600" fill="#1d4ed8" {FONT}>{escape(t["pins"])}</text>',
+        _arrow(right - 9, below - 5, to_right=True),
+        f'<text x="{right - 18:.1f}" y="{below}" text-anchor="end" font-size="14" font-weight="600" fill="#1d4ed8" {FONT}>{escape(t["cable"])}</text>',
+        f'<text x="{W / 2}" y="{below + 36:.1f}" text-anchor="middle" font-size="14" fill="#374151" {FONT}>{escape(t["view"])}</text>',
+        f'<text x="{W / 2}" y="{below + 58:.1f}" text-anchor="middle" font-size="12" fill="#6b7280" {FONT}>{escape(t["wires"])}</text>',
         "</svg>",
     ]
-    return "\n".join(body + ann) + "\n"
+    return "\n".join(out) + "\n"
 
 
 def nc(*ns: int) -> dict[int, tuple[str, str]]:
