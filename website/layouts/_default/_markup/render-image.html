@@ -1,0 +1,9 @@
+{{- /* Site-relative image paths (img/...) go through relURL so they resolve
+       under the GitHub Pages project path as well as on a custom domain. */ -}}
+{{- $u := urls.Parse .Destination -}}
+{{- $src := .Destination -}}
+{{- if and (not $u.IsAbs) (not (strings.HasPrefix .Destination "/")) -}}
+  {{- $src = relURL .Destination -}}
+{{- end -}}
+<img src="{{ $src }}" alt="{{ .Text }}"{{ with .Title }} title="{{ . }}"{{ end }} loading="lazy">
+{{- /**/ -}}

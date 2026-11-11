@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 330" width="600" height="330" role="img" aria-labelledby="t"><title id="t">Hoymiles HiT COM1 port block, front view</title>
+<rect width="600" height="330" fill="#ffffff"/>
+<rect x="30" y="40" width="160" height="110" rx="6" fill="#1f2937" stroke="#1f2937" stroke-width="1"/>
+<rect x="42" y="52" width="136" height="86" rx="3" fill="#0b1220"/>
+<rect x="86" y="52" width="48" height="24" fill="#475569"/>
+<rect x="60" y="102" width="5" height="30" fill="#eab308"/>
+<rect x="74" y="102" width="5" height="30" fill="#eab308"/>
+<rect x="88" y="102" width="5" height="30" fill="#eab308"/>
+<rect x="102" y="102" width="5" height="30" fill="#eab308"/>
+<rect x="116" y="102" width="5" height="30" fill="#eab308"/>
+<rect x="130" y="102" width="5" height="30" fill="#eab308"/>
+<rect x="144" y="102" width="5" height="30" fill="#eab308"/>
+<rect x="158" y="102" width="5" height="30" fill="#1d4ed8"/>
+<text x="160.5" y="168" text-anchor="middle" font-size="12" font-weight="800" fill="#1d4ed8" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">1</text>
+<text x="110" y="30" text-anchor="middle" font-size="15" font-weight="500" fill="#374151" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">Parallel_2</text>
+<rect x="220" y="40" width="160" height="110" rx="6" fill="#1f2937" stroke="#2563eb" stroke-width="5"/>
+<rect x="232" y="52" width="136" height="86" rx="3" fill="#0b1220"/>
+<rect x="276" y="52" width="48" height="24" fill="#475569"/>
+<rect x="250" y="102" width="5" height="30" fill="#eab308"/>
+<rect x="264" y="102" width="5" height="30" fill="#eab308"/>
+<rect x="278" y="102" width="5" height="30" fill="#eab308"/>
+<rect x="292" y="102" width="5" height="30" fill="#eab308"/>
+<rect x="306" y="102" width="5" height="30" fill="#eab308"/>
+<rect x="320" y="102" width="5" height="30" fill="#eab308"/>
+<rect x="334" y="102" width="5" height="30" fill="#eab308"/>
+<rect x="348" y="102" width="5" height="30" fill="#1d4ed8"/>
+<text x="350.5" y="168" text-anchor="middle" font-size="12" font-weight="800" fill="#1d4ed8" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">1</text>
+<text x="300" y="30" text-anchor="middle" font-size="15" font-weight="800" fill="#1d4ed8" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">Meter_2</text>
+<rect x="410" y="40" width="160" height="110" rx="6" fill="#1f2937" stroke="#1f2937" stroke-width="1"/>
+<rect x="422" y="52" width="136" height="86" rx="3" fill="#0b1220"/>
+<rect x="466" y="52" width="48" height="24" fill="#475569"/>
+<rect x="440" y="102" width="5" height="30" fill="#eab308"/>
+<rect x="454" y="102" width="5" height="30" fill="#eab308"/>
+<rect x="468" y="102" width="5" height="30" fill="#eab308"/>
+<rect x="482" y="102" width="5" height="30" fill="#eab308"/>
+<rect x="496" y="102" width="5" height="30" fill="#eab308"/>
+<rect x="510" y="102" width="5" height="30" fill="#eab308"/>
+<rect x="524" y="102" width="5" height="30" fill="#eab308"/>
+<rect x="538" y="102" width="5" height="30" fill="#1d4ed8"/>
+<text x="540.5" y="168" text-anchor="middle" font-size="12" font-weight="800" fill="#1d4ed8" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">1</text>
+<text x="490" y="30" text-anchor="middle" font-size="15" font-weight="500" fill="#374151" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">BMS</text>
+<rect x="30" y="180" width="160" height="110" rx="6" fill="#1f2937" stroke="#1f2937" stroke-width="1"/>
+<rect x="42" y="192" width="136" height="86" rx="3" fill="#0b1220"/>
+<rect x="86" y="254" width="48" height="24" fill="#475569"/>
+<rect x="60" y="198" width="5" height="30" fill="#1d4ed8"/>
+<rect x="74" y="198" width="5" height="30" fill="#eab308"/>
+<rect x="88" y="198" width="5" height="30" fill="#eab308"/>
+<rect x="102" y="198" width="5" height="30" fill="#eab308"/>
+<rect x="116" y="198" width="5" height="30" fill="#eab308"/>
+<rect x="130" y="198" width="5" height="30" fill="#eab308"/>
+<rect x="144" y="198" width="5" height="30" fill="#eab308"/>
+<rect x="158" y="198" width="5" height="30" fill="#eab308"/>
+<text x="62.5" y="192" text-anchor="middle" font-size="12" font-weight="800" fill="#1d4ed8" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">1</text>
+<text x="110" y="312" text-anchor="middle" font-size="15" font-weight="500" fill="#374151" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">Parallel_1</text>
+<rect x="220" y="180" width="160" height="110" rx="6" fill="#1f2937" stroke="#1f2937" stroke-width="1"/>
+<rect x="232" y="192" width="136" height="86" rx="3" fill="#0b1220"/>
+<rect x="276" y="254" width="48" height="24" fill="#475569"/>
+<rect x="250" y="198" width="5" height="30" fill="#1d4ed8"/>
+<rect x="264" y="198" width="5" height="30" fill="#eab308"/>
+<rect x="278" y="198" width="5" height="30" fill="#eab308"/>
+<rect x="292" y="198" width="5" height="30" fill="#eab308"/>
+<rect x="306" y="198" width="5" height="30" fill="#eab308"/>
+<rect x="320" y="198" width="5" height="30" fill="#eab308"/>
+<rect x="334" y="198" width="5" height="30" fill="#eab308"/>
+<rect x="348" y="198" width="5" height="30" fill="#eab308"/>
+<text x="252.5" y="192" text-anchor="middle" font-size="12" font-weight="800" fill="#1d4ed8" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">1</text>
+<text x="300" y="312" text-anchor="middle" font-size="15" font-weight="500" fill="#374151" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">Meter_1</text>
+<rect x="410" y="180" width="160" height="110" rx="6" fill="#1f2937" stroke="#1f2937" stroke-width="1"/>
+<rect x="422" y="192" width="136" height="86" rx="3" fill="#0b1220"/>
+<rect x="466" y="254" width="48" height="24" fill="#475569"/>
+<rect x="440" y="198" width="5" height="30" fill="#1d4ed8"/>
+<rect x="454" y="198" width="5" height="30" fill="#eab308"/>
+<rect x="468" y="198" width="5" height="30" fill="#eab308"/>
+<rect x="482" y="198" width="5" height="30" fill="#eab308"/>
+<rect x="496" y="198" width="5" height="30" fill="#eab308"/>
+<rect x="510" y="198" width="5" height="30" fill="#eab308"/>
+<rect x="524" y="198" width="5" height="30" fill="#eab308"/>
+<rect x="538" y="198" width="5" height="30" fill="#eab308"/>
+<text x="442.5" y="192" text-anchor="middle" font-size="12" font-weight="800" fill="#1d4ed8" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">1</text>
+<text x="490" y="312" text-anchor="middle" font-size="15" font-weight="500" fill="#374151" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">DRM</text>
+</svg>
