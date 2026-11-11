@@ -10,6 +10,6 @@ Dostępne są warianty z **zewnętrzną** lub **wbudowaną** anteną
 
 Wersję z Ethernetem i PoE (Waveshare ESP32-S3-POE-ETH-8DI-8DO) przygotowuję **na zamówienie**. Oczekiwany termin dostawy to 5 dni roboczych, zależnie od dostępności płytek na rynku; cenę ustalimy na Discordzie.
 
-Sklep internetowy jest w przygotowaniu. Do tego czasu zamówienia przyjmuję na [Discordzie GbbOptimizera](https://discord.gg/XEhNSqQ6Jj), na kanale `#gbbdongle-od-k-hajdamowicza-pl`.
+Sklep internetowy jest w przygotowaniu. Do tego czasu zamówienia przyjmuję na {{< discord >}}Discordzie GbbOptimizera{{< /discord >}}, na kanale {{< discord-channel >}}.
 
 Wolisz zrobić to sam? Zobacz [listę obsługiwanych płytek]({{< relref "urzadzenia" >}}) i [instalator]({{< relref "instalacja" >}}).

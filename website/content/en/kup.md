@@ -11,6 +11,6 @@ It comes with an **external** or a **built-in** antenna.
 
 The Ethernet/PoE version (Waveshare ESP32-S3-POE-ETH-8DI-8DO) is **made to order**. Expected delivery is 5 working days, depending on board availability on the market; we agree on the price on Discord.
 
-The online shop is on its way. Until then, orders go through the [GbbOptimizer Discord](https://discord.gg/XEhNSqQ6Jj), channel `#gbbdongle-by-k-hajdamowicz-en`.
+The online shop is on its way. Until then, orders go through the {{< discord >}}GbbOptimizer Discord{{< /discord >}}, channel {{< discord-channel >}}.
 
 Prefer to build your own? See the [supported boards]({{< relref "urzadzenia" >}}) and the [installer]({{< relref "instalacja" >}}).
