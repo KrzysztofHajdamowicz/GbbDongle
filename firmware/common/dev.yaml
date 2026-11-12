@@ -1,5 +1,9 @@
-# Dev overlay: verbose logging. WiFi dev variants additionally include
-# common/wifi-dev.yaml to join your WiFi from secrets.yaml.
+# Dev overlay: verbose logging and the GbbDongle web panel. WiFi dev
+# variants additionally include common/wifi-dev.yaml to join your WiFi from
+# secrets.yaml.
+
+packages:
+  webui: !include webui.yaml
 
 substitutions:
   log_level: VERBOSE

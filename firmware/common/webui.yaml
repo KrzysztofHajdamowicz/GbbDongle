@@ -1,0 +1,18 @@
+# GbbDongle web panel: replaces the stock ESPHome v3 UI, which the browser
+# loads from oi.esphome.io, with firmware/webui/panel.{js,css} compiled into
+# flash and served as /0.js and /0.css. The panel uses the same web_server
+# API (/events + REST), so nothing else changes on the device; /?classic
+# still opens the stock UI (needs internet access).
+#
+# ESPHome resolves js_include/css_include relative to the main config file,
+# not to this package, so the paths below only work for entrypoints in
+# firmware/. That is why this package is included by the published images
+# (common/factory.yaml, common/ha.yaml) and common/dev.yaml, but not by the
+# import targets: a device adopted into the ESPHome dashboard compiles the
+# import target from /config/esphome, where webui/ does not exist, and keeps
+# the stock UI (with the same sorting groups).
+
+web_server:
+  js_url: ""
+  js_include: webui/panel.js
+  css_include: webui/panel.css

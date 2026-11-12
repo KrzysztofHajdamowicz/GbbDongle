@@ -8,6 +8,7 @@
 
 packages:
   updates: !include updates.yaml
+  webui: !include webui.yaml
 
 dashboard_import:
   package_import_url: github://KrzysztofHajdamowicz/GbbDongle/firmware/${device_name}.yaml@main

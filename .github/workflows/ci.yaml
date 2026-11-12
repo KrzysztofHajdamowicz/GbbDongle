@@ -86,6 +86,11 @@ jobs:
             uv run esphome -s external_components_source ../components config "firmware/${config}.yaml" > /dev/null
           done
 
+      # The web panel is compiled into the published images as-is; a syntax
+      # error would only show up as a blank page on the device.
+      - name: Check web panel script syntax
+        run: node --check firmware/webui/panel.js
+
   build:
     needs: changes
     if: needs.changes.outputs.firmware == 'true'
