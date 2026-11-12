@@ -69,6 +69,7 @@ html.gbb body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--f
 .gbb button, .gbb input, .gbb select { font: inherit; color: inherit; }
 .gbb :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .gbb a { color: var(--accent); }
+.gbb code { font: 600 .92em var(--mono); background: var(--tag); color: var(--heading); padding: 1px 6px; border-radius: 4px; }
 .gbb svg { flex: none; }
 
 /* Shell: sidebar + main column */

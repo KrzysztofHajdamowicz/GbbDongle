@@ -125,7 +125,7 @@
       "s.fw": "Oprogramowanie", "s.updh": "Dongle sprawdza co 6 godzin i sam instaluje nowe wersje.",
       "s.latest": "Masz najnowszą wersję", "s.avail": "Dostępna wersja {v}", "s.installing": "Instalowanie…", "s.unknown": "Sprawdzanie…",
       "s.install": "Zainstaluj teraz",
-      "s.pw": "Hasło do panelu", "s.pwp": "Login to admin. Po zmianie hasła przeglądarka poprosi o nowe.",
+      "s.pw": "Hasło do panelu", "s.pwp": "Login: `admin`. Po zmianie hasła przeglądarka poprosi o nowe.",
       "s.new": "Nowe hasło", "s.rep": "Powtórz hasło", "s.pwbtn": "Zmień hasło",
       "s.maint": "Konserwacja", "s.rb": "Uruchom ponownie", "s.rbh": "Zastosuje zapisane ustawienia chmury.",
       "s.file": "Wgraj firmware z pliku", "s.fileh": "Dla serwisu: plik .ota.bin z GitHuba. Zwykle nie jest potrzebne, aktualizacje instalują się same.",
@@ -188,7 +188,7 @@
       "s.fw": "Firmware", "s.updh": "The dongle checks every 6 hours and installs new versions by itself.",
       "s.latest": "You have the latest version", "s.avail": "Version {v} is available", "s.installing": "Installing…", "s.unknown": "Checking…",
       "s.install": "Install now",
-      "s.pw": "Panel password", "s.pwp": "The login is admin. After a change your browser asks for the new password.",
+      "s.pw": "Panel password", "s.pwp": "Login: `admin`. After a change your browser asks for the new password.",
       "s.new": "New password", "s.rep": "Repeat password", "s.pwbtn": "Change password",
       "s.maint": "Maintenance", "s.rb": "Restart", "s.rbh": "Applies saved cloud settings.",
       "s.file": "Upload firmware from a file", "s.fileh": "For service: the .ota.bin file from GitHub. Usually not needed, updates install by themselves.",
@@ -216,7 +216,12 @@
   };
   // Every translated node registers here so a language switch can redraw it.
   const i18n = [];
-  const tx = (el, key, vars) => { el._tk = key; el._tv = vars; el.textContent = t(key, vars); if (!el._reg) { el._reg = true; i18n.push(el); } return el; };
+  // `backticks` in a string mark literal values (logins, commands) shown as code.
+  const setText = (el, s) => {
+    if (s.includes("`")) el.replaceChildren(...s.split("`").map((part, i) => (i % 2 ? h("code", { text: part }) : part)));
+    else el.textContent = s;
+  };
+  const tx = (el, key, vars) => { el._tk = key; el._tv = vars; setText(el, t(key, vars)); if (!el._reg) { el._reg = true; i18n.push(el); } return el; };
   const T = (tag, key, attrs) => tx(h(tag, attrs), key);
 
   // ---------- entity state ----------
@@ -879,7 +884,7 @@
   }
   function applyLang() {
     document.documentElement.lang = lang;
-    for (const el of i18n) el.textContent = t(el._tk, el._tv);
+    for (const el of i18n) setText(el, t(el._tk, el._tv));
     langBtn.textContent = lang === "pl" ? "EN" : "PL";
     applyTheme();
     for (const [id, fns] of watchers) { const e = ents.get(id); if (e) fns.forEach((fn) => fn(e)); }
