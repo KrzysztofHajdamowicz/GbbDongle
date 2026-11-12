@@ -36,6 +36,7 @@ CLOUD = {"text/MQTT Server", "text/Plant Id", "text/Plant Token", "number/MQTT P
          "switch/Cloud Connection", "switch/TLS", "switch/TLS Skip CN Check"}
 ESC = "\x1b"
 LOG_COLOURS = {"E": "1;31", "W": "0;33", "I": "0;32", "D": "0;36", "V": "0;37", "C": "0;35"}
+STALL = object()  # queued to an /events stream when the device "reboots"
 
 
 class Device:
@@ -115,9 +116,11 @@ class Device:
     def reboot(self, seconds=6.0):
         self.log("I", "app:100", "Rebooting safely...")
         self.down_until = time.time() + seconds
+        # Like the ESP, drop off the network without closing the open
+        # /events streams: browsers notice only when TCP gives up.
         with self.lock:
             for q in self.clients:
-                q.put(None)
+                q.put(STALL)
         self.boot = time.time() + seconds
         self.ents["binary_sensor/Restart Required"].update(value=False, state="OFF")
         ok = bool(self.ents["text/Plant Id"]["value"]) and self.ents["switch/Cloud Connection"]["value"]
@@ -175,13 +178,16 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def down(self):
+        # A rebooting ESP does not answer at all; closing without a response
+        # makes the browser see a network error, as it would.
         if time.time() < self.dev.down_until:
             self.close_connection = True
-            self.reply(503)
             return True
         return False
 
     def do_GET(self):
+        if self.down():
+            return
         path = urlsplit(self.path).path
         if path == "/":
             return self.reply(200, INDEX.encode(), "text/html")
@@ -189,9 +195,10 @@ class Handler(BaseHTTPRequestHandler):
             f = WEBUI / ("panel.js" if path.endswith("js") else "panel.css")
             return self.reply(200, f.read_bytes(), "text/javascript" if path.endswith("js") else "text/css")
         if path == "/events":
-            if self.down():
-                return
             return self.events()
+        e = self.dev.ents.get(unquote(path.strip("/")))
+        if e is not None:
+            return self.reply(200, json.dumps(e).encode(), "application/json")
         self.reply(404)
 
     def events(self):
@@ -217,7 +224,8 @@ class Handler(BaseHTTPRequestHandler):
                 dev.clients.append(q)
             while True:
                 item = q.get()
-                if item is None:
+                if item is STALL:
+                    time.sleep(45)
                     break
                 emit(*item)
         except (BrokenPipeError, ConnectionResetError):

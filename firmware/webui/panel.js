@@ -758,17 +758,41 @@
   const ovClose = h("button", { class: "btn", type: "button", hidden: true, onclick: () => endReboot() }, T("span", "b.close"));
   const overlay = h("div", { class: "overlay", hidden: true, role: "alertdialog", "aria-live": "assertive" },
     h("div", { class: "card" }, h("div", { class: "spinner" }), ovT, ovB, ovClose));
-  let rebooting = false, sawDrop = false, slowTimer = 0, pendingRestart = false;
+  // A reboot is over when the device reports a later boot time than before
+  // it (boot time = arrival time minus the uptime in a ping); sawDrop is the
+  // fallback for pings without an uptime.
+  let rebooting = false, sawDrop = false, slowTimer = 0, probeTimer = 0, pendingRestart = false;
+  let bootAt = 0, bootBefore = 0;
   function waitForReboot() {
-    rebooting = true; sawDrop = false;
+    rebooting = true; sawDrop = false; bootBefore = bootAt;
     overlay.hidden = false; ovClose.hidden = true;
     tx(ovB, "rb.b");
     clearTimeout(slowTimer);
     slowTimer = setTimeout(() => { tx(ovB, "rb.slow"); ovClose.hidden = false; }, 60000);
+    clearTimeout(probeTimer);
+    probeTimer = setTimeout(probe, 1000);
   }
   function endReboot() {
-    rebooting = false; overlay.hidden = true; clearTimeout(slowTimer);
+    rebooting = false; overlay.hidden = true; clearTimeout(slowTimer); clearTimeout(probeTimer);
     renderDerived();
+  }
+  // The ESP reboots without closing the /events connection, so the browser
+  // notices the dead stream only when TCP gives up, about 45 s later. While
+  // a reboot is expected, short requests check whether the device still
+  // answers; the first one that fails reopens the stream.
+  function probe() {
+    if (!rebooting) return;
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 2000);
+    fetch("/text_sensor/" + encName("Uptime"), { cache: "no-store", signal: ctl.signal })
+      .then((r) => r.arrayBuffer())
+      .then(() => true, () => false)
+      .then((up) => {
+        clearTimeout(timer);
+        if (!rebooting) return;
+        if (!up && streamOpen) dropStream();
+        probeTimer = setTimeout(probe, 1000);
+      });
   }
   async function restart() {
     try {
@@ -853,43 +877,55 @@
     anyWatchers.forEach((fn) => fn());
   }
   // ESPHome asks EventSource to wait 30 s (retry: 30000) before reconnecting,
-  // which would keep the restart overlay up long after the device is back,
-  // so the panel closes a failed stream itself and reconnects sooner.
-  let es = null, reconnectTimer = 0;
+  // and a stream that silently stops (device rebooted or off the network)
+  // only errors once TCP gives up, so the panel closes the stream itself and
+  // reconnects: when it has heard nothing for 25 s (the device pings every
+  // 10 s), and during a reboot when a new stream has not opened in 3 s.
+  let es = null, reconnectTimer = 0, streamOpen = false, lastHeard = 0;
   function connect() {
-    es = new EventSource("/events");
-    es.addEventListener("open", () => setLink(true));
+    clearTimeout(reconnectTimer);
+    const self = (es = new EventSource("/events"));
+    streamOpen = false; lastHeard = Date.now();
+    const heard = () => { if (self === es) lastHeard = Date.now(); };
+    es.addEventListener("open", () => { if (self !== es) return; heard(); streamOpen = true; setLink(true); });
     es.addEventListener("ping", (ev) => {
-      setLink(true);
+      if (self !== es) return;
+      heard(); setLink(true);
       let d = {};
       try { d = JSON.parse(ev.data || "{}"); } catch (e) { /* keep defaults */ }
+      const known = typeof d.uptime === "number";
+      if (known) bootAt = Date.now() / 1000 - d.uptime;
       if (d.title) {
-        // A full ping (title, ota, log) starts every new connection, also
-        // after a reboot.
+        // A full ping (title, ota, log, uptime) starts every new connection.
         info = Object.assign(info, d);
         brandName.textContent = d.title;
         document.title = d.title;
         (watchers.get("__info") || []).forEach((fn) => fn());
         drawer.hidden = info.log === false;
-        if (rebooting && sawDrop) {
+        if (rebooting && (known && bootBefore ? bootAt > bootBefore + 3 : sawDrop)) {
           pendingRestart = false;
           tx($("b", restartBanner), "ban.t");
           endReboot();
         }
       }
     });
-    es.addEventListener("state", (ev) => { try { onState(JSON.parse(ev.data)); } catch (e) { /* malformed event */ } });
-    es.addEventListener("log", (ev) => onLog(ev.data));
-    const self = es;
-    es.addEventListener("error", () => {
-      if (self !== es) return;
-      self.close();
-      if (rebooting) sawDrop = true;
-      setLink(false);
-      clearTimeout(reconnectTimer);
-      reconnectTimer = setTimeout(connect, rebooting ? 2000 : 4000);
-    });
+    es.addEventListener("state", (ev) => { heard(); try { onState(JSON.parse(ev.data)); } catch (e) { /* malformed event */ } });
+    es.addEventListener("log", (ev) => { heard(); onLog(ev.data); });
+    es.addEventListener("error", () => { if (self === es) dropStream(); });
   }
+  function dropStream() {
+    if (es) es.close();
+    es = null; streamOpen = false;
+    if (rebooting) sawDrop = true;
+    setLink(false);
+    clearTimeout(reconnectTimer);
+    reconnectTimer = setTimeout(connect, rebooting ? 1000 : 4000);
+  }
+  setInterval(() => {
+    if (!es) return;
+    const quiet = Date.now() - lastHeard;
+    if (streamOpen ? quiet > 25000 : rebooting && quiet > 3000) dropStream();
+  }, 1000);
 
   // ---------- routing, language, theme ----------
   function route() {
