@@ -791,6 +791,9 @@
         clearTimeout(timer);
         if (!rebooting) return;
         if (!up && streamOpen) dropStream();
+        // Requests sent while the device came back can hang on connections
+        // from before the reboot; once it answers, start the stream afresh.
+        if (up && !streamOpen && Date.now() - lastHeard > 1000) { if (es) es.close(); es = null; connect(); }
         probeTimer = setTimeout(probe, 1000);
       });
   }
