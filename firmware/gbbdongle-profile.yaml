@@ -1,0 +1,89 @@
+# Bench-only profiling variant (not shipped, not in CI): gbbdongle-bench plus
+# CPU, heap and main-loop instrumentation, to measure how much headroom the
+# Waveshare ESP32-S3-RS485-CAN has while it serves the cloud link.
+#
+#   uv run esphome run firmware/gbbdongle-profile.yaml --device /dev/cu.usbmodemXXXX
+#
+# What it reports:
+# - every 30 s, a "profile" log line with the idle share of each CPU core
+#   (FreeRTOS run-time stats; idle = spare CPU) and internal heap free / low
+#   water mark / largest block / PSRAM free; every 5 min also the per-task
+#   breakdown with each task's free stack;
+# - every 60 s, ESPHome's runtime_stats: time spent in each component's
+#   loop() (avg/max) and main-loop overhead;
+# - web panel sensors (System group): the same heap figures, the longest
+#   gap between two main-loop passes in the last 10 s (Loop Time; ~16 ms when
+#   idle, anything well above that means something blocked), core idle %.
+
+packages:
+  device: !include gbbdongle-bench.yaml
+
+esphome:
+  includes:
+    - profiling/task_stats.h
+
+esp32:
+  framework:
+    sdkconfig_options:
+      CONFIG_FREERTOS_USE_TRACE_FACILITY: y
+      CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS: y
+      CONFIG_FREERTOS_VTASKLIST_INCLUDE_COREID: y
+
+debug:
+  update_interval: 10s
+
+runtime_stats:
+  log_interval: 60s
+
+interval:
+  - interval: 30s
+    then:
+      - lambda: |-
+          static uint32_t calls = 0;
+          gbb_profile::sample(calls++ % 10 == 0);
+
+sensor:
+  - platform: debug
+    free:
+      name: Heap Free
+      state_topic:
+      web_server: {sorting_group_id: grp_system, sorting_weight: 60}
+    block:
+      name: Heap Largest Block
+      state_topic:
+      web_server: {sorting_group_id: grp_system, sorting_weight: 61}
+    min_free:
+      name: Heap Min Free
+      state_topic:
+      web_server: {sorting_group_id: grp_system, sorting_weight: 62}
+    psram:
+      name: PSRAM Free
+      state_topic:
+      web_server: {sorting_group_id: grp_system, sorting_weight: 63}
+    loop_time:
+      name: Loop Time
+      state_topic:
+      web_server: {sorting_group_id: grp_system, sorting_weight: 64}
+  - platform: template
+    name: CPU0 Idle
+    state_topic:
+    web_server: {sorting_group_id: grp_system, sorting_weight: 65}
+    unit_of_measurement: "%"
+    accuracy_decimals: 1
+    update_interval: 30s
+    lambda: return gbb_profile::idle_percent[0];
+  - platform: template
+    name: CPU1 Idle
+    state_topic:
+    web_server: {sorting_group_id: grp_system, sorting_weight: 66}
+    unit_of_measurement: "%"
+    accuracy_decimals: 1
+    update_interval: 30s
+    lambda: return gbb_profile::idle_percent[1];
+
+text_sensor:
+  - platform: debug
+    reset_reason:
+      name: Reset Reason
+      state_topic:
+      web_server: {sorting_group_id: grp_system, sorting_weight: 67}
