@@ -18,6 +18,9 @@ update:
   - platform: http_request
     id: firmware_update
     name: Firmware
+    web_server:
+      sorting_group_id: grp_system
+      sorting_weight: 20
     state_topic:
     source: ${update_manifest_url}
     update_interval: 6h

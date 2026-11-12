@@ -44,8 +44,28 @@ api:
   reboot_timeout: 0s
   encryption:
 
+# The groups order the entities in the web panel by task (cloud link, inverter
+# link, network, system) instead of ESPHome's config/diagnostic split. Each
+# entity picks its group and position with a `web_server:` block; group names
+# are what the stock ESPHome panel shows as section headers.
 web_server:
   version: 3
+  sorting_groups:
+    - id: grp_status
+      name: Status
+      sorting_weight: 10
+    - id: grp_cloud
+      name: GbbOptimizer Cloud
+      sorting_weight: 20
+    - id: grp_inverter
+      name: Inverter (RS485)
+      sorting_weight: 30
+    - id: grp_network
+      name: Network
+      sorting_weight: 40
+    - id: grp_system
+      name: System
+      sorting_weight: 50
 
 safe_mode:
 
@@ -222,6 +242,9 @@ text:
   - platform: template
     id: cfg_mqtt_host
     name: MQTT Server
+    web_server:
+      sorting_group_id: grp_cloud
+      sorting_weight: 40
     state_topic:
     icon: mdi:server-network
     entity_category: config
@@ -234,6 +257,9 @@ text:
   - platform: template
     id: cfg_plant_id
     name: Plant Id
+    web_server:
+      sorting_group_id: grp_cloud
+      sorting_weight: 20
     state_topic:
     icon: mdi:solar-power
     entity_category: config
@@ -246,6 +272,9 @@ text:
   - platform: template
     id: cfg_plant_token
     name: Plant Token
+    web_server:
+      sorting_group_id: grp_cloud
+      sorting_weight: 30
     state_topic:
     icon: mdi:key
     entity_category: config
@@ -260,6 +289,9 @@ number:
   - platform: template
     id: cfg_mqtt_port
     name: MQTT Port
+    web_server:
+      sorting_group_id: grp_cloud
+      sorting_weight: 50
     state_topic:
     icon: mdi:numeric
     entity_category: config
@@ -275,6 +307,9 @@ select:
   - platform: template
     id: cfg_baud_rate
     name: RS485 Baud Rate
+    web_server:
+      sorting_group_id: grp_inverter
+      sorting_weight: 10
     state_topic:
     icon: mdi:swap-horizontal
     entity_category: config
@@ -292,6 +327,9 @@ select:
   - platform: template
     id: cfg_parity
     name: RS485 Parity
+    web_server:
+      sorting_group_id: grp_inverter
+      sorting_weight: 20
     state_topic:
     icon: mdi:swap-horizontal
     entity_category: config
@@ -307,6 +345,9 @@ switch:
   - platform: template
     id: cfg_cloud_enabled
     name: Cloud Connection
+    web_server:
+      sorting_group_id: grp_cloud
+      sorting_weight: 10
     state_topic:
     icon: mdi:cloud-upload
     entity_category: config
@@ -315,6 +356,9 @@ switch:
   - platform: template
     id: cfg_tls_enabled
     name: TLS
+    web_server:
+      sorting_group_id: grp_cloud
+      sorting_weight: 60
     state_topic:
     icon: mdi:lock
     entity_category: config
@@ -323,6 +367,9 @@ switch:
   - platform: template
     id: cfg_tls_skip_cn_check
     name: TLS Skip CN Check
+    web_server:
+      sorting_group_id: grp_cloud
+      sorting_weight: 70
     state_topic:
     icon: mdi:lock-alert
     entity_category: config
@@ -333,6 +380,9 @@ switch:
   - platform: template
     id: cfg_persist_emergency
     name: Persist Emergency Commands
+    web_server:
+      sorting_group_id: grp_cloud
+      sorting_weight: 80
     state_topic:
     icon: mdi:content-save-alert
     entity_category: config
@@ -342,12 +392,18 @@ switch:
 button:
   - platform: restart
     name: Apply Settings (Restart)
+    web_server:
+      sorting_group_id: grp_status
+      sorting_weight: 30
     state_topic:
     icon: mdi:restart
   # Clears everything persisted in NVS: device settings, the provisioned API
   # encryption key (HA-compatible line) and the admin password (factory line).
   - platform: factory_reset
     name: Factory Reset
+    web_server:
+      sorting_group_id: grp_system
+      sorting_weight: 90
     state_topic:
     icon: mdi:restore-alert
     entity_category: diagnostic
@@ -355,11 +411,17 @@ button:
 binary_sensor:
   - platform: template
     name: Cloud Connected
+    web_server:
+      sorting_group_id: grp_status
+      sorting_weight: 10
     state_topic:
     device_class: connectivity
     lambda: return id(gbb_mqtt).is_connected();
   - platform: template
     name: Restart Required
+    web_server:
+      sorting_group_id: grp_status
+      sorting_weight: 20
     state_topic:
     icon: mdi:restart-alert
     entity_category: diagnostic
@@ -368,6 +430,9 @@ binary_sensor:
 sensor:
   - platform: template
     name: Requests Handled
+    web_server:
+      sorting_group_id: grp_inverter
+      sorting_weight: 30
     state_topic:
     icon: mdi:counter
     entity_category: diagnostic
@@ -377,6 +442,9 @@ sensor:
     lambda: return id(gbb).get_requests_handled();
   - platform: template
     name: Modbus Errors
+    web_server:
+      sorting_group_id: grp_inverter
+      sorting_weight: 40
     state_topic:
     icon: mdi:alert-circle
     entity_category: diagnostic
@@ -386,6 +454,9 @@ sensor:
     lambda: return id(gbb).get_modbus_errors();
   - platform: template
     name: Emergency Sets Stored
+    web_server:
+      sorting_group_id: grp_cloud
+      sorting_weight: 90
     state_topic:
     icon: mdi:lifebuoy
     entity_category: diagnostic
@@ -396,6 +467,9 @@ sensor:
 text_sensor:
   - platform: template
     name: Firmware Version
+    web_server:
+      sorting_group_id: grp_system
+      sorting_weight: 10
     state_topic:
     entity_category: diagnostic
     # A template text sensor only publishes from update(); with `never` the
@@ -406,6 +480,9 @@ text_sensor:
   - platform: uptime
     id: uptime_text
     name: Uptime
+    web_server:
+      sorting_group_id: grp_status
+      sorting_weight: 40
     state_topic:
     # Sub-30s interval keeps seconds in the formatted value; the format below
     # matches the ClientInfo convention ("3d 23h 48min 56s").

@@ -14,6 +14,9 @@ improv_serial:
 sensor:
   - platform: wifi_signal # Reports the WiFi signal strength/RSSI in dB
     name: "WiFi Signal dB"
+    web_server:
+      sorting_group_id: grp_network
+      sorting_weight: 30
     state_topic:
     id: wifi_signal_db
     update_interval: 60s
@@ -23,6 +26,9 @@ sensor:
     id: wifi_signal_percent
     source_id: wifi_signal_db
     name: "WiFi Signal Percent"
+    web_server:
+      sorting_group_id: grp_network
+      sorting_weight: 20
     state_topic:
     filters:
       - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
@@ -35,6 +41,9 @@ text_sensor:
     ip_address:
       id: ip_address_text
       name: IP Address
+      web_server:
+        sorting_group_id: grp_network
+        sorting_weight: 10
       state_topic:
       entity_category: diagnostic
 
