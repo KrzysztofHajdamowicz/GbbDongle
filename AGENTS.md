@@ -22,17 +22,18 @@ generates it internally.
 | `components/gbb_dongle/` | The custom ESPHome external component: Python config schema (`__init__.py`) + C++ implementation |
 | `firmware/common/base.yaml` | Board- and transport-agnostic package: api (keyless encryption), web_server, esphome + web_server OTA, uart skeleton, mqtt placeholder, SNTP time, the `gbb_dongle:` block, all config entities, compiled-in CA certs, `esphome.min_version` |
 | `firmware/common/wifi.yaml` | WiFi connectivity package: `wifi:` + setup AP, `captive_portal:`, `improv_serial:`, WiFi Signal / IP Address entities. Ethernet boards simply don't include it (`ethernet:` conflicts with `wifi:` in ESPHome) |
-| `firmware/common/factory.yaml` | Factory-line overlay: `api: !remove`, digest web auth, the Admin Password entity (rotates web + esphome-OTA password), includes `updates.yaml` |
-| `firmware/common/ha.yaml` | HA-compatible-line overlay: `dashboard_import` pointing at the import target, includes `updates.yaml` |
+| `firmware/common/factory.yaml` | Factory-line overlay: `api: !remove`, digest web auth, the Admin Password entity (rotates web + esphome-OTA password), includes `updates.yaml` and `webui.yaml` |
+| `firmware/common/ha.yaml` | HA-compatible-line overlay: `dashboard_import` pointing at the import target, includes `updates.yaml` and `webui.yaml` |
 | `firmware/common/updates.yaml` | Self-update for the published images only: `http_request` OTA + update entity + the spread auto-install script |
-| `firmware/common/dev.yaml` | Dev overlay: verbose logging + local component source |
+| `firmware/common/dev.yaml` | Dev overlay: verbose logging + local component source + `webui.yaml` |
+| `firmware/common/webui.yaml`, `firmware/webui/` | The GbbDongle web panel (`panel.js` + `panel.css`, no build step) compiled into flash via `web_server: js_include/css_include` with `js_url: ""`, replacing the stock UI from oi.esphome.io. See "Web panel" below |
 | `firmware/common/wifi-dev.yaml` | Dev overlay for WiFi boards: joins WiFi from `firmware/secrets.yaml` (gitignored; copy the repo-root `secrets.yaml.example`) |
 | `firmware/boards/*.yaml` | One package per board (core file + transport overlays for the 8DI-8DO): chip/flash/psram, UART pins, RS485 direction control, ethernet, BLE provisioning |
 | `firmware/gbbdongle*.yaml` | Device entrypoints combining the packages above via `packages:` — per board an import target (`<config>.yaml`), the two published images (`-factory`, `-ha`) and a `-dev` variant; `gbbdongle-bench.yaml` is a bench-only overlay |
 | `website/` | Product site (Hugo; Polish at `/`, English at `/en/`): landing page, devices, install wizard + guide (`content/*/instalacja.md`, boards in `data/devices.yaml`), FAQ rendered from `docs/faq.md` (EN) and `docs/faq.pl.md` (PL, a translation: change both together), pinouts. Every PL page in `content/pl` has an EN counterpart with the same file name in `content/en` (translated URL via `slug`). Built and deployed by `pages.yaml` |
 | `tools/site/assemble-manifests.sh` | Writes all ESP Web Tools + OTA manifests next to a release's binaries (used by `pages.yaml`) |
 | `docs/protocol.md` | **Authoritative** cloud-protocol description — read it before touching protocol code |
-| `tools/` | `cloud_roundtrip.py` (plays the cloud against a dongle on a local broker), `bench/` (pymodbus RTU slave standing in for the inverter on a USB-RS485 adapter, an emergency-set test request and the bench procedure README) and `busscan/` (one-shot Go diagnostic that scans Modbus addresses through a dongle, Polish README, no CI) |
+| `tools/` | `cloud_roundtrip.py` (plays the cloud against a dongle on a local broker), `bench/` (pymodbus RTU slave standing in for the inverter on a USB-RS485 adapter, an emergency-set test request and the bench procedure README) `busscan/` (one-shot Go diagnostic that scans Modbus addresses through a dongle, Polish README, no CI) and `webui/mock_device.py` (fake web_server for working on the panel without a device) |
 | `.github/workflows/` | `ci.yaml` (path-filtered: import-target validation + compile matrix for firmware changes, Hugo site build for site changes; `CI result` is the single required check), `release.yaml` (build, SBOM, attestations, GitHub release, then calls `pages.yaml`), `pages.yaml` (Hugo site + the release's binaries and manifests → GitHub Pages; also on site changes on `main`), `dependabot-auto-merge.yml`; `.github/actions/build-site` is the site build shared by `pages.yaml` and `ci.yaml` |
 
 ### Package layering
@@ -162,6 +163,31 @@ Files:
   `uptime_text_id` entities feed the `Client*` fields of fromDevice
   responses (WiFi ids wired in `common/wifi.yaml`, IP on Ethernet boards in
   the board file; missing WiFi sensors ⇒ ClientInfo says "Ethernet").
+
+## Web panel
+
+`firmware/webui/panel.{js,css}` is a dependency-free panel (vanilla JS,
+Polish/English, light/dark, log drawer) that ESPHome serves as `/0.js` and
+`/0.css`; the index page it builds then has no other script, so the panel
+works without internet. It talks to the stock web_server API only: the
+`/events` stream (`ping`, `state`, `log`) and `POST /<domain>/<name>/<action>`.
+Entities are addressed by `<domain>/<display name>` (the id the event stream
+sends), and `panel.js` places the known ones on its pages through the `ID`
+table at the top, so **renaming an entity means updating that table** (and
+the REST users: docs, bench tools). Unknown entities appear under System →
+Other. Values from the device are written with `textContent` only.
+`/?classic` loads the stock UI from oi.esphome.io instead.
+
+`common/webui.yaml` is included by the published lines and the dev overlay,
+not by the import targets: ESPHome resolves `js_include` relative to the
+main config file, which for an adopted device is in `/config/esphome`, so
+adopted devices keep the stock UI (still grouped by the sorting groups).
+The gzipped panel takes about 21 KB of flash.
+
+Work on it without flashing: `python3 tools/webui/mock_device.py` serves the
+working-tree files and fakes the API (`--ethernet`, `--line ha`,
+`--unconfigured` for the other layouts); reload the browser after edits. CI
+runs `node --check` on `panel.js`.
 
 ## MQTT protocol
 
