@@ -61,14 +61,16 @@ Type {{< hostname >}} into your browser.
 
 If `.local` names do not work on your network, look the IP address up in your router's DHCP list. You can also connect the dongle over USB, open this installer, choose **Logs & Console** and read the IP address from the log.
 {{< only line="factory" >}}
-Log in as `admin` / `admin` and set your own password in the **Admin Password** field right away. The same password protects firmware uploads. An empty field restores `admin`, and **Factory Reset** restores all defaults.
+Log in as `admin` / `admin` and set your own password under **System** → **Panel password** right away. The same password protects firmware uploads. **Restore factory settings** restores all defaults, including the `admin` password.
 {{< /only >}}
 {{< /step >}}
 
 {{< step title="Connect to GbbOptimizer" >}}
 1. In GbbOptimizer open **Instalacje** (Installations), click **Popraw** (Edit) next to your installation and switch the installation type at the top to **GbbDongle**. Until you do, GbbOptimizer talks to the inverter the old way (e.g. through Deye Cloud) and the dongle receives nothing.
-2. Copy **MQTT Server**, **Plant Id** and **Plant Token** from the installation into the dongle's panel. Never post the token publicly.
-3. Click **Apply Settings (Restart)**.
+2. In the dongle's panel open the **GbbOptimizer cloud** tab and copy the MQTT server, **Plant Id** and token from the installation. Never post the token publicly.
+3. Click **Save**, then **Apply and restart**. After about fifteen seconds **Overview** shows "Everything works".
+
+Older firmware has the stock ESPHome panel with English entity names: there the fields are **MQTT Server**, **Plant Id** and **Plant Token**, and the button is **Apply Settings (Restart)**.
 {{< /step >}}
 
 {{< step title="Add to Home Assistant (optional)" line="ha" >}}

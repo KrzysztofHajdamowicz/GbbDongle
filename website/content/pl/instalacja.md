@@ -60,14 +60,16 @@ Wpisz w przeglądarce {{< hostname >}}.
 
 Jeśli nazwy `.local` nie działają w Twojej sieci, znajdź adres IP na liście urządzeń DHCP w routerze. Możesz też podłączyć dongle przez USB, otworzyć ten instalator, wybrać **Logs & Console** i odczytać adres IP z logu.
 {{< only line="factory" >}}
-Zaloguj się jako `admin` / `admin` i od razu ustaw własne hasło w polu **Admin Password**. To samo hasło chroni wgrywanie aktualizacji. Puste pole przywraca hasło `admin`, a **Factory Reset** wszystkie ustawienia domyślne.
+Zaloguj się jako `admin` / `admin` i od razu ustaw własne hasło w zakładce **System** → **Hasło do panelu**. To samo hasło chroni wgrywanie aktualizacji. **Przywróć ustawienia fabryczne** przywraca wszystkie ustawienia domyślne, także hasło `admin`.
 {{< /only >}}
 {{< /step >}}
 
 {{< step title="Połącz z GbbOptimizerem" >}}
 1. W GbbOptimizerze otwórz **Instalacje**, przy swojej instalacji kliknij **Popraw** i na górze zmień typ instalacji na **GbbDongle**. Dopóki tego nie zrobisz, GbbOptimizer rozmawia z falownikiem starą drogą (np. przez Deye Cloud) i dongle nic nie dostaje.
-2. Przepisz z instalacji do panelu dongla: **MQTT Server**, **Plant Id** i **Plant Token**. Tokenu nigdy nie publikuj.
-3. Kliknij **Apply Settings (Restart)**.
+2. W panelu dongla otwórz zakładkę **Chmura GbbOptimizer** i przepisz z instalacji serwer MQTT, **Plant Id** i token. Tokenu nigdy nie publikuj.
+3. Kliknij **Zapisz**, a potem **Zastosuj i uruchom ponownie**. Po kilkunastu sekundach **Przegląd** pokaże „Wszystko działa”.
+
+Starszy firmware ma standardowy panel ESPHome z angielskimi nazwami: tam pola nazywają się **MQTT Server**, **Plant Id** i **Plant Token**, a przycisk **Apply Settings (Restart)**.
 {{< /step >}}
 
 {{< step title="Dodaj do Home Assistanta (opcjonalnie)" line="ha" >}}

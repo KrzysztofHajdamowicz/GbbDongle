@@ -96,11 +96,12 @@ Every board ships in two firmware flavours, selectable in the web installer:
    - Waveshare 8DI-8DO (Ethernet variant): plug in Ethernet (PoE, USB or
      7–36 V power) — the device gets an address via DHCP
      (`gbbdongle-8di8do-eth.local`).
-3. Open the device's web UI (Factory Image: log in with `admin` / `admin`
-   and set your own Admin Password) and fill in the GbbOptimizer settings
-   (MQTT Server, Plant Id, Plant Token — from your GbbOptimizer plant page),
-   then press **Apply Settings (Restart)**. Settings are stored in flash;
-   changes to cloud settings take effect after a restart.
+3. Open the device's web panel (Factory Image: log in with `admin` / `admin`
+   and set your own password under System → Panel password), fill in the
+   GbbOptimizer settings on the GbbOptimizer cloud tab (MQTT server, Plant
+   Id, Plant Token — from your GbbOptimizer plant page), click **Save**, then
+   **Apply and restart**. Settings are stored in flash; changes to cloud
+   settings take effect after a restart.
 4. Wire RS485 A/B to the inverter (default 9600 baud, 8N1 — configurable
    live, no restart needed).
 
@@ -111,6 +112,12 @@ out-of-the-box; the first upload is unauthenticated by design (the factory
 state has no OTA password).
 
 ## Configuration entities
+
+The published images serve their own web panel (`firmware/webui/`, Polish and
+English, light and dark) built on the ESPHome web_server API; `/?classic`
+opens the stock ESPHome UI, which devices adopted into Home Assistant keep.
+Both show the entities below, grouped by task; the REST API and the stock UI
+use these English names.
 
 | Entity | Meaning |
 |---|---|
