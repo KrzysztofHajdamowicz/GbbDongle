@@ -938,6 +938,13 @@
     for (const a of nav.children) {
       if (a.dataset.page === p) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
     }
+    // On a phone the tabs are a scrolling strip and the only page title
+    // shown, so bring the current one into view (clear of the edge fade).
+    const cur = $('[aria-current="page"]', nav);
+    if (cur && nav.scrollWidth > nav.clientWidth) {
+      const n = nav.getBoundingClientRect(), r = cur.getBoundingClientRect();
+      if (r.left < n.left + 12 || r.right > n.right - 40) nav.scrollLeft += r.left - n.left - 12;
+    }
     const key = PAGES.find(([id]) => id === p)[1];
     tx(pageTitle, key);
   }
