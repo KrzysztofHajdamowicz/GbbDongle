@@ -58,8 +58,14 @@ boards get an address over DHCP. Then open the web panel:
   connect the board over USB, open the web installer, choose **Logs & Console** and find the IP address
   in the log (with the Ethernet cable plugged in).
 
-The web panel login is `admin` / `admin` (Factory firmware). Change it with the **Admin Password**
-field; saving an empty password restores `admin`, and **Factory Reset** restores all defaults.
+The web panel login is `admin` / `admin` (Factory firmware). Change the password under **System** →
+**Panel password**; **Restore factory settings** restores all defaults. Older firmware and devices
+adopted into Home Assistant have the stock ESPHome panel instead: there the password is the **Admin
+Password** field (saving it empty restores `admin`) and the defaults come back with **Factory Reset**.
+
+The panel has the tabs **Overview** (is everything working), **GbbOptimizer cloud**, **Inverter
+(RS485)**, **Network** and **System**. The device logs open from the bar at the bottom of the page. Add
+`?classic` to the address for the stock ESPHome panel (needs internet access).
 
 ### What do I configure in GbbOptimizer?
 
@@ -67,8 +73,9 @@ field; saving an empty password restores `admin`, and **Factory Reset** restores
    installation type at the top to **GbbDongle**. Until you do, GbbOptimizer keeps talking to the
    inverter through its previous method (e.g. Deye Cloud) and the dongle receives nothing.
 2. Copy the MQTT server address, the installation id (Plant Id) and the access token from the
-   installation into the dongle's web panel and press **Apply Settings (Restart)**. Never post the
-   token publicly.
+   installation into the dongle's web panel (**GbbOptimizer cloud** tab), click **Save**, then **Apply
+   and restart** (**Apply Settings (Restart)** in the stock ESPHome panel). Never post the token
+   publicly.
 3. Use your real, active installation straight away. Switching costs at most about an hour of
    inverter control if something goes wrong.
 
@@ -183,8 +190,9 @@ parameters (**Wyślij email po utracie połączenia**, email after connection lo
 
 GbbOptimizer can send an emergency ("last will") command set together with the hourly settings. If no
 new settings arrive by minute 10 of the hour, the dongle runs that set on the inverter itself. What the
-set contains is decided in GbbOptimizer. By default it is kept in RAM only. Turn on **Persist Emergency
-Commands** if it should survive a power cut or restart of the dongle. Details are in
+set contains is decided in GbbOptimizer. By default it is kept in RAM only. Turn on **Keep after restart** on the
+**Emergency commands** card (**Persist Emergency Commands** in the stock ESPHome panel) if it should
+survive a power cut or restart of the dongle. Details are in
 [protocol.md](protocol.md).
 
 ### After a router or internet outage, the dongle did not come back

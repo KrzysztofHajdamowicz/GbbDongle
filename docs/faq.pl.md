@@ -60,16 +60,24 @@ Płytki z Ethernetem dostają adres z DHCP. Potem otwórz panel WWW:
   podłącz płytkę przez USB, otwórz instalator, wybierz **Logs & Console** i odczytaj adres IP z logu
   (z podłączonym kablem Ethernet).
 
-Login do panelu WWW to `admin` / `admin` (firmware Factory). Zmienisz go w polu **Admin Password**;
-zapisanie pustego hasła przywraca `admin`, a **Factory Reset** przywraca wszystkie ustawienia domyślne.
+Login do panelu WWW to `admin` / `admin` (firmware Factory). Hasło zmienisz w zakładce **System** →
+**Hasło do panelu**, a **Przywróć ustawienia fabryczne** przywraca wszystkie ustawienia domyślne. Starszy
+firmware i urządzenia adoptowane w Home Assistancie mają standardowy panel ESPHome z angielskimi nazwami:
+tam hasło zmienisz w polu **Admin Password** (zapisanie pustego przywraca `admin`), a ustawienia
+fabryczne przyciskiem **Factory Reset**.
+
+Panel ma zakładki: **Przegląd** (czy wszystko działa), **Chmura GbbOptimizer**, **Falownik (RS485)**,
+**Sieć** i **System**. Logi urządzenia rozwiniesz paskiem na dole strony. Klasyczny panel ESPHome
+otworzysz, dopisując `?classic` do adresu (potrzebuje internetu).
 
 ### Co ustawić w GbbOptimizerze?
 
 1. W **Instalacje** otwórz swoją instalację przyciskiem **Popraw** i na górze zmień typ instalacji na
    **GbbDongle**. Dopóki tego nie zrobisz, GbbOptimizer rozmawia z falownikiem poprzednią drogą (np. przez
    Deye Cloud), a dongle nic nie dostaje.
-2. Przepisz z instalacji do panelu WWW dongla adres serwera MQTT, identyfikator instalacji (Plant Id) i
-   token dostępu, potem kliknij **Apply Settings (Restart)**. Nigdy nie publikuj tokenu.
+2. Przepisz z instalacji do panelu WWW dongla (zakładka **Chmura GbbOptimizer**) adres serwera MQTT,
+   identyfikator instalacji (Plant Id) i token dostępu, kliknij **Zapisz**, a potem **Zastosuj i uruchom
+   ponownie** (w standardowym panelu ESPHome: **Apply Settings (Restart)**). Nigdy nie publikuj tokenu.
 3. Od razu użyj swojej prawdziwej, działającej instalacji. Jeśli coś pójdzie nie tak, stracisz najwyżej
    około godziny sterowania falownikiem.
 
@@ -182,8 +190,8 @@ po utracie połączenia**).
 
 GbbOptimizer może razem z ustawieniami godzinowymi wysłać awaryjny zestaw poleceń („last will”). Jeśli do
 10. minuty godziny nie przyjdą nowe ustawienia, dongle sam wykona ten zestaw na falowniku. O jego treści
-decyduje GbbOptimizer. Domyślnie jest trzymany tylko w RAM. Włącz **Persist Emergency Commands**, jeśli ma
-przetrwać zanik zasilania albo restart dongla. Szczegóły są w [protocol.md](protocol.md).
+decyduje GbbOptimizer. Domyślnie jest trzymany tylko w RAM. Włącz **Pamiętaj po restarcie** w karcie **Komendy awaryjne**
+(w standardowym panelu ESPHome: **Persist Emergency Commands**), jeśli ma przetrwać zanik zasilania albo restart dongla. Szczegóły są w [protocol.md](protocol.md).
 
 ### Po awarii routera albo internetu dongle nie wrócił
 
