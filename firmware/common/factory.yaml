@@ -25,6 +25,9 @@ text:
   - platform: template
     id: admin_password_txt
     name: Admin Password
+    web_server:
+      sorting_group_id: grp_system
+      sorting_weight: 30
     icon: mdi:form-textbox-password
     entity_category: config
     mode: password

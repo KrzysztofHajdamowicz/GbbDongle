@@ -121,7 +121,12 @@ Files:
   `mqtt:` client is the cloud link only: every named entity carries an empty
   `state_topic:` so ESPHome never mirrors it to the broker (Plant Token!) or
   obeys command topics for it — add one to every new entity;
-  `tools/check_mqtt_exposure.py` fails CI otherwise.
+  `tools/check_mqtt_exposure.py` fails CI otherwise. Every named entity
+  also carries a `web_server:` block (`sorting_group_id` + `sorting_weight`)
+  that places it in one of the web-panel groups declared under
+  `web_server: sorting_groups:` in `base.yaml` (Status, GbbOptimizer Cloud,
+  Inverter (RS485), Network, System); without one it falls back to ESPHome's
+  config/diagnostic sections.
 - `gbb_protocol.{h,cpp}` — JSON parse/build of the `Header` payload
   (PascalCase keys, ArduinoJson).
 - `emergency_store.{h,cpp}` — the emergency ("last will") command sets

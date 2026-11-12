@@ -23,5 +23,8 @@ text_sensor:
     ip_address:
       id: ip_address_text
       name: IP Address
+      web_server:
+        sorting_group_id: grp_network
+        sorting_weight: 10
       state_topic:
       entity_category: diagnostic
