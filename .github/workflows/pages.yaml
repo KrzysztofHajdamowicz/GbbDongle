@@ -46,6 +46,10 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      artifact-id: ${{ steps.upload.outputs.artifact_id }}
+      base-url: ${{ steps.pages.outputs.base_url }}
+      tag: ${{ steps.site.outputs.tag }}
     steps:
       - uses: actions/checkout@v7
 
@@ -54,15 +58,24 @@ jobs:
 
       # Pages' own base URL (the custom domain); the release's binaries and
       # manifests land under firmware/ at the same paths every deploy.
-      - uses: ./.github/actions/build-site
+      - id: site
+        uses: ./.github/actions/build-site
         with:
           base-url: ${{ steps.pages.outputs.base_url }}
           tag: ${{ inputs.tag }}
 
-      - uses: actions/upload-pages-artifact@v5
+      - id: upload
+        uses: actions/upload-pages-artifact@v5
         with:
           path: site
 
+  # Creates the Pages deployment through the REST API instead of
+  # actions/deploy-pages, which always sends GITHUB_SHA as
+  # pages_build_version. Pages treats a build version it has already
+  # deployed as done and keeps serving that deployment, so a release tagged
+  # on a commit that a push to main had already deployed (with the previous
+  # release's firmware) would publish nothing. The run id makes every
+  # deployment's build version unique.
   deploy:
     needs: build
     runs-on: ubuntu-latest
@@ -70,5 +83,50 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - id: deployment
-        uses: actions/deploy-pages@v5
+      - name: Deploy to GitHub Pages
+        id: deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ needs.build.outputs.artifact-id }}
+          BUILD_VERSION: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          OIDC_TOKEN=$(curl -sSf -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}" | jq -r .value)
+          echo "::add-mask::${OIDC_TOKEN}"
+          RESP=$(jq -n --argjson artifact_id "$ARTIFACT_ID" --arg version "$BUILD_VERSION" \
+              --arg oidc "$OIDC_TOKEN" \
+              '{artifact_id: $artifact_id, pages_build_version: $version, oidc_token: $oidc}' \
+            | gh api -X POST "repos/${GITHUB_REPOSITORY}/pages/deployments" --input -)
+          ID=$(jq -r '(.id // empty | tostring), (.status_url // "" | split("/") | last)' <<<"$RESP" | grep -m1 .)
+          echo "page_url=$(jq -r '.page_url // empty' <<<"$RESP")" >> "$GITHUB_OUTPUT"
+          echo "Deployment ${ID} (build version ${BUILD_VERSION})"
+          for _ in $(seq 60); do
+            sleep 10
+            STATUS=$(gh api "repos/${GITHUB_REPOSITORY}/pages/deployments/${ID}" -q .status || echo unknown_status)
+            echo "Status: ${STATUS}"
+            case "$STATUS" in
+              succeed) exit 0 ;;
+              deployment_failed|deployment_content_failed|deployment_cancelled|deployment_lost) exit 1 ;;
+            esac
+          done
+          echo "Timed out waiting for the deployment" >&2
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/pages/deployments/${ID}/cancel" || true
+          exit 1
+
+      # Devices poll this manifest: a deploy only counts once the live site
+      # offers the release that was built. The query string skips the CDN
+      # cache (max-age=600).
+      - name: Check the live update manifest
+        env:
+          BASE_URL: ${{ needs.build.outputs.base-url }}
+          TAG: ${{ needs.build.outputs.tag }}
+        run: |
+          URL="${BASE_URL}/firmware/update-manifest.json"
+          for _ in $(seq 12); do
+            LIVE=$(curl -sSf "${URL}?run=${GITHUB_RUN_ID}-${RANDOM}" | jq -r .version || true)
+            echo "Live version: ${LIVE:-none}, expected ${TAG#v}"
+            [ "$LIVE" = "${TAG#v}" ] && exit 0
+            sleep 10
+          done
+          echo "::error::${URL} does not serve ${TAG}" >&2
+          exit 1
