@@ -134,7 +134,7 @@
       "s.frbtn": "Przywróć…", "fr.q": "Skasować wszystkie ustawienia?", "fr.yes": "Tak, skasuj", "no": "Anuluj",
       "s.other": "Inne", "s.help": "Pomoc", "s.helpb": "Instrukcja i najczęstsze pytania są na stronie projektu.",
       "s.classic": "Klasyczny panel ESPHome (wymaga internetu)",
-      "b.save": "Zapisz", "b.cancel": "Cofnij", "b.press": "Uruchom",
+      "b.save": "Zapisz", "b.cancel": "Cofnij", "b.press": "Uruchom", "b.close": "Zamknij",
       "dirty": "Masz niezapisane zmiany.", "saved": "Zapisano.", "savefail": "Nie udało się zapisać. Sprawdź połączenie i spróbuj ponownie.",
       "pw.empty": "Wpisz nowe hasło.", "pw.mis": "Hasła się różnią.", "pw.ok": "Hasło zmienione.",
       "port.bad": "Port musi być liczbą od 1 do 65535.",
@@ -197,7 +197,7 @@
       "s.frbtn": "Restore…", "fr.q": "Erase all settings?", "fr.yes": "Yes, erase", "no": "Cancel",
       "s.other": "Other", "s.help": "Help", "s.helpb": "The guide and the FAQ are on the project website.",
       "s.classic": "Classic ESPHome panel (needs internet)",
-      "b.save": "Save", "b.cancel": "Undo", "b.press": "Run",
+      "b.save": "Save", "b.cancel": "Undo", "b.press": "Run", "b.close": "Close",
       "dirty": "You have unsaved changes.", "saved": "Saved.", "savefail": "Saving failed. Check the connection and try again.",
       "pw.empty": "Enter a new password.", "pw.mis": "The passwords differ.", "pw.ok": "Password changed.",
       "port.bad": "The port must be a number from 1 to 65535.",
@@ -755,18 +755,30 @@
   // ---------- restart overlay ----------
   const ovT = T("b", "rb.t");
   const ovB = T("span", "rb.b", { style: "color:var(--muted)" });
+  const ovClose = h("button", { class: "btn", type: "button", hidden: true, onclick: () => endReboot() }, T("span", "b.close"));
   const overlay = h("div", { class: "overlay", hidden: true, role: "alertdialog", "aria-live": "assertive" },
-    h("div", { class: "card" }, h("div", { class: "spinner" }), ovT, ovB));
+    h("div", { class: "card" }, h("div", { class: "spinner" }), ovT, ovB, ovClose));
   let rebooting = false, sawDrop = false, slowTimer = 0, pendingRestart = false;
   function waitForReboot() {
     rebooting = true; sawDrop = false;
-    overlay.hidden = false;
+    overlay.hidden = false; ovClose.hidden = true;
     tx(ovB, "rb.b");
     clearTimeout(slowTimer);
-    slowTimer = setTimeout(() => tx(ovB, "rb.slow"), 60000);
+    slowTimer = setTimeout(() => { tx(ovB, "rb.slow"); ovClose.hidden = false; }, 60000);
+  }
+  function endReboot() {
+    rebooting = false; overlay.hidden = true; clearTimeout(slowTimer);
+    renderDerived();
   }
   async function restart() {
-    try { await post(ID.apply, "press"); } catch (e) { /* the device may drop the request while rebooting */ }
+    try {
+      await post(ID.apply, "press");
+    } catch (e) {
+      // An HTTP error means the device answered and refused: no reboot is
+      // coming. A network error is the device dropping the request as it
+      // reboots.
+      if (String(e.message).startsWith("HTTP")) { restartBanner.hidden = false; tx($("b", restartBanner), "savefail"); return; }
+    }
     waitForReboot();
     renderDerived();
   }
@@ -840,8 +852,12 @@
     (watchers.get(data.id) || []).forEach((fn) => fn(e));
     anyWatchers.forEach((fn) => fn());
   }
+  // ESPHome asks EventSource to wait 30 s (retry: 30000) before reconnecting,
+  // which would keep the restart overlay up long after the device is back,
+  // so the panel closes a failed stream itself and reconnects sooner.
+  let es = null, reconnectTimer = 0;
   function connect() {
-    const es = new EventSource("/events");
+    es = new EventSource("/events");
     es.addEventListener("open", () => setLink(true));
     es.addEventListener("ping", (ev) => {
       setLink(true);
@@ -856,18 +872,22 @@
         (watchers.get("__info") || []).forEach((fn) => fn());
         drawer.hidden = info.log === false;
         if (rebooting && sawDrop) {
-          rebooting = false; overlay.hidden = true; clearTimeout(slowTimer);
           pendingRestart = false;
-          renderDerived();
+          tx($("b", restartBanner), "ban.t");
+          endReboot();
         }
       }
     });
     es.addEventListener("state", (ev) => { try { onState(JSON.parse(ev.data)); } catch (e) { /* malformed event */ } });
     es.addEventListener("log", (ev) => onLog(ev.data));
+    const self = es;
     es.addEventListener("error", () => {
-      if (es.readyState === EventSource.CLOSED) { es.close(); setTimeout(connect, 3000); }
+      if (self !== es) return;
+      self.close();
       if (rebooting) sawDrop = true;
       setLink(false);
+      clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(connect, rebooting ? 2000 : 4000);
     });
   }
 

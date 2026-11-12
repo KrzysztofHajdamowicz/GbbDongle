@@ -180,6 +180,7 @@ html.gbb body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--f
 .gbb .btn.danger { background: var(--err-soft); color: var(--err); }
 .gbb .btn.danger.solid { background: var(--err); color: #fff; }
 .gbb .btn[disabled] { opacity: .5; cursor: default; }
+.gbb .btn.primary[disabled] { background: var(--tag); color: var(--muted); opacity: 1; }
 
 .gbb details.adv { border-top: 1px dashed var(--line); margin-top: 4px; }
 .gbb details.adv summary { cursor: pointer; padding: 10px 0 4px; color: var(--accent); font-weight: 600; font-size: 14px; }
@@ -263,7 +264,10 @@ html.gbb body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--f
   .gbb .shell { grid-template-columns: minmax(0, 1fr); }
   .gbb .side { position: static; height: auto; padding: 12px 0 0; border-right: 0; border-bottom: 1px solid var(--line); gap: 10px; overflow: visible; }
   .gbb .brand { padding: 0 max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left)); }
-  .gbb nav { flex-direction: row; overflow-x: auto; gap: 4px; padding: 0 12px 8px; scrollbar-width: none; }
+  /* The fade on the right edge hints that the tab strip scrolls. */
+  .gbb nav { flex-direction: row; overflow-x: auto; gap: 4px; padding: 0 28px 8px 12px; scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent); }
   .gbb nav a { white-space: nowrap; padding: 7px 10px; }
   .gbb nav .dot { margin-left: 2px; }
   .gbb .side-foot { display: none; }
