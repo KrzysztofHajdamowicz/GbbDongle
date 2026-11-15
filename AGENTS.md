@@ -155,7 +155,10 @@ Files:
   `emergency_minute_threshold` (10) + `emergency_retry_initial`/`_max`
   (60 s / 15 min, min 10 s, max ≥ initial; `gbbdongle-bench.yaml` lowers
   the threshold to bench-test the trigger without waiting an hour),
-  `certificate_authority`, and the `*_id` wiring of the config entities
+  `certificate_authority` (its presence alone makes the cloud link TLS:
+  codegen then defines `USE_MQTT_TLS`, which ESPHome ≥ 2026.11 needs for the
+  mqtt TLS setters; there is no runtime TLS or skip-CN switch, and
+  `tools/check_mqtt_exposure.py` fails CI for a config without it), and the `*_id` wiring of the config entities
   declared in `base.yaml`. `version:` defaults to `auto` → resolved from
   `git describe`; release builds stamp it via `esphome -s version X.Y.Z`.
   `client_environment:` (fed `GbbDongle/${device_name}` in `base.yaml`) plus
@@ -273,7 +276,8 @@ resulting JSON. Site preview: `hugo server --source website`; run
 release's binaries and manifests into the gitignored `website/static/firmware/`
 so the install wizard can flash from localhost.
 
-Testing without cloud/inverter: local mosquitto with TLS off +
+Testing without cloud/inverter: local mosquitto + a local build without TLS
+(`firmware/*.local.yaml`, gitignored, `certificate_authority: !remove`) +
 `tools/cloud_roundtrip.py` (publishes a captured `toDevice` request, prints
 the response; paho-mqtt and pymodbus come from the `dev` uv group, installed
 by default) + `tools/bench/modbus_slave.py` on a USB-RS485 adapter standing

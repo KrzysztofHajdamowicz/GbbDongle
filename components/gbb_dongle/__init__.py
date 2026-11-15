@@ -106,8 +106,13 @@ CONFIG_SCHEMA = cv.All(
             cv.Required(CONF_PLANT_ID_ID): cv.use_id(text.Text),
             cv.Required(CONF_PLANT_TOKEN_ID): cv.use_id(text.Text),
             cv.Required(CONF_CLOUD_ENABLED_ID): cv.use_id(switch.Switch),
-            cv.Optional(CONF_TLS_ENABLED_ID): cv.use_id(switch.Switch),
-            cv.Optional(CONF_TLS_SKIP_CN_CHECK_ID): cv.use_id(switch.Switch),
+            # TLS is decided at build time by certificate_authority alone.
+            cv.Optional(CONF_TLS_ENABLED_ID): cv.invalid(
+                "Removed: the cloud link uses TLS whenever certificate_authority is set"
+            ),
+            cv.Optional(CONF_TLS_SKIP_CN_CHECK_ID): cv.invalid(
+                "Removed: the broker hostname is always verified"
+            ),
             cv.Optional(CONF_BAUD_RATE_ID): cv.use_id(select.Select),
             cv.Optional(CONF_PARITY_ID): cv.use_id(select.Select),
             cv.Optional(CONF_WIFI_SIGNAL_DB_ID): cv.use_id(sensor.Sensor),
@@ -157,6 +162,10 @@ async def to_code(config):
 
     if CONF_CERTIFICATE_AUTHORITY in config:
         cg.add(var.set_ca_certificate(config[CONF_CERTIFICATE_AUTHORITY]))
+        # The mqtt component compiles its TLS transport and certificate
+        # setters only under USE_MQTT_TLS (ESPHome 2026.11+), and defines it
+        # itself only for TLS configured in its own block.
+        cg.add_define("USE_MQTT_TLS")
         # Same workaround as the mqtt component applies when TLS is in use,
         # see https://github.com/espressif/esp-idf/issues/139
         from esphome.components.esp32 import add_idf_sdkconfig_option
@@ -169,8 +178,6 @@ async def to_code(config):
         (CONF_PLANT_ID_ID, var.set_plant_id_text),
         (CONF_PLANT_TOKEN_ID, var.set_plant_token_text),
         (CONF_CLOUD_ENABLED_ID, var.set_cloud_enabled_switch),
-        (CONF_TLS_ENABLED_ID, var.set_tls_enabled_switch),
-        (CONF_TLS_SKIP_CN_CHECK_ID, var.set_tls_skip_cn_check_switch),
         (CONF_BAUD_RATE_ID, var.set_baud_rate_select),
         (CONF_PARITY_ID, var.set_parity_select),
         (CONF_WIFI_SIGNAL_DB_ID, var.set_wifi_signal_db_sensor),

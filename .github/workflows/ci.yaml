@@ -137,8 +137,9 @@ jobs:
         run: uv run esphome -s external_components_source ../components config firmware/${{ matrix.config }}.yaml
 
       # The mqtt: client is the cloud link; no entity may publish or accept
-      # commands on it (see the mqtt: block in firmware/common/base.yaml).
-      - name: Check no entity is exposed over MQTT
+      # commands on it (see the mqtt: block in firmware/common/base.yaml), and
+      # published images must compile in the CA so the link runs over TLS.
+      - name: Check the cloud MQTT link (no exposed entity, TLS on)
         run: uv run python tools/check_mqtt_exposure.py firmware/${{ matrix.config }}.yaml
 
       - name: Compile firmware

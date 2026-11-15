@@ -48,8 +48,6 @@ class GbbDongle : public Component, public uart::UARTDevice {
   void set_plant_id_text(text::Text *t) { this->plant_id_ = t; }
   void set_plant_token_text(text::Text *t) { this->plant_token_ = t; }
   void set_cloud_enabled_switch(switch_::Switch *s) { this->cloud_enabled_ = s; }
-  void set_tls_enabled_switch(switch_::Switch *s) { this->tls_enabled_ = s; }
-  void set_tls_skip_cn_check_switch(switch_::Switch *s) { this->tls_skip_cn_check_ = s; }
   void set_baud_rate_select(select::Select *s) { this->baud_rate_ = s; }
   void set_parity_select(select::Select *s) { this->parity_ = s; }
   void set_wifi_signal_db_sensor(sensor::Sensor *s) { this->wifi_signal_db_ = s; }
@@ -98,8 +96,6 @@ class GbbDongle : public Component, public uart::UARTDevice {
   text::Text *plant_id_{nullptr};
   text::Text *plant_token_{nullptr};
   switch_::Switch *cloud_enabled_{nullptr};
-  switch_::Switch *tls_enabled_{nullptr};
-  switch_::Switch *tls_skip_cn_check_{nullptr};
   select::Select *baud_rate_{nullptr};
   select::Select *parity_{nullptr};
   sensor::Sensor *wifi_signal_db_{nullptr};

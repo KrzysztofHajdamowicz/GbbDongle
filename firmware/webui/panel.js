@@ -97,8 +97,8 @@
       "hero.bad": "Brak połączenia z GbbOptimizerem", "hero.badb": "Sprawdź Plant Id, token i serwer w ustawieniach chmury oraz czy dongle ma dostęp do internetu. Szczegóły są w logach.",
       "hero.logs": "Pokaż logi", "hero.restart": "Zmiany czekają na zastosowanie", "hero.restartb": "Uruchom dongle ponownie, żeby nowe ustawienia chmury zaczęły działać.",
       "hero.wait": "Łączenie…", "hero.waitb": "Pobieram stan urządzenia.",
-      "st.conn": "Połączono", "st.disc": "Rozłączono", "st.off": "Wyłączono", "on": "włączone", "off": "wyłączone",
-      "f.server": "Serwer", "f.tls": "Szyfrowanie", "f.params": "Parametry łącza", "f.req": "Obsłużone zapytania", "f.err": "Błędy Modbus",
+      "st.conn": "Połączono", "st.disc": "Rozłączono", "st.off": "Wyłączono",
+      "f.server": "Serwer", "f.params": "Parametry łącza", "f.req": "Obsłużone zapytania", "f.err": "Błędy Modbus",
       "f.ip": "Adres IP", "f.conn": "Połączenie", "f.version": "Wersja", "f.uptime": "Działa od", "f.update": "Aktualizacje",
       "t.device": "Urządzenie", "eth": "Ethernet (kabel)", "sig.good": "dobry sygnał", "sig.ok": "średni sygnał", "sig.weak": "słaby sygnał",
       "c.h": "Połączenie z GbbOptimizerem", "c.p": "Dane przepiszesz z GbbOptimizera. Po zapisaniu uruchom dongle ponownie.",
@@ -109,8 +109,7 @@
       "c.token": "Token instalacji", "c.tokenh": "Traktuj jak hasło i nigdy go nie publikuj.",
       "c.tokenph": "Ukryty. Wpisz nowy, aby go zmienić.", "c.show": "Pokaż", "c.hide": "Ukryj",
       "c.server": "Serwer MQTT", "c.serverh": "Np. gbboptimizer7-mqtt.gbbsoft.pl", "c.adv": "Ustawienia zaawansowane",
-      "c.port": "Port", "c.porth": "Domyślnie 8883.", "c.tls": "Szyfrowanie (TLS)", "c.tlsh": "Zostaw włączone.",
-      "c.cn": "Nie sprawdzaj nazwy serwera w certyfikacie", "c.cnh": "Tylko do testów z własnym brokerem. Osłabia bezpieczeństwo.",
+      "c.port": "Port", "c.porth": "Domyślnie 8883.",
       "c.foot": "Zmiany w tej sekcji wymagają ponownego uruchomienia.",
       "c.fixed": "Poprawiłem adres serwera: zostawiłem samą nazwę hosta.",
       "e.h": "Komendy awaryjne", "e.p": "Gdy chmura przestanie odpowiadać, dongle sam wyśle do falownika ustawienia przygotowane wcześniej przez GbbOptimizer.",
@@ -160,8 +159,8 @@
       "hero.bad": "No connection to GbbOptimizer", "hero.badb": "Check the Plant Id, token and server in the cloud settings, and whether the dongle has internet access. The logs have the details.",
       "hero.logs": "Show logs", "hero.restart": "Changes are waiting to be applied", "hero.restartb": "Restart the dongle so the new cloud settings take effect.",
       "hero.wait": "Connecting…", "hero.waitb": "Loading the device state.",
-      "st.conn": "Connected", "st.disc": "Offline", "st.off": "Off", "on": "on", "off": "off",
-      "f.server": "Server", "f.tls": "Encryption", "f.params": "Line settings", "f.req": "Requests handled", "f.err": "Modbus errors",
+      "st.conn": "Connected", "st.disc": "Offline", "st.off": "Off",
+      "f.server": "Server", "f.params": "Line settings", "f.req": "Requests handled", "f.err": "Modbus errors",
       "f.ip": "IP address", "f.conn": "Connection", "f.version": "Version", "f.uptime": "Up for", "f.update": "Updates",
       "t.device": "Device", "eth": "Ethernet (cable)", "sig.good": "good signal", "sig.ok": "fair signal", "sig.weak": "weak signal",
       "c.h": "Connection to GbbOptimizer", "c.p": "Copy these from GbbOptimizer. Restart the dongle after saving.",
@@ -172,8 +171,7 @@
       "c.token": "Plant token", "c.tokenh": "Treat it like a password and never share it.",
       "c.tokenph": "Hidden. Type a new one to change it.", "c.show": "Show", "c.hide": "Hide",
       "c.server": "MQTT server", "c.serverh": "e.g. gbboptimizer7-mqtt.gbbsoft.pl", "c.adv": "Advanced settings",
-      "c.port": "Port", "c.porth": "Default 8883.", "c.tls": "Encryption (TLS)", "c.tlsh": "Leave on.",
-      "c.cn": "Don't check the server name in the certificate", "c.cnh": "Only for testing with your own broker. Weakens security.",
+      "c.port": "Port", "c.porth": "Default 8883.",
       "c.foot": "Changes here need a restart.",
       "c.fixed": "I trimmed the server address down to the host name.",
       "e.h": "Emergency commands", "e.p": "If the cloud stops answering, the dongle sends the inverter the settings GbbOptimizer prepared in advance.",
@@ -229,7 +227,7 @@
     cloudConnected: "binary_sensor/Cloud Connected", restartRequired: "binary_sensor/Restart Required",
     apply: "button/Apply Settings (Restart)", uptime: "text_sensor/Uptime",
     cloudEnabled: "switch/Cloud Connection", plantId: "text/Plant Id", token: "text/Plant Token",
-    host: "text/MQTT Server", port: "number/MQTT Port", tls: "switch/TLS", skipCn: "switch/TLS Skip CN Check",
+    host: "text/MQTT Server", port: "number/MQTT Port",
     persist: "switch/Persist Emergency Commands", sets: "sensor/Emergency Sets Stored",
     baud: "select/RS485 Baud Rate", parity: "select/RS485 Parity",
     req: "sensor/Requests Handled", err: "sensor/Modbus Errors",
@@ -480,7 +478,6 @@
     tile("#cloud", "cloud", "nav.cloud", tileCloudPill, [
       kv("c.plant", readout(ID.plantId), ID.plantId),
       kv("f.server", readout(ID.host), ID.host),
-      kv("f.tls", readout(ID.tls, (e) => t(e.value ? "on" : "off")), ID.tls),
     ]),
     tile("#inverter", "inverter", "nav.inverter", null, [
       kv("f.params", lineParams, ID.baud),
@@ -506,8 +503,6 @@
     const token = textField(fc, ID.token, { password: true });
     const host = textField(fc, ID.host);
     const port = numberField(fc, ID.port);
-    const tls = switchField(fc, ID.tls);
-    const cn = switchField(fc, ID.skipCn);
     const fixedMsg = T("small", "c.fixed", { class: "msg ok", hidden: true });
     // People paste "mqtts://host:8883/" from elsewhere: keep the host only
     // and move a port into the port field, both still to be saved.
@@ -536,9 +531,7 @@
       row(ID.token, "c.token", "c.tokenh", h("div", { class: "pw" }, token.el, eye)),
       row(ID.host, "c.server", "c.serverh", h("div", { style: "display:grid;gap:4px;width:100%" }, host.el, fixedMsg)),
       h("details", { class: "adv" }, T("summary", "c.adv"),
-        row(ID.port, "c.port", "c.porth", port.el),
-        row(ID.tls, "c.tls", "c.tlsh", tls.el),
-        row(ID.skipCn, "c.cn", "c.cnh", cn.el)),
+        row(ID.port, "c.port", "c.porth", port.el)),
     );
     // The firmware raises Restart Required itself; show the banner at once
     // instead of waiting for that state event.

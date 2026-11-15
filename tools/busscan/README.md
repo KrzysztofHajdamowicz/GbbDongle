@@ -9,6 +9,12 @@ numer seryjny) na kolejne adresy slave i drukuje tabelę wyników.
 Niczego nie zapisuje do falowników — wykonywane są wyłącznie odczyty (funkcja
 Modbus 0x03).
 
+> **Uwaga:** busscan wymaga dongla, który da się przełączyć na nieszyfrowany
+> broker. Firmware bez encji `TLS` (połączenie z chmurą zawsze po TLS) tego nie
+> pozwala — wtedy dongle musi mieć wgrany lokalny obraz bez TLS (zob.
+> [tools/bench/README.md](../bench/README.md)), a krok „`TLS` = off” poniżej
+> się pomija.
+
 ## Uruchomienie (tryb ręczny)
 
 1. Uruchom binarkę dla swojego systemu (macOS: najpierw

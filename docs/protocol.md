@@ -10,7 +10,7 @@ ESP32/ESP32-S3 board with a direct RS485 connection to the inverter.
 
 | Parameter | Value |
 |---|---|
-| Broker | `gbboptimizerX-mqtt.gbbsoft.pl`, port 8883, TLS (host, port, TLS and TLS Skip CN Check are runtime settings; trust anchors compiled in via `certificate_authority` in `base.yaml`) |
+| Broker | `gbboptimizerX-mqtt.gbbsoft.pl`, port 8883, TLS with hostname verification, always on (host and port are runtime settings; trust anchors compiled in via `certificate_authority` in `base.yaml`) |
 | Client ID | `GbbConnect2_{PlantId}` |
 | Username | `{PlantId}` |
 | Password | `{PlantToken}` |
