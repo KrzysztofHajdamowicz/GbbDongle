@@ -12,6 +12,9 @@ build/
 secrets.yaml
 firmware/secrets.yaml
 
+# Local-only firmware variants (e.g. bench builds without TLS)
+firmware/*.local.yaml
+
 # busscan cross-compiled binaries
 tools/busscan/dist/
 

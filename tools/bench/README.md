@@ -8,9 +8,15 @@ Three processes on the Mac stand in for GbbOptimizer and the inverter:
 | Cloud | `tools/cloud_roundtrip.py` — publishes one `toDevice` request, prints the `fromDevice` response |
 | Inverter | `tools/bench/modbus_slave.py` — pymodbus RTU slave on a USB-RS485 adapter wired A/B to the dongle |
 
-Plus the dongle itself, flashed with `firmware/gbbdongle-bench.yaml`
-(gbbdongle-dev + `emergency_minute_threshold: 1`, so the hourly emergency
-trigger fires at minute 2 of the next hour instead of minute 11).
+Plus the dongle itself, running a local variant of
+`firmware/gbbdongle-bench.yaml` (gbbdongle-dev + `emergency_minute_threshold:
+1`, so the hourly emergency trigger fires at minute 2 of the next hour instead
+of minute 11) built without TLS.
+
+Every committed config, bench ones included, compiles the CA in and therefore
+always connects over TLS with the broker hostname verified; there is no
+switch to turn that off at runtime. A plain-MQTT build for the local broker
+lives only on your machine: `firmware/*.local.yaml` is gitignored.
 
 ## Setup
 
@@ -26,10 +32,21 @@ trigger fires at minute 2 of the next hour instead of minute 11).
    isolation between an IoT subnet and the Mac, and the macOS application
    firewall).
 
-2. Dongle — flash and keep the serial log open:
+2. Dongle — create `firmware/gbbdongle-bench.local.yaml`, which drops the
+   CA and with it TLS:
+
+   ```yaml
+   packages:
+     bench: !include gbbdongle-bench.yaml
+
+   gbb_dongle:
+     certificate_authority: !remove
+   ```
+
+   then flash it and keep the serial log open:
 
    ```sh
-   uv run esphome run firmware/gbbdongle-bench.yaml --device /dev/cu.usbmodemXXXX
+   uv run esphome run firmware/gbbdongle-bench.local.yaml --device /dev/cu.usbmodemXXXX
    ```
 
    Point it at the broker through its web UI or the REST API (entity
@@ -41,7 +58,6 @@ trigger fires at minute 2 of the next hour instead of minute 11).
    curl -X POST -d '' "$D/number/MQTT%20Port/set?value=1883"
    curl -X POST -d '' "$D/text/Plant%20Id/set?value=TEST1"
    curl -X POST -d '' "$D/text/Plant%20Token/set?value=TEST1"
-   curl -X POST -d '' "$D/switch/TLS/turn_off"
    curl -X POST -d '' "$D/button/Apply%20Settings%20(Restart)/press"
    ```
 

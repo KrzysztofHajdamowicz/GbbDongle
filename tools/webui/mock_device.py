@@ -33,7 +33,7 @@ INDEX = (
     "<script type=module src=/0.js></script><esp-app></esp-app></body></html>"
 )
 CLOUD = {"text/MQTT Server", "text/Plant Id", "text/Plant Token", "number/MQTT Port",
-         "switch/Cloud Connection", "switch/TLS", "switch/TLS Skip CN Check"}
+         "switch/Cloud Connection"}
 ESC = "\x1b"
 LOG_COLOURS = {"E": "1;31", "W": "0;33", "I": "0;32", "D": "0;36", "V": "0;37", "C": "0;35"}
 STALL = object()  # queued to an /events stream when the device "reboots"
@@ -68,8 +68,6 @@ class Device:
         add("text", "MQTT Server", 1, "gbboptimizer7-mqtt.gbbsoft.pl" if configured else "",
             min_length=0, max_length=128, pattern="", mode=0)
         add("number", "MQTT Port", 1, "8883", min_value="1", max_value="65535", step="1", mode=1)
-        add("switch", "TLS", 1, True, "ON", assumed_state=False)
-        add("switch", "TLS Skip CN Check", 1, False, "OFF", assumed_state=False)
         add("switch", "Persist Emergency Commands", 1, True, "ON", assumed_state=False)
         add("sensor", "Emergency Sets Stored", 2, 2, "2")
         add("select", "RS485 Baud Rate", 1, "9600",

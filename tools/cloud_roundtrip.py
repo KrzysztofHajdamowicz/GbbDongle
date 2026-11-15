@@ -3,8 +3,9 @@
 
 Publishes a captured toDevice request (from gbbconnect-go's
 example-communication.txt) and prints the fromDevice response. Point the
-dongle at the same broker first (TLS off, matching Plant Id/Token — the
-local mosquitto does not check credentials by default).
+dongle at the same broker first (a build without TLS, see
+tools/bench/README.md; matching Plant Id/Token — the local mosquitto does
+not check credentials by default).
 
     brew install mosquitto && brew services start mosquitto
     uv run python tools/cloud_roundtrip.py --broker 192.168.1.10 --plant-id TEST1

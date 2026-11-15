@@ -121,10 +121,9 @@ use these English names.
 
 | Entity | Meaning |
 |---|---|
-| MQTT Server / MQTT Port | e.g. `gbboptimizer-mqtt.gbbsoft.pl` : `8883` |
+| MQTT Server / MQTT Port | e.g. `gbboptimizer-mqtt.gbbsoft.pl` : `8883`; always over TLS with the broker hostname verified (Certum Trusted Root CA and Certum Trusted Network CA compiled in, no switch to turn it off) |
 | Plant Id / Plant Token | from GbbOptimizer |
 | Cloud Connection | master enable switch |
-| TLS / TLS Skip CN Check | TLS is on by default (Certum Trusted Root CA, Certum Trusted Network CA and ISRG Root X1 compiled in) |
 | RS485 Baud Rate / Parity | serial parameters, applied live |
 | Persist Emergency Commands | keep the emergency ("last will") command sets from GbbOptimizer across reboots (NVS write on every change); off = RAM only — see [docs/protocol.md](docs/protocol.md) |
 | Admin Password | Factory Image only: changes the web-dashboard and OTA-upload password (login stays `admin`); empty restores the default password |
@@ -195,8 +194,8 @@ messages) and the entity wiring.
 
 ### Testing without the cloud / inverter
 
-Run a local mosquitto (`brew install mosquitto`), point the dongle at it with
-TLS off, and publish a captured `toDevice` request; a Modbus slave simulator
+Run a local mosquitto (`brew install mosquitto`), point a local build
+without TLS (`firmware/*.local.yaml`, gitignored) at it, and publish a captured `toDevice` request; a Modbus slave simulator
 (`tools/bench/modbus_slave.py`, pymodbus) on a USB-RS485 adapter stands in
 for the inverter. The full procedure and test scenarios are in
 [tools/bench/README.md](tools/bench/README.md).

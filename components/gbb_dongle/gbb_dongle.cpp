@@ -5,6 +5,7 @@
 
 #include "esphome/components/logger/logger.h"
 #include "esphome/components/network/util.h"
+#include "esphome/core/alloc_helpers.h"
 #include "esphome/core/hal.h"
 #include "esphome/core/helpers.h"
 #include "esphome/core/log.h"
@@ -54,10 +55,8 @@ void GbbDongle::setup() {
   }
   if (this->mqtt_port_ != nullptr)
     this->mqtt_port_->add_on_state_callback([this](float) { this->mark_dirty_(); });
-  for (switch_::Switch *s : {this->cloud_enabled_, this->tls_enabled_, this->tls_skip_cn_check_}) {
-    if (s != nullptr)
-      s->add_on_state_callback([this](bool) { this->mark_dirty_(); });
-  }
+  if (this->cloud_enabled_ != nullptr)
+    this->cloud_enabled_->add_on_state_callback([this](bool) { this->mark_dirty_(); });
   // Serial settings on the other hand are applied live.
   for (select::Select *s : {this->baud_rate_, this->parity_}) {
     if (s != nullptr)
@@ -93,14 +92,15 @@ void GbbDongle::configure_mqtt_() {
   this->mqtt_->set_password(token);
   this->mqtt_->set_client_id("GbbConnect2_" + plant_id);
 
-  const bool tls = this->tls_enabled_ == nullptr || this->tls_enabled_->state;
-  if (tls && this->ca_certificate_ != nullptr) {
-    this->mqtt_->set_ca_certificate(this->ca_certificate_);
-    if (this->tls_skip_cn_check_ != nullptr)
-      this->mqtt_->set_skip_cert_cn_check(this->tls_skip_cn_check_->state);
-  } else if (tls) {
-    ESP_LOGE(TAG, "TLS requested but no CA certificate compiled in; connecting WITHOUT TLS");
-  }
+  // TLS is a build-time property: codegen defines USE_MQTT_TLS exactly when a
+  // CA is compiled in, and the mqtt component then always connects over TLS
+  // with hostname verification. Without a CA (bench builds) it is plain TCP.
+#ifdef USE_MQTT_TLS
+  this->mqtt_->set_ca_certificate(this->ca_certificate_);
+  const bool tls = true;
+#else
+  const bool tls = false;
+#endif
 
   this->topic_from_device_ = plant_id + "/ModbusInMqtt/fromDevice";
   this->topic_keepalive_ = plant_id + "/keepalive";
@@ -115,7 +115,7 @@ void GbbDongle::configure_mqtt_() {
     // spams warnings until the first retry. loop() flips this on once
     // network::is_connected() returns true.
     ESP_LOGI(TAG, "Cloud configured for GbbOptimizer at %s:%u as plant '%s' (TLS: %s); connecting once WiFi is up",
-             host.c_str(), port, plant_id.c_str(), tls && this->ca_certificate_ != nullptr ? "yes" : "NO");
+             host.c_str(), port, plant_id.c_str(), tls ? "yes" : "NO");
     this->cloud_enable_pending_ = true;
   } else {
     ESP_LOGI(TAG, "Cloud connection disabled by switch");
