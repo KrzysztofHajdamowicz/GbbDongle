@@ -39,10 +39,12 @@ struct PairingLimits {
 };
 
 /// Reduce a code as someone typed or pasted it to the form GbbOptimizer
-/// issues: whitespace dropped, letters upper-cased, and a nine-symbol code
-/// regrouped as X-XXXX-XXXX (e.g. "j eeh7abcd" -> "J-EEH7-ABCD"). Codes of
-/// any other length keep the dashes they were typed with. Returns false when
-/// the input cannot be a code (other characters, too short or too long).
+/// issues: whitespace dropped, letters upper-cased, and a code of eight to
+/// ten symbols regrouped as the account prefix (none, one or two symbols)
+/// and two groups of four ("j eeh7abcd" -> "J-EEH7-ABCD", "abeeh7abcd" ->
+/// "AB-EEH7-ABCD"). Codes of any other length keep the dashes they were
+/// typed with. Returns false when the input cannot be a code (other
+/// characters, too short or too long).
 bool normalize_pairing_code(const std::string &input, std::string &out);
 
 /// Parse and check GbbOptimizer's 200 answer. Returns nullptr on success,

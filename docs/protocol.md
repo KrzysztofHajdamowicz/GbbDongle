@@ -156,10 +156,11 @@ GbbDongle deviations from the original:
 ## Pairing with GbbOptimizer
 
 Instead of copying MQTT Server, Plant Id and Plant Token by hand, the owner
-generates a one-time pairing code for the plant in GbbOptimizer (format
-`X-XXXX-XXXX`, e.g. `J-EEH7-ABCD`) and pastes it into the dongle's web
-panel. The dongle exchanges it for the plant's cloud settings (GbbOptimizer
-manual, MQTT chapter, "GbbDongle Pairing"):
+generates a one-time pairing code for the plant in GbbOptimizer (a prefix
+of one or two letters and two groups of four, e.g. `J-EEH7-ABCD` or
+`AB-EEH7-ABCD`) and pastes it into the dongle's web panel. The dongle
+exchanges it for the plant's cloud settings (GbbOptimizer manual, MQTT
+chapter, "GbbDongle Pairing"):
 
 ```
 POST https://gbboptimizer.gbbsoft.pl/Callback/GbbDongleJoin
@@ -180,10 +181,11 @@ How the dongle runs the exchange (`components/gbb_dongle/cloud_pairing.cpp`):
 
 - The typed code is normalized before it is sent: whitespace (also
   no-break spaces) dropped, letters upper-cased, typographic dashes turned
-  into `-`, and a nine-symbol code regrouped as `X-XXXX-XXXX`. Codes of
-  another length (4 to 32 letters and digits) keep the dashes they were
-  typed with. Anything else is refused locally (`invalid_format`) without a
-  request.
+  into `-`, and a code of 8 to 10 letters and digits regrouped as a prefix
+  of up to two symbols and two groups of four (`jeeh7abcd` →
+  `J-EEH7-ABCD`, `ab eeh7 abcd` → `AB-EEH7-ABCD`). Codes of another length
+  (4 to 32 letters and digits) keep the dashes they were typed with.
+  Anything else is refused locally (`invalid_format`) without a request.
 - HTTPS with ESP-IDF's HTTP client on a FreeRTOS task of its own, so the
   TLS handshake never stalls the main loop or the RS485 timing. The server
   is verified against the same trust anchors as the broker
