@@ -50,6 +50,9 @@ class EmergencyManager {
   void start_next_set();
   /// Consume the executor result of an emergency run (header.emergency).
   void handle_result(GbbHeader &&header);
+  /// Forget every stored set, in RAM and NVS (the plant changed). A set
+  /// already on the bus still completes.
+  void clear_sets();
 
   State state() const { return this->state_; }
   size_t sets_stored() const { return this->store_.size(); }

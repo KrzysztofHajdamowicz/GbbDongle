@@ -16,6 +16,7 @@
 #include "esphome/core/gpio.h"
 #include "esphome/core/preferences.h"
 
+#include "cloud_pairing.h"
 #include "emergency_manager.h"
 #include "gbb_protocol.h"
 #include "log_ring_buffer.h"
@@ -42,6 +43,8 @@ class GbbDongle : public Component, public uart::UARTDevice {
   void set_environment(const char *environment) { this->environment_ = environment; }
   void set_client_environment(const char *client_environment) { this->client_environment_ = client_environment; }
   void set_ca_certificate(const char *pem) { this->ca_certificate_ = pem; }
+  void set_pairing_status_text_sensor(text_sensor::TextSensor *s) { this->pairing_.set_status_text_sensor(s); }
+  void set_pairing_plant_text_sensor(text_sensor::TextSensor *s) { this->pairing_.set_plant_text_sensor(s); }
 
   void set_mqtt_host_text(text::Text *t) { this->mqtt_host_ = t; }
   void set_mqtt_port_number(number::Number *n) { this->mqtt_port_ = n; }
@@ -65,6 +68,13 @@ class GbbDongle : public Component, public uart::UARTDevice {
   void set_emergency_minute_threshold(uint8_t minute) { this->emergency_.set_minute_threshold(minute); }
   void set_emergency_retry_initial(uint32_t ms) { this->emergency_.set_retry_initial(ms); }
   void set_emergency_retry_max(uint32_t ms) { this->emergency_.set_retry_max(ms); }
+
+  // Pairing with GbbOptimizer, driven by the Pairing entities in YAML: a
+  // pairing code is exchanged for the plant's cloud settings, which are only
+  // saved once the user confirms the plant they belong to.
+  void start_pairing(const std::string &code);
+  void confirm_pairing();
+  void cancel_pairing();
 
   // For template sensors / binary sensors in YAML.
   bool is_settings_dirty() const { return this->settings_dirty_; }
@@ -104,6 +114,11 @@ class GbbDongle : public Component, public uart::UARTDevice {
   text_sensor::TextSensor *uptime_text_{nullptr};
 
   ModbusExecutor executor_;
+  CloudPairing pairing_;
+  // Set once confirmed cloud settings are saved: the device restarts as soon
+  // as the bus is idle, without starting new bus work meanwhile.
+  bool restart_pending_{false};
+  uint32_t restart_requested_at_{0};
   LogRingBuffer log_buffer_;
   uint32_t log_buffer_size_{65536};
   ESPPreferenceObject log_level_pref_;

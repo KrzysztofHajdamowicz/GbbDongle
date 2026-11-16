@@ -101,6 +101,18 @@ void EmergencyManager::handle_fields(GbbHeader &header) {
   }
 }
 
+void EmergencyManager::clear_sets() {
+  const size_t count = this->store_.size();
+  this->store_.clear_all();
+  this->last_inv_setup_ts_ = 0;
+  this->inv_setup_awaiting_time_ = false;
+  this->boot_loaded_awaiting_time_ = false;
+  this->cloud_back_ = false;
+  if (this->state_ != State::EXECUTING)
+    this->state_ = State::EMPTY;
+  ESP_LOGI(TAG, "Emergency command sets cleared (%u)", (unsigned) count);
+}
+
 void EmergencyManager::check_trigger_() {
   if (this->state_ == State::BACKOFF) {
     if ((int32_t) (millis() - this->retry_at_) >= 0) {

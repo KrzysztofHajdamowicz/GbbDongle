@@ -128,6 +128,15 @@ Files:
   `web_server: sorting_groups:` in `base.yaml` (Status, GbbOptimizer Cloud,
   Inverter (RS485), Network, System); without one it falls back to ESPHome's
   config/diagnostic sections.
+- `cloud_pairing.{h,cpp}` — pairing with GbbOptimizer: a code typed into
+  the Pairing Code entity is POSTed to GbbOptimizer's `GbbDongleJoin`
+  endpoint (ESP-IDF `esp_http_client` on its own FreeRTOS task, pinned to
+  `certificate_authority`, no redirects); the answer is validated on the
+  main loop and waits for Pairing Confirm, which `GbbDongle::confirm_pairing()`
+  applies (cloud entities, emergency sets cleared on a plant change,
+  restart once the bus is idle). Progress goes to the Pairing Status /
+  Pairing Plant text sensors. Never log the code or the token. See
+  docs/protocol.md "Pairing with GbbOptimizer".
 - `gbb_protocol.{h,cpp}` — JSON parse/build of the `Header` payload
   (PascalCase keys, ArduinoJson).
 - `emergency_store.{h,cpp}` — the emergency ("last will") command sets
@@ -158,7 +167,10 @@ Files:
   `certificate_authority` (its presence alone makes the cloud link TLS:
   codegen then defines `USE_MQTT_TLS`, which ESPHome ≥ 2026.11 needs for the
   mqtt TLS setters; there is no runtime TLS or skip-CN switch, and
-  `tools/check_mqtt_exposure.py` fails CI for a config without it), and the `*_id` wiring of the config entities
+  `tools/check_mqtt_exposure.py` fails CI for a config without it; pairing
+  needs it too), `pairing_status_id`/`pairing_plant_id` (text sensors the
+  pairing reports to; codegen also requests ESP-IDF's HTTP client, which
+  ESPHome otherwise leaves out), and the `*_id` wiring of the config entities
   declared in `base.yaml`. `version:` defaults to `auto` → resolved from
   `git describe`; release builds stamp it via `esphome -s version X.Y.Z`.
   `client_environment:` (fed `GbbDongle/${device_name}` in `base.yaml`) plus
@@ -189,8 +201,9 @@ The gzipped panel takes about 21 KB of flash.
 
 Work on it without flashing: `python3 tools/webui/mock_device.py` serves the
 working-tree files and fakes the API (`--ethernet`, `--line ha`,
-`--unconfigured` for the other layouts); reload the browser after edits. CI
-runs `node --check` on `panel.js`.
+`--unconfigured`, `--pairing-off` for the other layouts; pairing codes
+ending in `0000`, `4290`, `NETW` or `BADR` play the refusals); reload the
+browser after edits. CI runs `node --check` on `panel.js`.
 
 ## MQTT protocol
 

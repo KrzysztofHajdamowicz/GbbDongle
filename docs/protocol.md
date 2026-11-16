@@ -153,6 +153,80 @@ GbbDongle deviations from the original:
 - `LinesOnNoInvSetup` is not echoed back in responses (GbbConnect2 echoes it
   only as a serializer side effect; the cloud ignores it).
 
+## Pairing with GbbOptimizer
+
+Instead of copying MQTT Server, Plant Id and Plant Token by hand, the owner
+generates a one-time pairing code for the plant in GbbOptimizer (format
+`X-XXXX-XXXX`, e.g. `J-EEH7-ABCD`) and pastes it into the dongle's web
+panel. The dongle exchanges it for the plant's cloud settings (GbbOptimizer
+manual, MQTT chapter, "GbbDongle Pairing"):
+
+```
+POST https://gbboptimizer.gbbsoft.pl/Callback/GbbDongleJoin
+Content-Type: application/json
+
+{"code":"J-EEH7-ABCD"}
+```
+
+| Answer | Meaning | Pairing Status |
+|---|---|---|
+| 200 `{"plantId":"G12345","plantName":"Dom","plantToken":"…","mqttServer":"gbboptimizer7-mqtt.gbbsoft.pl","mqttPort":8883}` | the plant's settings | `confirm` |
+| 404 `{"error":"invalid_code"}` | unknown, already used or expired code | `invalid_code` |
+| 429 | too many attempts | `rate_limited` |
+| other status | | `server_error` |
+| no answer (DNS, TCP, TLS, 15 s timeout) | | `network_error` |
+
+How the dongle runs the exchange (`components/gbb_dongle/cloud_pairing.cpp`):
+
+- The typed code is normalized before it is sent: whitespace (also
+  no-break spaces) dropped, letters upper-cased, typographic dashes turned
+  into `-`, and a nine-symbol code regrouped as `X-XXXX-XXXX`. Codes of
+  another length (4 to 32 letters and digits) keep the dashes they were
+  typed with. Anything else is refused locally (`invalid_format`) without a
+  request.
+- HTTPS with ESP-IDF's HTTP client on a FreeRTOS task of its own, so the
+  TLS handshake never stalls the main loop or the RS485 timing. The server
+  is verified against the same trust anchors as the broker
+  (`certificate_authority`) with hostname verification; redirects are not
+  followed. A build without `certificate_authority` reports `unavailable`
+  and the panel hides pairing. The `User-Agent` is `GbbDongle/<version>`.
+- Only the 200 body is read, up to 2 KiB, and it is checked before anything
+  is shown: `plantId` must fit the Plant Id entity and contain only
+  letters, digits, `-` and `_` (it becomes part of MQTT topics);
+  `plantToken` must fit the Plant Token entity and be printable ASCII;
+  `mqttServer` must be a host name under `.gbbsoft.pl` (the firmware also
+  trusts ISRG Root X1, so a broker elsewhere could present a valid
+  certificate and receive the token at the first login) and fit the MQTT
+  Server entity; `mqttPort` must be a whole number 1–65535. `plantName` is
+  display only: control and text-direction characters are dropped and it
+  is cut to 64 bytes. A failed check gives `bad_response` and the reason in
+  the log.
+- The settings are not saved yet. Pairing Plant shows
+  `<plantName> · <plantId> · <mqttServer>` and the panel asks for
+  confirmation. **Pairing Confirm** writes MQTT Server, MQTT Port, Plant Id
+  and Plant Token, turns Cloud Connection on, clears the stored emergency
+  sets (RAM and NVS) when the Plant Id changes, and restarts the device
+  once the RS485 bus is idle (after 1 s, at most 30 s). No new cloud
+  request or emergency set starts meanwhile. **Pairing Cancel**, a new
+  code, or 10 minutes without confirmation (`expired`) discard the result.
+- The code and the token never go to the log; the Plant Id and the broker
+  do.
+- If GbbOptimizer issues a new Plant Token for the pairing, the token
+  changes on the server whether or not the result is confirmed on the
+  dongle: Cancel only keeps the dongle's old settings.
+
+Pairing Status values: `idle`, `working`, `confirm`, `applied`,
+`invalid_format`, `invalid_code`, `rate_limited`, `network_error`,
+`server_error`, `bad_response`, `expired`, `unavailable`. The REST API
+drives the same flow (Factory Image: with the panel login):
+
+```
+curl -X POST 'http://<dongle>/text/Pairing%20Code/set?value=J-EEH7-ABCD'
+curl 'http://<dongle>/text_sensor/Pairing%20Status'
+curl 'http://<dongle>/text_sensor/Pairing%20Plant'
+curl -X POST 'http://<dongle>/button/Pairing%20Confirm/press'
+```
+
 ## GbbDongle-specific behavior
 
 - `SubInverterSN` is accepted but not used for routing: there is a single

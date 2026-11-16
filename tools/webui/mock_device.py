@@ -9,6 +9,11 @@ setting raises Restart Required; pressing Apply Settings (Restart) drops the
 stream for a few seconds and comes back with the cloud connected, like a
 reboot. Edit panel.js/panel.css and reload the browser, no flashing needed.
 
+Pairing answers like GbbOptimizer would after a second: a code whose last
+group is 0000 is refused (invalid_code), 4290 is rate-limited, NETW fails on
+the network, BADR gets an unusable answer; any other well-formed code
+returns the installation "Dom" (--pairing-off: firmware without pairing).
+
     python3 tools/webui/mock_device.py                # factory line, WiFi
     python3 tools/webui/mock_device.py --ethernet --line ha --unconfigured
 
@@ -34,6 +39,7 @@ INDEX = (
 )
 CLOUD = {"text/MQTT Server", "text/Plant Id", "text/Plant Token", "number/MQTT Port",
          "switch/Cloud Connection"}
+PAIRING_ERRORS = {"0000": "invalid_code", "4290": "rate_limited", "NETW": "network_error", "BADR": "bad_response"}
 ESC = "\x1b"
 LOG_COLOURS = {"E": "1;31", "W": "0;33", "I": "0;32", "D": "0;36", "V": "0;37", "C": "0;35"}
 STALL = object()  # queued to an /events stream when the device "reboots"
@@ -68,6 +74,12 @@ class Device:
         add("text", "MQTT Server", 1, "gbboptimizer7-mqtt.gbbsoft.pl" if configured else "",
             min_length=0, max_length=128, pattern="", mode=0)
         add("number", "MQTT Port", 1, "8883", min_value="1", max_value="65535", step="1", mode=1)
+        add("text", "Pairing Code", 1, "", min_length=0, max_length=64, pattern="", mode=0)
+        add("text_sensor", "Pairing Status", 2, "unavailable" if args.pairing_off else "idle")
+        add("text_sensor", "Pairing Plant", 2, "")
+        add("button", "Pairing Confirm", 1, None)
+        add("button", "Pairing Cancel", 1, None)
+        self.pairing = None  # settings fetched for the code, waiting for Pairing Confirm
         add("switch", "Persist Emergency Commands", 1, True, "ON", assumed_state=False)
         add("sensor", "Emergency Sets Stored", 2, 2, "2")
         add("select", "RS485 Baud Rate", 1, "9600",
@@ -111,6 +123,57 @@ class Device:
             self.publish("binary_sensor/Restart Required")
             self.log("I", "gbb_dongle:155", "Cloud settings changed; restart the device to apply them")
 
+    # --- pairing (cloud_pairing.cpp) ---
+    def pairing_start(self, typed):
+        status = self.ents["text_sensor/Pairing Status"]["value"]
+        if status in ("unavailable", "working", "applied"):
+            return
+        self.pairing = None
+        self.set("text_sensor/Pairing Plant", "")
+        symbols = "".join(c for c in typed.upper() if c.isalnum() and c.isascii())
+        if not all(c.isalnum() and c.isascii() or c in " -" for c in typed) or not 4 <= len(symbols) <= 32:
+            self.log("W", "gbb_dongle.pairing:281", "That is not a GbbOptimizer pairing code (expected e.g. X-XXXX-XXXX)")
+            return self.set("text_sensor/Pairing Status", "invalid_format")
+        self.log("I", "gbb_dongle.pairing:303", "Asking GbbOptimizer for the plant's cloud settings")
+        self.set("text_sensor/Pairing Status", "working")
+        threading.Timer(1.2, self.pairing_answer, (symbols[-4:],)).start()
+
+    def pairing_answer(self, last_group):
+        if self.ents["text_sensor/Pairing Status"]["value"] != "working":
+            return  # cancelled meanwhile
+        error = PAIRING_ERRORS.get(last_group)
+        if error:
+            self.log("W", "gbb_dongle.pairing:331", f"Pairing failed ({error})")
+            return self.set("text_sensor/Pairing Status", error)
+        self.pairing = {"text/Plant Id": "J48213", "text/Plant Token": "",
+                        "text/MQTT Server": "gbboptimizer10-mqtt.gbbsoft.pl", "number/MQTT Port": "8883"}
+        self.log("I", "gbb_dongle.pairing:362", "GbbOptimizer returned plant J48213 on "
+                 "gbboptimizer10-mqtt.gbbsoft.pl:8883; waiting for confirmation")
+        self.set("text_sensor/Pairing Plant", "Dom · J48213 · gbboptimizer10-mqtt.gbbsoft.pl")
+        self.set("text_sensor/Pairing Status", "confirm")
+
+    def pairing_confirm(self):
+        if self.pairing is None or self.ents["text_sensor/Pairing Status"]["value"] != "confirm":
+            self.log("W", "gbb_dongle:121", "Nothing to confirm: no plant settings from GbbOptimizer are waiting")
+            return
+        for eid, value in self.pairing.items():
+            if self.ents[eid].get("mode") == 1:
+                self.set(eid, "", "********")
+            else:
+                self.set(eid, value)
+        self.set("switch/Cloud Connection", True, "ON")
+        self.pairing = None
+        self.set("text_sensor/Pairing Status", "applied")
+        self.log("I", "gbb_dongle:136", "Cloud settings for plant J48213 saved; restarting to connect")
+        threading.Timer(1.0, self.reboot).start()
+
+    def pairing_cancel(self):
+        if self.ents["text_sensor/Pairing Status"]["value"] in ("unavailable", "applied"):
+            return
+        self.pairing = None
+        self.set("text_sensor/Pairing Plant", "")
+        self.set("text_sensor/Pairing Status", "idle")
+
     def reboot(self, seconds=6.0):
         self.log("I", "app:100", "Rebooting safely...")
         self.down_until = time.time() + seconds
@@ -121,6 +184,10 @@ class Device:
                 q.put(STALL)
         self.boot = time.time() + seconds
         self.ents["binary_sensor/Restart Required"].update(value=False, state="OFF")
+        if self.ents["text_sensor/Pairing Status"]["value"] != "unavailable":
+            self.ents["text_sensor/Pairing Status"].update(value="idle", state="idle")
+        self.ents["text_sensor/Pairing Plant"].update(value="", state="")
+        self.pairing = None
         ok = bool(self.ents["text/Plant Id"]["value"]) and self.ents["switch/Cloud Connection"]["value"]
         self.ents["binary_sensor/Cloud Connected"].update(value=ok, state="ON" if ok else "OFF")
 
@@ -257,6 +324,12 @@ class Handler(BaseHTTPRequestHandler):
         if domain == "switch" and action in ("turn_on", "turn_off", "toggle"):
             v = (not e["value"]) if action == "toggle" else action == "turn_on"
             dev.set(eid, v, "ON" if v else "OFF")
+        elif eid == "text/Pairing Code" and action == "set":
+            dev.pairing_start(args.get("value", ""))
+        elif eid == "button/Pairing Confirm" and action == "press":
+            dev.pairing_confirm()
+        elif eid == "button/Pairing Cancel" and action == "press":
+            dev.pairing_cancel()
         elif domain == "text" and action == "set":
             v = args.get("value", "")
             if e.get("mode") == 1:
@@ -290,6 +363,7 @@ def main():
     ap.add_argument("--line", choices=["factory", "ha", "dev"], default="factory")
     ap.add_argument("--ethernet", action="store_true", help="no WiFi sensors (Kamami, 8DI-8DO ETH)")
     ap.add_argument("--unconfigured", action="store_true", help="fresh device: no Plant Id or server")
+    ap.add_argument("--pairing-off", action="store_true", help="firmware without pairing (no CA certificate)")
     ap.add_argument("--version", default="2.1.0")
     ap.add_argument("--latest", default="2.1.0", help="version the update entity reports")
     ap.add_argument("--title", default="GbbDongle")

@@ -97,9 +97,12 @@ Every board ships in two firmware flavours, selectable in the web installer:
      7–36 V power) — the device gets an address via DHCP
      (`gbbdongle-8di8do-eth.local`).
 3. Open the device's web panel (Factory Image: log in with `admin` / `admin`
-   and set your own password under System → Panel password), fill in the
-   GbbOptimizer settings on the GbbOptimizer cloud tab (MQTT server, Plant
-   Id, Plant Token — from your GbbOptimizer plant page), click **Save**, then
+   and set your own password under System → Panel password). On the
+   GbbOptimizer cloud tab, paste a pairing code generated for your plant in
+   GbbOptimizer and click **Connect**; check the plant it names and click
+   **Save and connect**, and the dongle restarts connected to it. Without a
+   code, fill in the GbbOptimizer settings by hand (MQTT server, Plant Id,
+   Plant Token — from your GbbOptimizer plant page), click **Save**, then
    **Apply and restart**. Settings are stored in flash; changes to cloud
    settings take effect after a restart.
 4. Wire RS485 A/B to the inverter (default 9600 baud, 8N1 — configurable
@@ -123,6 +126,9 @@ use these English names.
 |---|---|
 | MQTT Server / MQTT Port | e.g. `gbboptimizer-mqtt.gbbsoft.pl` : `8883`; always over TLS with the broker hostname verified (Certum Trusted Root CA and Certum Trusted Network CA compiled in, no switch to turn it off) |
 | Plant Id / Plant Token | from GbbOptimizer |
+| Pairing Code | a one-time code from GbbOptimizer; the dongle fetches the four settings above with it (never stored) |
+| Pairing Status / Pairing Plant | progress of the pairing and the plant the code belongs to |
+| Pairing Confirm / Pairing Cancel | save the fetched settings and restart, or discard them — see [docs/protocol.md](docs/protocol.md#pairing-with-gbboptimizer) |
 | Cloud Connection | master enable switch |
 | RS485 Baud Rate / Parity | serial parameters, applied live |
 | Persist Emergency Commands | keep the emergency ("last will") command sets from GbbOptimizer across reboots (NVS write on every change); off = RAM only — see [docs/protocol.md](docs/protocol.md) |

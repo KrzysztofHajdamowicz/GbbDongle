@@ -47,6 +47,8 @@ CONF_EMERGENCY_PERSIST_ID = "emergency_persist_id"
 CONF_EMERGENCY_MINUTE_THRESHOLD = "emergency_minute_threshold"
 CONF_EMERGENCY_RETRY_INITIAL = "emergency_retry_initial"
 CONF_EMERGENCY_RETRY_MAX = "emergency_retry_max"
+CONF_PAIRING_STATUS_ID = "pairing_status_id"
+CONF_PAIRING_PLANT_ID = "pairing_plant_id"
 
 gbb_dongle_ns = cg.esphome_ns.namespace("gbb_dongle")
 GbbDongle = gbb_dongle_ns.class_("GbbDongle", cg.Component, uart.UARTDevice)
@@ -119,6 +121,8 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_WIFI_SIGNAL_PERCENT_ID): cv.use_id(sensor.Sensor),
             cv.Optional(CONF_IP_ADDRESS_ID): cv.use_id(text_sensor.TextSensor),
             cv.Optional(CONF_UPTIME_TEXT_ID): cv.use_id(text_sensor.TextSensor),
+            cv.Optional(CONF_PAIRING_STATUS_ID): cv.use_id(text_sensor.TextSensor),
+            cv.Optional(CONF_PAIRING_PLANT_ID): cv.use_id(text_sensor.TextSensor),
             cv.Optional(CONF_RESPONSE_TIMEOUT, default="1000ms"): _time_at_least(
                 "100ms"
             ),
@@ -184,6 +188,8 @@ async def to_code(config):
         (CONF_WIFI_SIGNAL_PERCENT_ID, var.set_wifi_signal_percent_sensor),
         (CONF_IP_ADDRESS_ID, var.set_ip_address_text_sensor),
         (CONF_UPTIME_TEXT_ID, var.set_uptime_text_sensor),
+        (CONF_PAIRING_STATUS_ID, var.set_pairing_status_text_sensor),
+        (CONF_PAIRING_PLANT_ID, var.set_pairing_plant_text_sensor),
         (CONF_TIME_ID, var.set_time_source),
         (CONF_EMERGENCY_PERSIST_ID, var.set_emergency_persist_switch),
     ]:
@@ -202,3 +208,14 @@ async def to_code(config):
     # Needed so logger::Logger::add_log_callback() compiles to a real
     # implementation (USE_LOG_LISTENERS) for the LastLog ring buffer.
     logger.request_log_listener()
+
+    # Pairing with GbbOptimizer (cloud_pairing.cpp) posts the code over HTTPS
+    # with ESP-IDF's HTTP client, which ESPHome leaves out of the build unless
+    # a component asks for it.
+    from esphome.components import esp32
+
+    if hasattr(esp32, "request_http_client"):
+        esp32.request_http_client()
+    else:  # ESPHome before 2026.10
+        esp32.include_builtin_idf_component("esp_http_client")
+        esp32.include_builtin_idf_component("esp-tls")

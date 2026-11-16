@@ -83,6 +83,12 @@ void EmergencyStore::clear(const std::string &sub_inverter_sn) {
 void EmergencyStore::clear_all() {
   this->sets_.clear();
   this->revisions_.clear();
+  nvs_handle_t handle;
+  if (nvs_open_rw(handle)) {
+    nvs_erase_sets(handle);
+    nvs_close(handle);
+  }
+  this->persisted_hash_ = 0;
 }
 
 uint32_t EmergencyStore::revision(const std::string &sub_inverter_sn) const {

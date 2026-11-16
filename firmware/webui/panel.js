@@ -91,7 +91,7 @@
       "ban.btn": "Zastosuj i uruchom ponownie",
       "lost.t": "Brak połączenia z dongle'em.", "lost.b": "Strona połączy się sama, gdy dongle będzie znowu dostępny.",
       "hero.ok": "Wszystko działa", "hero.okb": "Dongle jest połączony z GbbOptimizerem, który może teraz sterować falownikiem.",
-      "hero.setup": "Dokończ konfigurację", "hero.setupb": "Wpisz dane instalacji z GbbOptimizera, a potem uruchom dongle ponownie.",
+      "hero.setup": "Dokończ konfigurację", "hero.setupb": "Wklej kod parowania z GbbOptimizera albo wpisz dane instalacji ręcznie.",
       "hero.setupbtn": "Przejdź do ustawień chmury",
       "hero.off": "Połączenie z chmurą jest wyłączone", "hero.offb": "GbbOptimizer nie steruje teraz falownikiem przez ten dongle.",
       "hero.bad": "Brak połączenia z GbbOptimizerem", "hero.badb": "Sprawdź Plant Id, token i serwer w ustawieniach chmury oraz czy dongle ma dostęp do internetu. Szczegóły są w logach.",
@@ -101,7 +101,19 @@
       "f.server": "Serwer", "f.params": "Parametry łącza", "f.req": "Obsłużone zapytania", "f.err": "Błędy Modbus",
       "f.ip": "Adres IP", "f.conn": "Połączenie", "f.version": "Wersja", "f.uptime": "Działa od", "f.update": "Aktualizacje",
       "t.device": "Urządzenie", "eth": "Ethernet (kabel)", "sig.good": "dobry sygnał", "sig.ok": "średni sygnał", "sig.weak": "słaby sygnał",
-      "c.h": "Połączenie z GbbOptimizerem", "c.p": "Dane przepiszesz z GbbOptimizera. Po zapisaniu uruchom dongle ponownie.",
+      "p.h": "Parowanie z GbbOptimizerem", "p.p": "Najprościej: wygeneruj w GbbOptimizerze kod parowania dla swojej instalacji i wklej go tutaj. Dongle sam pobierze Plant Id, token i serwer.",
+      "p.code": "Kod parowania", "p.codeh": "Np. J-EEH7-ABCD. Kod jest jednorazowy i ważny krótko.", "p.go": "Połącz",
+      "p.working": "Pobieram dane instalacji z GbbOptimizera…", "p.q": "Kod należy do instalacji:",
+      "p.qb": "Po zapisaniu dongle uruchomi się ponownie i połączy z tą instalacją.", "p.yes": "Zapisz i połącz",
+      "p.applied": "Zapisano. Dongle uruchamia się ponownie.",
+      "p.e.format": "To nie wygląda na kod parowania. Sprawdź, czy kod jest skopiowany w całości.",
+      "p.e.code": "GbbOptimizer nie przyjął kodu: jest błędny, został już użyty albo wygasł. Wygeneruj nowy.",
+      "p.e.rate": "Za dużo prób. Odczekaj chwilę i spróbuj ponownie.",
+      "p.e.net": "Nie udało się połączyć z GbbOptimizerem. Sprawdź, czy dongle ma dostęp do internetu.",
+      "p.e.server": "GbbOptimizer zgłosił błąd. Spróbuj ponownie za kilka minut.",
+      "p.e.bad": "GbbOptimizer odpowiedział w nieoczekiwany sposób. Szczegóły są w logach.",
+      "p.e.expired": "Dane nie zostały zapisane w ciągu 10 minut. Wygeneruj nowy kod.",
+      "c.h": "Połączenie z GbbOptimizerem", "c.p": "Te pola wypełnia parowanie. Możesz je też przepisać z GbbOptimizera ręcznie, a po zapisaniu uruchomić dongle ponownie.",
       "c.where": "Skąd wziąć te dane?", "c.s1": "W GbbOptimizerze otwórz Instalacje i przy swojej instalacji kliknij Popraw.",
       "c.s2": "Na górze zmień typ instalacji na GbbDongle.", "c.s3": "Przepisz stamtąd serwer MQTT, Plant Id i token do pól poniżej.",
       "c.en": "Połączenie z chmurą", "c.enh": "Wyłącz, jeśli chcesz na chwilę odciąć dongle od GbbOptimizera.",
@@ -153,7 +165,7 @@
       "ban.btn": "Apply and restart",
       "lost.t": "No connection to the dongle.", "lost.b": "This page reconnects by itself when the dongle is reachable again.",
       "hero.ok": "Everything works", "hero.okb": "The dongle is connected to GbbOptimizer, which can now control the inverter.",
-      "hero.setup": "Finish the setup", "hero.setupb": "Enter your installation details from GbbOptimizer, then restart the dongle.",
+      "hero.setup": "Finish the setup", "hero.setupb": "Paste a pairing code from GbbOptimizer, or enter your installation details by hand.",
       "hero.setupbtn": "Go to cloud settings",
       "hero.off": "The cloud connection is off", "hero.offb": "GbbOptimizer is not controlling the inverter through this dongle.",
       "hero.bad": "No connection to GbbOptimizer", "hero.badb": "Check the Plant Id, token and server in the cloud settings, and whether the dongle has internet access. The logs have the details.",
@@ -163,7 +175,19 @@
       "f.server": "Server", "f.params": "Line settings", "f.req": "Requests handled", "f.err": "Modbus errors",
       "f.ip": "IP address", "f.conn": "Connection", "f.version": "Version", "f.uptime": "Up for", "f.update": "Updates",
       "t.device": "Device", "eth": "Ethernet (cable)", "sig.good": "good signal", "sig.ok": "fair signal", "sig.weak": "weak signal",
-      "c.h": "Connection to GbbOptimizer", "c.p": "Copy these from GbbOptimizer. Restart the dongle after saving.",
+      "p.h": "Pair with GbbOptimizer", "p.p": "The easy way: generate a pairing code for your installation in GbbOptimizer and paste it here. The dongle fetches the Plant Id, token and server by itself.",
+      "p.code": "Pairing code", "p.codeh": "e.g. J-EEH7-ABCD. A code works once and only for a short time.", "p.go": "Connect",
+      "p.working": "Fetching your installation from GbbOptimizer…", "p.q": "This code belongs to the installation:",
+      "p.qb": "After saving, the dongle restarts and connects to this installation.", "p.yes": "Save and connect",
+      "p.applied": "Saved. The dongle is restarting.",
+      "p.e.format": "That doesn't look like a pairing code. Check that the whole code was copied.",
+      "p.e.code": "GbbOptimizer didn't accept the code: it is wrong, already used or expired. Generate a new one.",
+      "p.e.rate": "Too many attempts. Wait a moment and try again.",
+      "p.e.net": "Couldn't reach GbbOptimizer. Check that the dongle has internet access.",
+      "p.e.server": "GbbOptimizer reported an error. Try again in a few minutes.",
+      "p.e.bad": "GbbOptimizer answered in an unexpected way. The logs have the details.",
+      "p.e.expired": "Nothing was saved within 10 minutes. Generate a new code.",
+      "c.h": "Connection to GbbOptimizer", "c.p": "Pairing fills these in. You can also copy them from GbbOptimizer by hand and restart the dongle after saving.",
       "c.where": "Where do I find these?", "c.s1": "In GbbOptimizer open Installations and click Edit next to yours.",
       "c.s2": "At the top, change the installation type to GbbDongle.", "c.s3": "Copy the MQTT server, Plant Id and token into the fields below.",
       "c.en": "Cloud connection", "c.enh": "Turn off to cut the dongle off from GbbOptimizer for a while.",
@@ -234,6 +258,8 @@
     ip: "text_sensor/IP Address", wifiPct: "sensor/WiFi Signal Percent", wifiDb: "sensor/WiFi Signal dB",
     fw: "text_sensor/Firmware Version", update: "update/Firmware", adminPw: "text/Admin Password",
     factory: "button/Factory Reset",
+    pairCode: "text/Pairing Code", pairStatus: "text_sensor/Pairing Status", pairPlant: "text_sensor/Pairing Plant",
+    pairConfirm: "button/Pairing Confirm", pairCancel: "button/Pairing Cancel",
   };
   const KNOWN = new Set(Object.values(ID));
   const ents = new Map();           // id -> merged JSON from the event stream
@@ -496,6 +522,64 @@
   ));
 
   // ---------- Cloud ----------
+  // Pairing: the firmware exchanges the code with GbbOptimizer and reports
+  // progress through Pairing Status (idle, working, confirm, applied or an
+  // error) and the plant it found through Pairing Plant; the settings are
+  // saved only when Pairing Confirm is pressed. Firmware without a CA
+  // certificate reports "unavailable" and the card stays hidden.
+  const pairCard = card("p.h", "p.p");
+  pairCard.hidden = true;
+  {
+    const code = h("input", { type: "text", autocomplete: "off", spellcheck: "false", autocapitalize: "characters",
+      maxlength: "64", placeholder: "X-XXXX-XXXX", id: "f-paircode" });
+    const go = h("button", { class: "btn primary", type: "button" }, T("span", "p.go"));
+    const msg = h("small", { class: "msg", role: "status", hidden: true });
+    const plant = h("b");
+    const yes = h("button", { class: "btn primary", type: "button" }, T("span", "p.yes"));
+    const no = h("button", { class: "btn", type: "button" }, T("span", "no"));
+    const ask = h("div", { class: "callout pair-ask", hidden: true },
+      T("span", "p.q"), plant, T("small", "p.qb"), h("div", { class: "pair-actions" }, yes, no));
+    const MSG = {
+      working: "p.working", applied: "p.applied", invalid_format: "p.e.format", invalid_code: "p.e.code",
+      rate_limited: "p.e.rate", network_error: "p.e.net", server_error: "p.e.server", bad_response: "p.e.bad",
+      expired: "p.e.expired",
+    };
+    const showMsg = (key, tone) => { msg.hidden = !key; if (key) { msg.className = "msg " + tone; tx(msg, key); } };
+    let last = "";
+    const render = () => {
+      const s = str(ID.pairStatus);
+      pairCard.hidden = !s || s === "unavailable";
+      code.disabled = go.disabled = s === "working" || s === "applied";
+      yes.disabled = no.disabled = false;
+      showMsg(MSG[s], s === "applied" ? "ok" : s === "working" ? "" : "bad");
+      ask.hidden = s !== "confirm";
+      plant.textContent = str(ID.pairPlant);
+      if (s !== last && (s === "confirm" || s === "applied")) code.value = "";
+      // Every open panel follows the restart, not only the one that confirmed.
+      if (s === "applied" && last !== "applied" && !rebooting) waitForReboot();
+      last = s;
+    };
+    watch(ID.pairStatus, render);
+    watch(ID.pairPlant, render);
+    const submit = () => {
+      const v = code.value.trim();
+      if (!v || go.disabled) { code.focus(); return; }
+      go.disabled = true;
+      post(ID.pairCode, "set", { value: v }).catch(() => { go.disabled = false; showMsg("savefail", "bad"); });
+    };
+    go.addEventListener("click", submit);
+    code.addEventListener("keydown", (ev) => { if (ev.key === "Enter") submit(); });
+    const press = (id) => {
+      yes.disabled = no.disabled = true;
+      post(id, "press").catch(() => { yes.disabled = no.disabled = false; showMsg("savefail", "bad"); });
+    };
+    yes.addEventListener("click", () => press(ID.pairConfirm));
+    no.addEventListener("click", () => press(ID.pairCancel));
+    pairCard._body.append(
+      row(ID.pairCode, "p.code", "p.codeh", h("div", { style: "display:grid;gap:4px;width:100%" },
+        h("div", { class: "pw" }, code, go), msg)),
+      ask);
+  }
   {
     const fc = formCard("c.h", "c.p", "c.foot");
     const en = switchField(fc, ID.cloudEnabled);
@@ -536,7 +620,7 @@
     // The firmware raises Restart Required itself; show the banner at once
     // instead of waiting for that state event.
     fc._afterSave = () => { pendingRestart = true; fixedMsg.hidden = true; renderDerived(); };
-    sections.cloud.append(fc,
+    sections.cloud.append(pairCard, fc,
       card("e.h", "e.p",
         row(ID.sets, "e.stored", null, readout(ID.sets, fmtNum)),
         row(ID.persist, "e.persist", "e.persisth", liveSwitch(ID.persist))));
