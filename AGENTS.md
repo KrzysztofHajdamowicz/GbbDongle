@@ -33,6 +33,7 @@ generates it internally.
 | `website/` | Product site (Hugo; Polish at `/`, English at `/en/`): landing page, devices, install wizard + guide (`content/*/instalacja.md`, boards in `data/devices.yaml`), FAQ rendered from `docs/faq.md` (EN) and `docs/faq.pl.md` (PL, a translation: change both together), pinouts. Every PL page in `content/pl` has an EN counterpart with the same file name in `content/en` (translated URL via `slug`). Built and deployed by `pages.yaml` |
 | `tools/site/assemble-manifests.sh` | Writes all ESP Web Tools + OTA manifests next to a release's binaries (used by `pages.yaml`) |
 | `docs/protocol.md` | **Authoritative** cloud-protocol description — read it before touching protocol code |
+| `tests/host/` | Host tests: units of `components/gbb_dongle/` compiled for the dev machine against stand-in ESP-IDF/FreeRTOS/ESPHome headers (`stubs/`), with ASan + UBSan; `run.sh` runs them (ArduinoJson from a firmware build). Not in CI yet. See its README |
 | `tools/` | `cloud_roundtrip.py` (plays the cloud against a dongle on a local broker), `bench/` (pymodbus RTU slave standing in for the inverter on a USB-RS485 adapter, an emergency-set test request and the bench procedure README), `busscan/` (one-shot Go diagnostic that scans Modbus addresses through a dongle, Polish README, no CI) and `webui/mock_device.py` (fake web_server for working on the panel without a device) |
 | `.github/workflows/` | `ci.yaml` (path-filtered: import-target validation + compile matrix for firmware changes, Hugo site build for site changes; `CI result` is the single required check), `release.yaml` (build, SBOM, attestations, GitHub release, then calls `pages.yaml`), `pages.yaml` (Hugo site + the release's binaries and manifests → GitHub Pages; also on site changes on `main`), `dependabot-auto-merge.yml`; `.github/actions/build-site` is the site build shared by `pages.yaml` and `ci.yaml` |
 
@@ -136,7 +137,9 @@ Files:
   applies (cloud entities, emergency sets cleared on a plant change,
   restart once the bus is idle). Progress goes to the Pairing Status /
   Pairing Plant text sensors. Never log the code or the token. See
-  docs/protocol.md "Pairing with GbbOptimizer".
+  docs/protocol.md "Pairing with GbbOptimizer". After changing it, run
+  `tests/host/run.sh` (code normalization, answer validation, the state
+  machine against a fake HTTP client).
 - `gbb_protocol.{h,cpp}` — JSON parse/build of the `Header` payload
   (PascalCase keys, ArduinoJson).
 - `emergency_store.{h,cpp}` — the emergency ("last will") command sets
@@ -253,6 +256,7 @@ uv sync
 uv run esphome config firmware/<variant>.yaml     # validate
 uv run esphome compile firmware/<variant>.yaml    # build
 uv run esphome run firmware/<variant>-dev.yaml    # flash + logs
+tests/host/run.sh                                 # host tests (after any compile)
 ```
 
 `base.yaml` defaults `external_components` to `github://…@main` (required
