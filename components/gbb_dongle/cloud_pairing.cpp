@@ -17,8 +17,10 @@ namespace gbb_dongle {
 
 static const char *const TAG = "gbb_dongle.pairing";
 
-// GbbOptimizer issues codes of nine symbols grouped 1-4-4 (J-EEH7-ABCD).
-static const size_t CODE_SYMBOLS = 9;
+// GbbOptimizer codes: the account prefix of one or two letters, then eight
+// symbols grouped 4-4, e.g. J-EEH7-ABCD or AB-EEH7-ABCD.
+static const size_t CODE_BODY_SYMBOLS = 8;
+static const size_t CODE_MAX_PREFIX = 2;
 static const size_t CODE_MIN_SYMBOLS = 4;
 static const size_t CODE_MAX_SYMBOLS = 32;
 
@@ -89,8 +91,11 @@ bool normalize_pairing_code(const std::string &input, std::string &out) {
   }
   if (symbols.size() < CODE_MIN_SYMBOLS || symbols.size() > CODE_MAX_SYMBOLS)
     return false;
-  if (symbols.size() == CODE_SYMBOLS) {
-    out = symbols.substr(0, 1) + "-" + symbols.substr(1, 4) + "-" + symbols.substr(5, 4);
+  const size_t count = symbols.size();
+  if (count >= CODE_BODY_SYMBOLS && count <= CODE_BODY_SYMBOLS + CODE_MAX_PREFIX) {
+    const size_t prefix = count - CODE_BODY_SYMBOLS;
+    out = prefix > 0 ? symbols.substr(0, prefix) + "-" : "";
+    out += symbols.substr(prefix, 4) + "-" + symbols.substr(prefix + 4, 4);
   } else {
     out = typed;
   }
