@@ -69,15 +69,27 @@ The panel has the tabs **Overview** (is everything working), **GbbOptimizer clou
 
 ### What do I configure in GbbOptimizer?
 
+The easiest way is pairing with a one-time code; the step-by-step guide with screenshots is in
+[pairing.md](pairing.md). In short:
+
 1. In **Instalacje** (Installations), open your installation with **Popraw** (Edit) and switch the
-   installation type at the top to **GbbDongle**. Until you do, GbbOptimizer keeps talking to the
-   inverter through its previous method (e.g. Deye Cloud) and the dongle receives nothing.
-2. Copy the MQTT server address, the installation id (Plant Id) and the access token from the
-   installation into the dongle's web panel (**GbbOptimizer cloud** tab), click **Save**, then **Apply
-   and restart** (**Apply Settings (Restart)** in the stock ESPHome panel). Never post the token
-   publicly.
-3. Use your real, active installation straight away. Switching costs at most about an hour of
-   inverter control if something goes wrong.
+   installation type to **GbbDongle** (**Change type or timeslots…** → **Plant with GbbDongle by
+   K.Hajdamowicz** → **Change**). Until you do, GbbOptimizer keeps talking to the inverter through its
+   previous method (e.g. Deye Cloud or GbbConnect2) and the dongle receives nothing.
+2. In the **GbbDongle Pairing** section of the same page click **Generate a new code**. The code (e.g.
+   `J-EEH7-ABCD`) works once and for 10 minutes, and generating it gives the installation a new token:
+   GbbConnect2, a Home Assistant MQTT bridge or chart links that used the old token stop working.
+3. In the dongle's web panel, on the **GbbOptimizer cloud** tab, paste the code into **Pairing code**,
+   click **Connect**, check the installation it shows and click **Save and connect**. The dongle saves
+   the settings, restarts and connects; **Overview** then shows **Cloud connected**.
+
+Firmware without the pairing card, or if you prefer to do it by hand: switch the type as in step 1, then
+copy the MQTT server address, the installation id (Plant Id) and the access token from the
+installation into the dongle's web panel (**GbbOptimizer cloud** tab), click **Save**, then **Apply and
+restart** (**Apply Settings (Restart)** in the stock ESPHome panel). Never post the token publicly.
+
+Use your real, active installation straight away. Switching costs at most about an hour of
+inverter control if something goes wrong.
 
 ### How do I check that it works?
 

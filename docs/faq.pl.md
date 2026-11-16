@@ -72,14 +72,27 @@ otworzysz, dopisując `?classic` do adresu (potrzebuje internetu).
 
 ### Co ustawić w GbbOptimizerze?
 
-1. W **Instalacje** otwórz swoją instalację przyciskiem **Popraw** i na górze zmień typ instalacji na
-   **GbbDongle**. Dopóki tego nie zrobisz, GbbOptimizer rozmawia z falownikiem poprzednią drogą (np. przez
-   Deye Cloud), a dongle nic nie dostaje.
-2. Przepisz z instalacji do panelu WWW dongla (zakładka **Chmura GbbOptimizer**) adres serwera MQTT,
-   identyfikator instalacji (Plant Id) i token dostępu, kliknij **Zapisz**, a potem **Zastosuj i uruchom
-   ponownie** (w standardowym panelu ESPHome: **Apply Settings (Restart)**). Nigdy nie publikuj tokenu.
-3. Od razu użyj swojej prawdziwej, działającej instalacji. Jeśli coś pójdzie nie tak, stracisz najwyżej
-   około godziny sterowania falownikiem.
+Najprościej sparować dongle jednorazowym kodem; instrukcja krok po kroku ze zrzutami ekranu jest w
+[pairing.pl.md](pairing.pl.md). W skrócie:
+
+1. W **Instalacje** otwórz swoją instalację przyciskiem **Popraw** i zmień typ instalacji na
+   **GbbDongle** (**Change type or timeslots…** → **Plant with GbbDongle by K.Hajdamowicz** →
+   **Change**). Dopóki tego nie zrobisz, GbbOptimizer rozmawia z falownikiem poprzednią drogą (np. przez
+   Deye Cloud albo GbbConnect2), a dongle nic nie dostaje.
+2. Na tej samej stronie, w sekcji **GbbDongle Pairing**, kliknij **Generate a new code**. Kod (np.
+   `J-EEH7-ABCD`) działa raz i przez 10 minut, a jego wygenerowanie nadaje instalacji nowy token:
+   GbbConnect2, most MQTT w Home Assistant czy linki do wykresów ze starym tokenem przestaną działać.
+3. W panelu WWW dongla, w zakładce **Chmura GbbOptimizer**, wklej kod w pole **Kod parowania**, kliknij
+   **Połącz**, sprawdź pokazaną instalację i kliknij **Zapisz i połącz**. Dongle zapisze ustawienia,
+   uruchomi się ponownie i połączy; na stronie **Przegląd** pojawi się **Chmura połączona**.
+
+Firmware bez karty parowania albo wolisz ręcznie: zmień typ jak w kroku 1, a potem przepisz z
+instalacji do panelu WWW dongla (zakładka **Chmura GbbOptimizer**) adres serwera MQTT, identyfikator
+instalacji (Plant Id) i token dostępu, kliknij **Zapisz**, a potem **Zastosuj i uruchom ponownie**
+(w standardowym panelu ESPHome: **Apply Settings (Restart)**). Nigdy nie publikuj tokenu.
+
+Od razu użyj swojej prawdziwej, działającej instalacji. Jeśli coś pójdzie nie tak, stracisz najwyżej
+około godziny sterowania falownikiem.
 
 ### Jak sprawdzić, czy działa?
 
