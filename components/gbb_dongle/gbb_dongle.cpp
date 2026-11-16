@@ -6,6 +6,7 @@
 #include "esphome/components/logger/logger.h"
 #include "esphome/components/network/util.h"
 #include "esphome/core/alloc_helpers.h"
+#include "esphome/core/application.h"
 #include "esphome/core/hal.h"
 #include "esphome/core/helpers.h"
 #include "esphome/core/log.h"
@@ -27,6 +28,13 @@ static const size_t LAST_LOG_MAX_BYTES = 3 * 1024;
 // Product identity for the fromDevice ClientName field — not configurable,
 // it names this firmware regardless of board or transport.
 static const char *const CLIENT_NAME = "GbbDongle";
+
+// After confirmed pairing: time for the web server to deliver the answer to
+// the button press, then the restart waits for the running bus transaction
+// (an emergency set should reach the inverter whole), but not longer than
+// the maximum.
+static const uint32_t PAIRING_RESTART_DELAY_MS = 1000;
+static const uint32_t PAIRING_RESTART_MAX_WAIT_MS = 30 * 1000;
 
 void GbbDongle::setup() {
   if (this->flow_control_pin_ != nullptr) {
@@ -70,9 +78,57 @@ void GbbDongle::setup() {
   this->emergency_.set_executor(&this->executor_);
   this->emergency_.setup();
 
+  // Pairing checks GbbOptimizer's server against the same CA certificates as
+  // the broker, and refuses settings the cloud entities could not store.
+  this->pairing_.set_ca_certificate(this->ca_certificate_);
+  this->pairing_.set_user_agent(std::string(CLIENT_NAME) + "/" + this->version_);
+  PairingLimits limits;
+  const auto max_length = [](text::Text *t, size_t fallback) -> size_t {
+    return t != nullptr && t->traits.get_max_length() > 0 ? (size_t) t->traits.get_max_length() : fallback;
+  };
+  limits.plant_id = max_length(this->plant_id_, limits.plant_id);
+  limits.plant_token = max_length(this->plant_token_, limits.plant_token);
+  limits.mqtt_server = max_length(this->mqtt_host_, limits.mqtt_server);
+  this->pairing_.set_limits(limits);
+  this->pairing_.setup();
+
   this->configure_mqtt_();
   this->setup_complete_ = true;
 }
+
+void GbbDongle::start_pairing(const std::string &code) {
+  if (this->restart_pending_) {
+    ESP_LOGW(TAG, "Restart pending; pairing code ignored");
+    return;
+  }
+  this->pairing_.start(code);
+}
+
+void GbbDongle::confirm_pairing() {
+  if (this->restart_pending_)
+    return;
+  PairingResult result;
+  if (!this->pairing_.take_result(result)) {
+    ESP_LOGW(TAG, "Nothing to confirm: no plant settings from GbbOptimizer are waiting");
+    return;
+  }
+  const bool plant_changed = this->plant_id_->state != result.plant_id;
+  this->plant_id_->make_call().set_value(result.plant_id).perform();
+  this->plant_token_->make_call().set_value(result.plant_token).perform();
+  this->mqtt_host_->make_call().set_value(result.mqtt_server).perform();
+  this->mqtt_port_->make_call().set_value(result.mqtt_port).perform();
+  this->cloud_enabled_->turn_on();
+  if (plant_changed) {
+    // Sets stored for the previous plant were never meant for this one's
+    // inverter; the new plant's GbbOptimizer sends its own.
+    this->emergency_.clear_sets();
+  }
+  ESP_LOGI(TAG, "Cloud settings for plant %s saved; restarting to connect", result.plant_id.c_str());
+  this->restart_pending_ = true;
+  this->restart_requested_at_ = millis();
+}
+
+void GbbDongle::cancel_pairing() { this->pairing_.cancel(); }
 
 void GbbDongle::configure_mqtt_() {
   const std::string host = this->mqtt_host_ != nullptr ? this->mqtt_host_->state : "";
@@ -292,7 +348,7 @@ void GbbDongle::loop() {
       this->publish_response_(std::move(result));
     }
   }
-  if (!this->executor_.busy()) {
+  if (!this->executor_.busy() && !this->restart_pending_) {
     if (this->emergency_.wants_bus()) {
       // A triggered emergency cycle owns the bus until every stored set has
       // been executed: the inverter must never be left with a half-applied
@@ -324,6 +380,14 @@ void GbbDongle::loop() {
   }
 
   this->emergency_.loop();
+  this->pairing_.loop();
+
+  if (this->restart_pending_) {
+    const uint32_t waited = now - this->restart_requested_at_;
+    if ((waited >= PAIRING_RESTART_DELAY_MS && !this->executor_.busy()) || waited >= PAIRING_RESTART_MAX_WAIT_MS) {
+      App.safe_reboot();
+    }
+  }
 }
 
 void GbbDongle::dump_config() {
@@ -331,6 +395,7 @@ void GbbDongle::dump_config() {
   ESP_LOGCONFIG(TAG, "  Version: %s (%s)", this->version_, this->environment_);
   ESP_LOGCONFIG(TAG, "  Cloud configured: %s", YESNO(this->cloud_configured_));
   ESP_LOGCONFIG(TAG, "  CA certificate compiled in: %s", YESNO(this->ca_certificate_ != nullptr));
+  ESP_LOGCONFIG(TAG, "  Pairing: %s", this->pairing_.available() ? this->pairing_.url() : "unavailable (no CA)");
   ESP_LOGCONFIG(TAG, "  Log buffer: %" PRIu32 " B", this->log_buffer_size_);
   ESP_LOGCONFIG(TAG, "  Emergency: threshold minute %u, %u set(s) stored, persist %s",
                 this->emergency_.minute_threshold(), this->emergency_.sets_stored(),

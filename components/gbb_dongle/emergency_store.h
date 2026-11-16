@@ -24,6 +24,7 @@ class EmergencyStore {
   /// no replacement, no revision bump, and the caller can skip sync_nvs().
   bool set_lines(const std::string &sub_inverter_sn, std::vector<GbbLine> &&lines);
   void clear(const std::string &sub_inverter_sn);
+  /// Drop every set, together with its NVS copy whatever the persist setting.
   void clear_all();
 
   bool empty() const { return this->sets_.empty(); }

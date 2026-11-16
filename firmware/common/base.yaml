@@ -135,6 +135,8 @@ gbb_dongle:
   plant_id_id: cfg_plant_id
   plant_token_id: cfg_plant_token
   cloud_enabled_id: cfg_cloud_enabled
+  pairing_status_id: pairing_status
+  pairing_plant_id: pairing_plant
   baud_rate_id: cfg_baud_rate
   parity_id: cfg_parity
   time_id: sntp_time
@@ -254,6 +256,24 @@ text:
     initial_value: ""
     min_length: 0
     max_length: 64
+  # Pairing with GbbOptimizer: a code generated there is exchanged for the
+  # four cloud settings above, which are saved only after Pairing Confirm
+  # (see "Pairing with GbbOptimizer" in docs/protocol.md). Neither optimistic
+  # nor restored: the code is never stored or shown back.
+  - platform: template
+    id: cfg_pairing_code
+    name: Pairing Code
+    web_server:
+      sorting_group_id: grp_cloud
+      sorting_weight: 1
+    state_topic:
+    icon: mdi:link-variant
+    entity_category: config
+    mode: text
+    min_length: 0
+    max_length: 64
+    set_action:
+      - lambda: id(gbb).start_pairing(x);
 
 number:
   - platform: template
@@ -338,6 +358,26 @@ switch:
     restore_mode: RESTORE_DEFAULT_OFF
 
 button:
+  - platform: template
+    name: Pairing Confirm
+    web_server:
+      sorting_group_id: grp_cloud
+      sorting_weight: 4
+    state_topic:
+    icon: mdi:link-variant-plus
+    entity_category: config
+    on_press:
+      - lambda: id(gbb).confirm_pairing();
+  - platform: template
+    name: Pairing Cancel
+    web_server:
+      sorting_group_id: grp_cloud
+      sorting_weight: 5
+    state_topic:
+    icon: mdi:link-variant-off
+    entity_category: config
+    on_press:
+      - lambda: id(gbb).cancel_pairing();
   - platform: restart
     name: Apply Settings (Restart)
     web_server:
@@ -438,3 +478,29 @@ text_sensor:
     format:
       separator: " "
       minutes: min
+  # Written by the gbb_dongle component (pairing_status_id, pairing_plant_id).
+  # Status values: idle, working, confirm, applied, invalid_format,
+  # invalid_code, rate_limited, network_error, server_error, bad_response,
+  # expired, unavailable; the web panel translates them.
+  - platform: template
+    id: pairing_status
+    name: Pairing Status
+    web_server:
+      sorting_group_id: grp_cloud
+      sorting_weight: 2
+    state_topic:
+    icon: mdi:link-variant
+    entity_category: diagnostic
+    update_interval: never
+  # The plant a fetched result belongs to, "<name> · <Plant Id> · <server>",
+  # while it waits for Pairing Confirm; empty otherwise.
+  - platform: template
+    id: pairing_plant
+    name: Pairing Plant
+    web_server:
+      sorting_group_id: grp_cloud
+      sorting_weight: 3
+    state_topic:
+    icon: mdi:solar-power
+    entity_category: diagnostic
+    update_interval: never
