@@ -160,7 +160,7 @@ jobs:
   pages:
     needs: assemble
     permissions:
-      contents: read
+      contents: write    # pages.yaml creates a commit object per deployment
       pages: write
       id-token: write
     uses: ./.github/workflows/pages.yaml
