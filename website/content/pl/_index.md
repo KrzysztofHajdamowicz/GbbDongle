@@ -66,8 +66,8 @@ steps:
     #   text: Przez USB, prosto z przeglądarki Chrome, Edge albo Firefox. Gotowe urządzenie ma go już wgranego.
     - title: Podłącz do sieci
       text: WiFi skonfigurujesz z instalatora albo przez punkt dostępowy *GbbDongle Setup*. Ethernet działa od razu.
-    - title: Wpisz dane z GbbOptimizera
-      text: Serwer MQTT, identyfikator instalacji i token w panelu WWW dongla.
+    - title: Sparuj z GbbOptimizerem
+      text: Wygeneruj kod w GbbOptimizerze i wklej go w panelu WWW dongla.
     - title: Wepnij w falownik
       text: Kabel RJ45 do portu Modbus. Zobacz pinouty dla swojego falownika.
 cta:

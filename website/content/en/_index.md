@@ -66,8 +66,8 @@ steps:
     #   text: Over USB, straight from Chrome, Edge or Firefox. The ready-made device comes flashed.
     - title: Connect to the network
       text: Set up WiFi from the installer or through the *GbbDongle Setup* access point. Ethernet works right away.
-    - title: Enter your GbbOptimizer details
-      text: MQTT server, installation id and token in the dongle's web panel.
+    - title: Pair with GbbOptimizer
+      text: Generate a code in GbbOptimizer and paste it into the dongle's web panel.
     - title: Plug into the inverter
       text: RJ45 cable to the Modbus port. See the pinouts for your inverter.
 cta:

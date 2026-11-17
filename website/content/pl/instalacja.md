@@ -65,11 +65,14 @@ Zaloguj się jako `admin` / `admin` i od razu ustaw własne hasło w zakładce *
 {{< /step >}}
 
 {{< step title="Połącz z GbbOptimizerem" >}}
-1. W GbbOptimizerze otwórz **Instalacje**, przy swojej instalacji kliknij **Popraw** i na górze zmień typ instalacji na **GbbDongle**. Dopóki tego nie zrobisz, GbbOptimizer rozmawia z falownikiem starą drogą (np. przez Deye Cloud) i dongle nic nie dostaje.
-2. W panelu dongla otwórz zakładkę **Chmura GbbOptimizer** i przepisz z instalacji serwer MQTT, **Plant Id** i token. Tokenu nigdy nie publikuj.
-3. Kliknij **Zapisz**, a potem **Zastosuj i uruchom ponownie**. Po kilkunastu sekundach **Przegląd** pokaże „Wszystko działa”.
+1. W GbbOptimizerze otwórz **Instalacje**, przy swojej instalacji kliknij **Popraw**, potem **Change type or timeslots…**, wybierz **Plant with GbbDongle by K.Hajdamowicz** i kliknij **Change**. Dopóki tego nie zrobisz, GbbOptimizer rozmawia z falownikiem starą drogą (np. przez Deye Cloud albo GbbConnect2) i dongle nic nie dostaje.
+2. Na tej samej stronie, w sekcji **GbbDongle Pairing**, kliknij **Generate a new code**. Kod (np. `J-EEH7-ABCD`) działa raz i przez 10 minut. Nie wysyłaj go nikomu.
+3. W panelu dongla otwórz zakładkę **Chmura GbbOptimizer**, wklej kod w kartę **Parowanie z GbbOptimizerem** i kliknij **Połącz**.
+4. Sprawdź nazwę instalacji i Plant Id, które pokaże panel, i kliknij **Zapisz i połącz**. Dongle uruchomi się ponownie, a po kilkunastu sekundach **Przegląd** pokaże „Wszystko działa”.
 
-Starszy firmware ma standardowy panel ESPHome z angielskimi nazwami: tam pola nazywają się **MQTT Server**, **Plant Id** i **Plant Token**, a przycisk **Apply Settings (Restart)**.
+Wygenerowanie kodu nadaje instalacji nowy token. Jeśli korzystasz z GbbConnect2, mostu MQTT w Home Assistancie albo linków do wykresów z tokenem, wpisz tam później nowy token. Instrukcja ze zrzutami ekranu i opisem komunikatów o błędach jest w [przewodniku po parowaniu](pairing.pl.md).
+
+Dane można też wpisać ręcznie, w polach pod kartą parowania: serwer MQTT, **Plant Id** i token z instalacji (tokenu nigdy nie publikuj), potem **Zapisz** i **Zastosuj i uruchom ponownie**. Tak samo konfiguruje się firmware sprzed wersji 2.3.0, które nie ma parowania. Jeśli ma standardowy panel ESPHome, pola nazywają się **MQTT Server**, **Plant Id** i **Plant Token**, a przycisk **Apply Settings (Restart)**.
 {{< /step >}}
 
 {{< step title="Dodaj do Home Assistanta (opcjonalnie)" line="ha" >}}

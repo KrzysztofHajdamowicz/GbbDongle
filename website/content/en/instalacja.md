@@ -66,11 +66,14 @@ Log in as `admin` / `admin` and set your own password under **System** → **Pan
 {{< /step >}}
 
 {{< step title="Connect to GbbOptimizer" >}}
-1. In GbbOptimizer open **Instalacje** (Installations), click **Popraw** (Edit) next to your installation and switch the installation type at the top to **GbbDongle**. Until you do, GbbOptimizer talks to the inverter the old way (e.g. through Deye Cloud) and the dongle receives nothing.
-2. In the dongle's panel open the **GbbOptimizer cloud** tab and copy the MQTT server, **Plant Id** and token from the installation. Never post the token publicly.
-3. Click **Save**, then **Apply and restart**. After about fifteen seconds **Overview** shows "Everything works".
+1. In GbbOptimizer open **Instalacje** (Installations), click **Popraw** (Edit) next to your installation, then **Change type or timeslots…**, pick **Plant with GbbDongle by K.Hajdamowicz** and click **Change**. Until you do, GbbOptimizer talks to the inverter the old way (e.g. through Deye Cloud or GbbConnect2) and the dongle receives nothing.
+2. On the same page, in the **GbbDongle Pairing** section, click **Generate a new code**. The code (e.g. `J-EEH7-ABCD`) works once and for 10 minutes. Do not share it.
+3. In the dongle's panel open the **GbbOptimizer cloud** tab, paste the code into the **Pair with GbbOptimizer** card and click **Connect**.
+4. Check the installation name and Plant Id the panel shows and click **Save and connect**. The dongle restarts, and after about fifteen seconds **Overview** shows "Everything works".
 
-Older firmware has the stock ESPHome panel with English entity names: there the fields are **MQTT Server**, **Plant Id** and **Plant Token**, and the button is **Apply Settings (Restart)**.
+Generating a code gives the installation a new token. If you use GbbConnect2, the Home Assistant MQTT bridge or chart links with the token in them, enter the new token there afterwards. The [pairing guide](pairing.md) has screenshots and explains the error messages.
+
+You can also enter the details by hand in the fields below the pairing card: the MQTT server, **Plant Id** and token from the installation (never post the token publicly), then **Save** and **Apply and restart**. Firmware older than 2.3.0, which has no pairing, is set up the same way. If it has the stock ESPHome panel, the fields are **MQTT Server**, **Plant Id** and **Plant Token**, and the button is **Apply Settings (Restart)**.
 {{< /step >}}
 
 {{< step title="Add to Home Assistant (optional)" line="ha" >}}
