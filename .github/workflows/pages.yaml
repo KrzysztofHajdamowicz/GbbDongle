@@ -47,6 +47,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
+      artifact-id: ${{ steps.upload.outputs.artifact_id }}
       base-url: ${{ steps.pages.outputs.base_url }}
       tag: ${{ steps.site.outputs.tag }}
     steps:
@@ -63,27 +64,81 @@ jobs:
           base-url: ${{ steps.pages.outputs.base_url }}
           tag: ${{ inputs.tag }}
 
-      - uses: actions/upload-pages-artifact@v5
+      - id: upload
+        uses: actions/upload-pages-artifact@v5
         with:
           path: site
 
-  # actions/deploy-pages sends GITHUB_SHA as pages_build_version, and Pages
-  # keeps serving the existing deployment when it already has one for that
-  # build version (a value other than a commit SHA is rejected). So a release
-  # tagged on a commit that a push to main had already deployed, with the
-  # previous release's firmware, publishes nothing while reporting success.
-  # The manifest check below turns that into a failed run; recover by
-  # deploying from a newer commit (any push to main touching the site, then
-  # this workflow picks the latest release).
+  # Pages labels a deployment with pages_build_version, which must be a
+  # commit SHA of the repository, and keeps serving the existing deployment
+  # when that build version was already deployed. A release tagged on a
+  # commit that a push to main had already deployed (with the previous
+  # release's firmware) would publish nothing, and so would a manual re-run.
+  # Every deployment therefore gets its own commit object: same tree as
+  # GITHUB_SHA, GITHUB_SHA as its parent, created through the Git database
+  # API and referenced by no branch or tag. The deployment itself goes
+  # through the Pages REST API, as actions/deploy-pages does, with that SHA.
+  # If Pages refuses it, the job deploys as GITHUB_SHA with a warning, and
+  # the manifest check below still catches a deployment that changed
+  # nothing.
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # the per-deployment commit object
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - id: deployment
-        uses: actions/deploy-pages@v5
+      - name: Deploy to GitHub Pages
+        id: deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ needs.build.outputs.artifact-id }}
+        run: |
+          API="repos/${GITHUB_REPOSITORY}"
+          OIDC_TOKEN=$(curl -sSf -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}" | jq -r .value)
+          echo "::add-mask::${OIDC_TOKEN}"
+
+          build_commit() {
+            local tree
+            tree=$(gh api "${API}/git/commits/${GITHUB_SHA}" -q .tree.sha) &&
+            gh api -X POST "${API}/git/commits" -q .sha \
+              -f message="Pages deployment (run ${GITHUB_RUN_ID}, attempt ${GITHUB_RUN_ATTEMPT})" \
+              -f tree="${tree}" -f "parents[]=${GITHUB_SHA}"
+          }
+          create_deployment() {
+            jq -n --argjson artifact_id "$ARTIFACT_ID" --arg version "$1" --arg oidc "$OIDC_TOKEN" \
+                '{artifact_id: $artifact_id, pages_build_version: $version, oidc_token: $oidc}' \
+              | gh api -X POST "${API}/pages/deployments" --input -
+          }
+
+          if VERSION=$(build_commit) && RESP=$(create_deployment "$VERSION"); then
+            :
+          else
+            echo "::warning::Pages did not take a per-deployment build version; deploying as ${GITHUB_SHA}"
+            VERSION="${GITHUB_SHA}"
+            RESP=$(create_deployment "$VERSION")
+          fi
+          ID=$(jq -r '(.id // empty | tostring), (.status_url // "" | split("/") | last)' <<<"$RESP" | grep -m1 .)
+          echo "page_url=$(jq -r '.page_url // empty' <<<"$RESP")" >> "$GITHUB_OUTPUT"
+          echo "Deployment ${ID} (build version ${VERSION})"
+
+          for _ in $(seq 120); do
+            sleep 5
+            STATUS=$(gh api "${API}/pages/deployments/${ID}" -q .status || echo unknown_status)
+            echo "Status: ${STATUS}"
+            case "$STATUS" in
+              succeed) exit 0 ;;
+              deployment_failed|deployment_perms_error|deployment_content_failed|deployment_cancelled|deployment_lost) exit 1 ;;
+            esac
+          done
+          echo "::error::Timed out waiting for Pages deployment ${ID}" >&2
+          gh api -X POST "${API}/pages/deployments/${ID}/cancel" || true
+          exit 1
 
       # Devices poll this manifest: a deploy only counts once the live site
       # offers the release that was built. The query string skips the CDN
