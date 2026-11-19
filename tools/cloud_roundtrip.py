@@ -49,7 +49,7 @@ def main() -> int:
             request = json.load(f)
 
     response: list[str] = []
-    client = mqtt.Client(client_id="gbb-cloud-sim")
+    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="gbb-cloud-sim")
 
     def on_message(_client, _userdata, msg):
         response.append(msg.payload.decode())

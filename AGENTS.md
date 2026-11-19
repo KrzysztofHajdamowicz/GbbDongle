@@ -86,7 +86,7 @@ Every board ships two images, selectable in the web installer:
 - **Waveshare ESP32-S3-RS485-CAN** (`gbbdongle.*` artifacts — the name is kept
   unsuffixed so update manifests already in the field keep resolving):
   ESP32-S3, PSRAM, manual RS485 direction via `flow_control_pin` GPIO21, BLE
-  provisioning (`esp32_improv`).
+  provisioning (`improv_ble`).
 - **LilyGo T-CAN485** (`gbbdongle-tcan485.*`): plain ESP32, no PSRAM
   (`log_buffer_size: 8192`), auto-direction transceiver but needs three GPIO
   enable switches (16/17/19) driven high.
@@ -102,7 +102,7 @@ Every board ships two images, selectable in the web installer:
   direction (TX=GPIO17, RX=GPIO18, `flow_control_pin` GPIO21 — without it
   the driver stays enabled and the receiver off; bench-verified). One board,
   two firmware variants (`wifi:` and `ethernet:` are mutually exclusive): the board
-  package is split into a core file plus a `-wifi` overlay (esp32_improv) and
+  package is split into a core file plus a `-wifi` overlay (improv_ble) and
   an `-eth` overlay (W5500 SPI Ethernet — the ethernet component owns spi2,
   never add an `spi:` block on it). WROOM-1U module: WiFi needs the external
   SMA antenna. Both variants are ESP32-S3 ⇒ keep them out of the legacy

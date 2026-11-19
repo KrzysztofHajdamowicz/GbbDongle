@@ -165,14 +165,14 @@ def main() -> int:
         threading.Thread(target=server.serve_forever, daemon=True).start()
         print(f"REST stub on http://localhost:{args.rest_stub}")
 
-    client = mqtt.Client(client_id=f"GbbConnect2_{args.plant_id}")
+    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"GbbConnect2_{args.plant_id}")
     client.username_pw_set(args.plant_id, "fake-token")
 
     def on_message(_client, _userdata, msg):
         print(f"<- {msg.topic}")
         handle_request(client, args.plant_id, msg.payload)
 
-    def on_connect(_client, _userdata, _flags, rc):
+    def on_connect(_client, _userdata, _flags, _reason_code, _properties):
         print(f"fake dongle connected to {args.broker}:{args.port} as Plant Id {args.plant_id}; "
               f"inverters on addresses {sorted(DEVICES)}")
         client.subscribe(f"{args.plant_id}/ModbusInMqtt/toDevice", qos=1)

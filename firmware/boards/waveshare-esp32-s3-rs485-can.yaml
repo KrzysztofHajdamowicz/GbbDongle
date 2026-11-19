@@ -23,5 +23,5 @@ gbb_dongle:
   flow_control_pin: GPIO21
 
 # BLE WiFi provisioning — affordable here thanks to PSRAM.
-esp32_improv:
+improv_ble:
   authorizer: none
