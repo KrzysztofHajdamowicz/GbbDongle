@@ -24,7 +24,9 @@ substitutions:
 esphome:
   name: ${device_name}
   friendly_name: ${friendly_name}
-  min_version: 2026.7.0
+  # improv_ble (BLE provisioning in the board files) exists since 2026.10.0;
+  # an older dashboard stops here instead of failing on an unknown component.
+  min_version: 2026.10.0
   project:
     name: krzysztofhajdamowicz.gbbdongle
     version: ${version}
